@@ -30,7 +30,8 @@
         
         .btn-gold { background: linear-gradient(to right, #d4af37, #c5a028); color: #000; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; width: 100%; padding: 14px; border-radius: 8px; }
         .btn-gold:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        
+        .btn-gold:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
+
         /* Animações */
         .screen { display: none; opacity: 0; animation: fadeIn 0.4s forwards; }
         .screen.active { display: block; }
@@ -144,9 +145,8 @@
                     <p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p>
                 </div>
 
-                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg shadow-blue-900/20">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.14 8.78h15.72v-1.1c0-1.72-1.4-3.13-3.13-3.13H7.27c-1.73 0-3.13 1.4-3.13 3.13v1.1z" fill="#fff"/><path d="M19.86 10.3H4.14v4.93c0 1.73 1.4 3.13 3.13 3.13h9.46c1.73 0 3.13-1.4 3.13-3.13v-4.93z" fill="#fff"/><circle cx="12" cy="14" r="1.5" fill="#009ee3"/></svg>
-                    Pagar com Mercado Pago
+                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg">
+                    <span>💳</span> Pagar com Mercado Pago
                 </button>
                 
                 <div class="relative py-4">
@@ -160,9 +160,14 @@
                         <input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900">
                         <button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button>
                     </div>
-                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE</label>
-                    <input type="file" id="proofFile" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2">
-                    <button onclick="finalizeBooking('PIX')" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">Enviar Comprovante</button>
+                    
+                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF ou Imagem)</label>
+                    
+                    <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2 cursor-pointer">
+                    
+                    <button id="btnFinalizePix" onclick="finalizeBooking('PIX')" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">
+                        Enviar Comprovante
+                    </button>
                 </div>
             </div>
         </section>
@@ -180,10 +185,11 @@
     </footer>
 
     <script>
-        // --- CONFIGURAÇÃO ---
+        // --- CONFIGURAÇÕES DE INTEGRAÇÃO ---
+        const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
         const MP_LINK = "https://mpago.la/1GMuNos"; 
         const PIX_KEY = "11914258886"; 
-        const SUPPORT_LINK = "https://w.app/wbcoworking"; // Link novo do suporte
+        const SUPPORT_LINK = "https://w.app/wbcoworking";
         const HOUR_PRICE = 50;
         
         // --- SISTEMA ---
@@ -314,7 +320,7 @@
         // --- PAGAMENTO E FINALIZAÇÃO ---
         function payMercadoPago() {
             window.open(MP_LINK, '_blank');
-            finalizeBooking('Mercado Pago (Pendente)');
+            finalizeBooking('Mercado Pago');
         }
 
         function copyPix() {
@@ -324,26 +330,81 @@
             alert("Chave Pix copiada!");
         }
 
+        // FUNÇÃO ATUALIZADA PARA LER ARQUIVO (PDF/IMAGEM) E ENVIAR
         function finalizeBooking(method) {
-            if(method === 'PIX' && !document.getElementById('proofFile').value) return alert("Por favor, anexe o comprovante.");
+            const fileInput = document.getElementById('proofFile');
+            const file = fileInput.files[0];
+
+            if(method === 'PIX' && !file) return alert("Por favor, anexe o comprovante (PDF ou Imagem).");
             
-            const newBooking = {
+            // Feedback visual
+            const btn = document.getElementById(method === 'PIX' ? 'btnFinalizePix' : 'checkoutDesc'); 
+            const originalText = btn.innerText;
+            
+            if(method === 'PIX') {
+                btn.innerText = "Enviando Arquivo...";
+                btn.disabled = true;
+            }
+
+            // Preparar dados
+            const bookingData = {
                 id: Date.now(),
                 userDoc: user.doc,
+                userName: user.name,
+                userPhone: user.phone,
+                userEmail: user.email,
                 date: selection.date,
                 slots: selection.slots,
                 total: selection.slots.length * HOUR_PRICE,
                 method: method,
-                status: method.includes('Pendente') ? 'Aguardando Pagamento' : 'Em Análise',
+                status: 'Aguardando',
                 createdAt: new Date().toISOString()
             };
-            
-            bookings.push(newBooking);
+
+            // Se tiver arquivo, ler como Base64
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    bookingData.fileName = file.name;
+                    bookingData.fileData = e.target.result; // Conteúdo do arquivo
+                    sendToWebhook(bookingData, btn, originalText);
+                };
+                reader.readAsDataURL(file); // Lê o PDF/Imagem
+            } else {
+                sendToWebhook(bookingData, btn, originalText);
+            }
+        }
+
+        async function sendToWebhook(data, btn, originalText) {
+            // 1. Salva Local
+            bookings.push(data);
             localStorage.setItem('wb_bookings', JSON.stringify(bookings));
-            alert("Solicitação Realizada!");
+            
+            // 2. Envia para Make.com
+            if (WEBHOOK_URL) {
+                try {
+                    await fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } catch (error) {
+                    console.error("Erro envio:", error);
+                }
+            }
+
+            alert("Reserva Solicitada! Verifique seu histórico.");
+            
+            // Reset
             selection = { date: null, slots: [] };
             document.getElementById('datePicker').value = '';
             document.getElementById('proofFile').value = '';
+            
+            if(btn) {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+            
             navTo('history');
         }
 
