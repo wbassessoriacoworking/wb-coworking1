@@ -98,7 +98,7 @@
                 <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg"><span>💳</span> Pagar com Mercado Pago</button>
                 <div class="relative py-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou via Pix</span></div></div>
                 <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30">
-                    <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (CELULAR/CNPJ)</p>
+                    <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (EMAIL)</p>
                     <div class="flex gap-2 mb-3"><input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900"><button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button></div>
                     <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF/IMG)</label>
                     <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2 cursor-pointer">
@@ -120,7 +120,7 @@
         // CONFIGURAÇÕES
         const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
         const MP_LINK = "https://mpago.la/1GMuNos"; 
-        const PIX_KEY = "11914258886"; 
+        const PIX_KEY = "chriskaires@gmail.com"; 
         const SUPPORT_LINK = "https://w.app/wbcoworking";
         const HOUR_PRICE = 50;
         
@@ -192,14 +192,10 @@
             if(method === 'PIX') { btn.innerText = "Enviando..."; btn.disabled = true; }
 
             // LÓGICA GOOGLE CALENDAR
-            selection.slots.sort(); // Garante ordem 09:00, 10:00
+            selection.slots.sort(); 
             const firstSlot = selection.slots[0];
             const lastSlot = selection.slots[selection.slots.length - 1];
-            
-            // Cria Data ISO (YYYY-MM-DDTHH:mm:ss)
             const googleStart = `${selection.date}T${firstSlot}:00`;
-            
-            // Calcula Fim (+1 hora do último slot)
             let endHour = parseInt(lastSlot.split(':')[0]) + 1;
             let endHourStr = endHour < 10 ? `0${endHour}:00:00` : `${endHour}:00:00`;
             const googleEnd = `${selection.date}T${endHourStr}`;
@@ -208,8 +204,7 @@
                 id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
                 date: selection.date, slots: selection.slots, total: selection.slots.length * HOUR_PRICE,
                 method: method, status: 'Aguardando', createdAt: new Date().toISOString(),
-                googleStart: googleStart, // CAMPO NOVO
-                googleEnd: googleEnd      // CAMPO NOVO
+                googleStart: googleStart, googleEnd: googleEnd 
             };
 
             if (file) {
