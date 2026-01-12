@@ -11,7 +11,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333' } },
+                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333', success: '#10b981', warning: '#f59e0b' } },
                     fontFamily: { serif: ['Playfair Display', 'serif'], sans: ['Inter', 'sans-serif'] }
                 }
             }
@@ -31,6 +31,9 @@
         .slot-btn:hover:not(:disabled) { border-color: #d4af37; color: #d4af37; }
         .slot-btn.selected { background: #d4af37; color: #000; border-color: #d4af37; font-weight: bold; }
         .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; background: #000; }
+        .status-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .status-paid { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .status-pending { background: #451a03; color: #fbbf24; border: 1px solid #b45309; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -84,7 +87,7 @@
                     <div id="slotsGrid" class="grid grid-cols-4 gap-3 mb-6"></div>
                     <div class="border-t border-wb-gray pt-6 flex justify-between items-center">
                         <div><p class="text-xs text-gray-500 uppercase">Total</p><p id="totalPrice" class="text-2xl font-serif text-wb-gold">R$ 0,00</p></div>
-                        <button onclick="goToCheckout()" class="btn-gold w-auto px-8">PAGAR</button>
+                        <button onclick="goToCheckout()" class="btn-gold w-auto px-8">AVANÇAR</button>
                     </div>
                 </div>
             </div>
@@ -93,10 +96,14 @@
         <section id="screen-checkout" class="screen max-w-lg mx-auto">
             <button onclick="navTo('booking')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
             <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray text-center">
-                <h2 class="text-2xl font-serif text-wb-gold mb-2">Finalizar Reserva</h2>
+                <h2 class="text-2xl font-serif text-wb-gold mb-2">Finalizar Solicitação</h2>
                 <div class="bg-black p-4 rounded mb-6 border border-wb-gray/50"><p class="text-gray-500 text-xs">Valor Total</p><p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p><p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p></div>
-                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg"><span>💳</span> Pagar com Mercado Pago</button>
+                
+                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg"><span>💳</span> Pagar com Mercado Pago (Cartão)</button>
+                <p class="text-[10px] text-gray-500 mb-4">Após pagar, o status atualiza automaticamente.</p>
+                
                 <div class="relative py-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou via Pix</span></div></div>
+                
                 <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30">
                     <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (EMAIL)</p>
                     <div class="flex gap-2 mb-3"><input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900"><button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button></div>
@@ -109,7 +116,7 @@
 
         <section id="screen-history" class="screen max-w-3xl mx-auto">
             <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
-            <h3 class="text-2xl font-serif text-white mb-6">Histórico</h3>
+            <h3 class="text-2xl font-serif text-white mb-6">Minhas Solicitações</h3>
             <div id="bookingList" class="space-y-4"></div>
         </section>
     </main>
@@ -129,8 +136,25 @@
         let bookings = JSON.parse(localStorage.getItem('wb_bookings')) || [];
         let selection = { date: null, slots: [] };
         let docMode = 'cpf';
+        let tempBooking = JSON.parse(localStorage.getItem('wb_temp_booking')) || null;
 
-        window.onload = () => { setupMasks(); document.getElementById('pixKeyDisplay').value = PIX_KEY; if(user) { updateUserUI(); navTo('menu'); } };
+        // INICIALIZAÇÃO E CHECAGEM DE RETORNO DO MP
+        window.onload = () => { 
+            setupMasks(); 
+            document.getElementById('pixKeyDisplay').value = PIX_KEY; 
+            if(user) { updateUserUI(); navTo('menu'); }
+
+            // Lógica de Retorno do Mercado Pago (Auto-Confirmar)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('collection_status') === 'approved' && tempBooking) {
+                // Se o MP aprovou e temos uma reserva pendente na memória:
+                tempBooking.status = "PAGO (Confirmado)";
+                tempBooking.method = "Cartão (Automático)";
+                sendToWebhook(tempBooking, null, null);
+                localStorage.removeItem('wb_temp_booking'); // Limpa temp
+                alert("Pagamento Confirmado pelo Mercado Pago! Sua reserva foi realizada.");
+            }
+        };
 
         function navTo(screen) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -170,28 +194,26 @@
             const hours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
             hours.forEach(h => {
                 const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.innerText = h;
+                // Bloqueio Local (Visual)
                 const isBusy = bookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
-                if(isBusy) { btn.disabled = true; } else { btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; }
+                if(isBusy) { 
+                    btn.disabled = true; 
+                    btn.innerText = h + " (X)"; 
+                } else { 
+                    btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; 
+                }
                 grid.appendChild(btn);
             });
         }
 
         function updateTotal() { document.getElementById('totalPrice').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; }
         function goToCheckout() { if(selection.slots.length === 0) return alert("Selecione um horário."); document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; navTo('checkout'); }
-        function payMercadoPago() { window.open(MP_LINK, '_blank'); finalizeBooking('Mercado Pago'); }
         function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
         function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
 
-        function finalizeBooking(method) {
-            const fileInput = document.getElementById('proofFile');
-            const file = fileInput.files[0];
-            if(method === 'PIX' && !file) return alert("Por favor, anexe o comprovante.");
-            
-            const btn = document.getElementById(method === 'PIX' ? 'btnFinalizePix' : 'checkoutDesc'); 
-            const originalText = btn.innerText;
-            if(method === 'PIX') { btn.innerText = "Enviando..."; btn.disabled = true; }
+        // --- SISTEMA DE PAGAMENTO ---
 
-            // LÓGICA GOOGLE CALENDAR
+        function prepareBookingData(method, status) {
             selection.slots.sort(); 
             const firstSlot = selection.slots[0];
             const lastSlot = selection.slots[selection.slots.length - 1];
@@ -200,12 +222,33 @@
             let endHourStr = endHour < 10 ? `0${endHour}:00:00` : `${endHour}:00:00`;
             const googleEnd = `${selection.date}T${endHourStr}`;
 
-            const bookingData = {
+            return {
                 id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
                 date: selection.date, slots: selection.slots, total: selection.slots.length * HOUR_PRICE,
-                method: method, status: 'Aguardando', createdAt: new Date().toISOString(),
+                method: method, status: status, createdAt: new Date().toISOString(),
                 googleStart: googleStart, googleEnd: googleEnd 
             };
+        }
+
+        function payMercadoPago() {
+            // Salva reserva temporária antes de ir pro MP
+            const booking = prepareBookingData('Mercado Pago', 'Pendente (Checkout)');
+            localStorage.setItem('wb_temp_booking', JSON.stringify(booking));
+            
+            // Abre MP
+            window.open(MP_LINK, '_self'); // Usa _self para manter na guia e facilitar retorno (opcional)
+        }
+
+        function finalizeBooking(method) {
+            const fileInput = document.getElementById('proofFile');
+            const file = fileInput.files[0];
+            if(method === 'PIX' && !file) return alert("Por favor, anexe o comprovante.");
+            
+            const btn = document.getElementById('btnFinalizePix');
+            const originalText = btn.innerText;
+            btn.innerText = "Enviando..."; btn.disabled = true;
+
+            const bookingData = prepareBookingData('PIX', 'EM ANÁLISE');
 
             if (file) {
                 const reader = new FileReader();
@@ -218,10 +261,22 @@
         }
 
         async function sendToWebhook(data, btn, originalText) {
-            bookings.push(data); localStorage.setItem('wb_bookings', JSON.stringify(bookings));
-            if (WEBHOOK_URL) { try { await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); } catch (error) { console.error("Erro envio:", error); } }
-            alert("Reserva Solicitada! Aguarde confirmação.");
-            selection = { date: null, slots: [] }; document.getElementById('datePicker').value = ''; document.getElementById('proofFile').value = '';
+            bookings.push(data); 
+            localStorage.setItem('wb_bookings', JSON.stringify(bookings));
+            
+            if (WEBHOOK_URL) { 
+                try { await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); } 
+                catch (error) { console.error("Erro envio:", error); } 
+            }
+            
+            if(!data.method.includes('Mercado Pago')) {
+                alert("Solicitação Recebida! Verifique o status no histórico.");
+            }
+            
+            selection = { date: null, slots: [] }; 
+            document.getElementById('datePicker').value = ''; 
+            document.getElementById('proofFile').value = '';
+            
             if(btn) { btn.innerText = originalText; btn.disabled = false; }
             navTo('history');
         }
@@ -229,14 +284,26 @@
         function renderHistory() {
             const list = document.getElementById('bookingList'); list.innerHTML = '';
             const myData = bookings.filter(b => b.userDoc === user.doc).sort((a,b) => b.id - a.id);
-            if(myData.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center">Sem reservas.</p>'; return; }
+            if(myData.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center">Nenhuma solicitação encontrada.</p>'; return; }
+            
             myData.forEach(b => {
-                const div = document.createElement('div'); div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
-                div.innerHTML = `<div><div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div><div class="text-gray-400 text-xs">${b.slots.join(', ')}</div><div class="text-gray-500 text-[10px] mt-1">${b.method} - ${b.status}</div></div>${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}`;
+                let badgeClass = 'status-pending';
+                if(b.status.includes('PAGO') || b.status.includes('Confirmado')) badgeClass = 'status-paid';
+                
+                const div = document.createElement('div'); 
+                div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div>
+                        <div class="text-gray-400 text-xs mt-1">Horário: ${b.slots.join(', ')}</div>
+                        <div class="mt-2"><span class="status-badge ${badgeClass}">${b.status}</span></div>
+                    </div>
+                    ${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}
+                `;
                 list.appendChild(div);
             });
         }
-        function cancelBooking(id) { if(confirm("Cancelar reserva?")) { const idx = bookings.findIndex(b => b.id === id); bookings[idx].status = 'Cancelado'; localStorage.setItem('wb_bookings', JSON.stringify(bookings)); renderHistory(); } }
+        function cancelBooking(id) { if(confirm("Deseja cancelar esta solicitação?")) { const idx = bookings.findIndex(b => b.id === id); bookings[idx].status = 'Cancelado'; localStorage.setItem('wb_bookings', JSON.stringify(bookings)); renderHistory(); } }
     </script>
 </body>
 </html>
