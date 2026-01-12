@@ -4,18 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WB Coworking | Sistema Oficial</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333' }
-                    },
+                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333' } },
                     fontFamily: { serif: ['Playfair Display', 'serif'], sans: ['Inter', 'sans-serif'] }
                 }
             }
@@ -23,21 +19,14 @@
     </script>
     <style>
         body { background-color: #050505; color: #e5e5e5; }
-        
-        /* Inputs e Botões */
         .input-wb { background: #0a0a0a; border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; }
         .input-wb:focus { border-color: #d4af37; box-shadow: 0 0 0 1px #d4af37; }
-        
         .btn-gold { background: linear-gradient(to right, #d4af37, #c5a028); color: #000; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; width: 100%; padding: 14px; border-radius: 8px; }
         .btn-gold:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .btn-gold:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
-
-        /* Animações */
         .screen { display: none; opacity: 0; animation: fadeIn 0.4s forwards; }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Botão Horário */
         .slot-btn { background: #111; border: 1px solid #333; color: #888; padding: 10px; border-radius: 6px; transition: 0.2s; }
         .slot-btn:hover:not(:disabled) { border-color: #d4af37; color: #d4af37; }
         .slot-btn.selected { background: #d4af37; color: #000; border-color: #d4af37; font-weight: bold; }
@@ -57,15 +46,11 @@
     </header>
 
     <main class="flex-grow container mx-auto px-4 py-8 relative">
-
         <section id="screen-login" class="screen active max-w-lg mx-auto mt-10">
             <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray/50 shadow-2xl">
                 <h2 class="text-3xl font-serif text-white mb-6 text-center">Acesso Exclusivo</h2>
                 <form id="loginForm" class="space-y-5">
-                    <div>
-                        <label class="text-xs font-bold text-wb-gold uppercase">Nome</label>
-                        <input type="text" id="inputName" required class="input-wb" placeholder="Dr. Nome Sobrenome">
-                    </div>
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">Nome</label><input type="text" id="inputName" required class="input-wb" placeholder="Dr. Nome Sobrenome"></div>
                     <div>
                         <div class="flex gap-4 mb-2">
                             <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-300"><input type="radio" name="docType" value="cpf" checked onchange="toggleDocMask('cpf')" class="accent-wb-gold"> CPF</label>
@@ -73,20 +58,8 @@
                         </div>
                         <input type="text" id="inputDoc" required class="input-wb" placeholder="000.000.000-00">
                     </div>
-                    <div>
-                        <label class="text-xs font-bold text-wb-gold uppercase">E-mail</label>
-                        <input type="email" id="inputEmail" required list="emailList" class="input-wb" placeholder="seu@email.com">
-                        <datalist id="emailList">
-                            <option value="@gmail.com">
-                            <option value="@hotmail.com">
-                            <option value="@outlook.com">
-                            <option value="@adv.oabsp.org.br">
-                        </datalist>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-wb-gold uppercase">WhatsApp</label>
-                        <input type="tel" id="inputPhone" required class="input-wb" placeholder="(11) 9xxxx-xxxx">
-                    </div>
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">E-mail</label><input type="email" id="inputEmail" required list="emailList" class="input-wb" placeholder="seu@email.com"><datalist id="emailList"><option value="@gmail.com"><option value="@hotmail.com"><option value="@outlook.com"><option value="@adv.oabsp.org.br"></datalist></div>
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">WhatsApp</label><input type="tel" id="inputPhone" required class="input-wb" placeholder="(11) 9xxxx-xxxx"></div>
                     <button type="submit" class="btn-gold mt-4">ENTRAR</button>
                 </form>
             </div>
@@ -95,21 +68,9 @@
         <section id="screen-menu" class="screen max-w-4xl mx-auto pt-8">
             <h2 class="text-2xl font-serif text-white text-center mb-8">Painel do Advogado</h2>
             <div class="grid md:grid-cols-3 gap-6">
-                <div onclick="navTo('booking')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center">
-                    <div class="text-4xl mb-4 group-hover:scale-110 transition">📅</div>
-                    <h3 class="text-lg font-bold text-white">Nova Reserva</h3>
-                    <p class="text-xs text-gray-500 mt-2">Agendar horários</p>
-                </div>
-                <div onclick="navTo('history')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center">
-                    <div class="text-4xl mb-4 group-hover:scale-110 transition">📂</div>
-                    <h3 class="text-lg font-bold text-white">Minhas Reservas</h3>
-                    <p class="text-xs text-gray-500 mt-2">Ver histórico</p>
-                </div>
-                <div onclick="openSupport()" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center">
-                    <div class="text-4xl mb-4 group-hover:scale-110 transition">💬</div>
-                    <h3 class="text-lg font-bold text-white">Suporte</h3>
-                    <p class="text-xs text-gray-500 mt-2">WhatsApp Oficial</p>
-                </div>
+                <div onclick="navTo('booking')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">📅</div><h3 class="text-lg font-bold text-white">Nova Reserva</h3><p class="text-xs text-gray-500 mt-2">Agendar horários</p></div>
+                <div onclick="navTo('history')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">📂</div><h3 class="text-lg font-bold text-white">Minhas Reservas</h3><p class="text-xs text-gray-500 mt-2">Ver histórico</p></div>
+                <div onclick="openSupport()" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">💬</div><h3 class="text-lg font-bold text-white">Suporte</h3><p class="text-xs text-gray-500 mt-2">WhatsApp Oficial</p></div>
             </div>
         </section>
 
@@ -117,18 +78,12 @@
             <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
             <div class="bg-wb-panel p-6 rounded-xl border border-wb-gray">
                 <h3 class="text-2xl font-serif text-wb-gold mb-6">Agendar Sala</h3>
-                <div class="mb-8">
-                    <label class="block text-sm text-white mb-2">Data</label>
-                    <input type="date" id="datePicker" class="input-wb text-white [color-scheme:dark]">
-                </div>
+                <div class="mb-8"><label class="block text-sm text-white mb-2">Data</label><input type="date" id="datePicker" class="input-wb text-white [color-scheme:dark]"></div>
                 <div id="slotsContainer" class="hidden">
                     <p class="text-sm text-gray-400 mb-3">Horários Disponíveis</p>
                     <div id="slotsGrid" class="grid grid-cols-4 gap-3 mb-6"></div>
                     <div class="border-t border-wb-gray pt-6 flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-gray-500 uppercase">Total</p>
-                            <p id="totalPrice" class="text-2xl font-serif text-wb-gold">R$ 0,00</p>
-                        </div>
+                        <div><p class="text-xs text-gray-500 uppercase">Total</p><p id="totalPrice" class="text-2xl font-serif text-wb-gold">R$ 0,00</p></div>
                         <button onclick="goToCheckout()" class="btn-gold w-auto px-8">PAGAR</button>
                     </div>
                 </div>
@@ -139,70 +94,43 @@
             <button onclick="navTo('booking')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
             <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray text-center">
                 <h2 class="text-2xl font-serif text-wb-gold mb-2">Finalizar Reserva</h2>
-                <div class="bg-black p-4 rounded mb-6 border border-wb-gray/50">
-                    <p class="text-gray-500 text-xs">Valor Total</p>
-                    <p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p>
-                    <p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p>
-                </div>
-
-                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg">
-                    <span>💳</span> Pagar com Mercado Pago
-                </button>
-                
-                <div class="relative py-4">
-                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div>
-                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou via Pix</span></div>
-                </div>
-
+                <div class="bg-black p-4 rounded mb-6 border border-wb-gray/50"><p class="text-gray-500 text-xs">Valor Total</p><p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p><p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p></div>
+                <button onclick="payMercadoPago()" class="w-full bg-[#009ee3] hover:bg-[#0081b8] text-white py-3 rounded-lg font-bold mb-4 flex items-center justify-center gap-2 transition shadow-lg"><span>💳</span> Pagar com Mercado Pago</button>
+                <div class="relative py-4"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou via Pix</span></div></div>
                 <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30">
                     <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (CELULAR/CNPJ)</p>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900">
-                        <button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button>
-                    </div>
-                    
-                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF ou Imagem)</label>
-                    
+                    <div class="flex gap-2 mb-3"><input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900"><button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button></div>
+                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF/IMG)</label>
                     <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2 cursor-pointer">
-                    
-                    <button id="btnFinalizePix" onclick="finalizeBooking('PIX')" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">
-                        Enviar Comprovante
-                    </button>
+                    <button id="btnFinalizePix" onclick="finalizeBooking('PIX')" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">Enviar Comprovante</button>
                 </div>
             </div>
         </section>
 
         <section id="screen-history" class="screen max-w-3xl mx-auto">
             <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
-            <h3 class="text-2xl font-serif text-white mb-6">Histórico de Agendamentos</h3>
+            <h3 class="text-2xl font-serif text-white mb-6">Histórico</h3>
             <div id="bookingList" class="space-y-4"></div>
         </section>
-
     </main>
 
-    <footer class="py-6 text-center border-t border-wb-gray/30 bg-black mt-auto">
-        <p class="text-wb-gold text-xs font-bold tracking-widest">WB COWORKING</p>
-    </footer>
+    <footer class="py-6 text-center border-t border-wb-gray/30 bg-black mt-auto"><p class="text-wb-gold text-xs font-bold tracking-widest">WB COWORKING</p></footer>
 
     <script>
-        // --- CONFIGURAÇÕES DE INTEGRAÇÃO ---
+        // CONFIGURAÇÕES
         const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
         const MP_LINK = "https://mpago.la/1GMuNos"; 
         const PIX_KEY = "11914258886"; 
         const SUPPORT_LINK = "https://w.app/wbcoworking";
         const HOUR_PRICE = 50;
         
-        // --- SISTEMA ---
+        // ESTADO
         let user = JSON.parse(localStorage.getItem('wb_user')) || null;
         let bookings = JSON.parse(localStorage.getItem('wb_bookings')) || [];
         let selection = { date: null, slots: [] };
         let docMode = 'cpf';
 
-        window.onload = () => {
-            setupMasks();
-            document.getElementById('pixKeyDisplay').value = PIX_KEY;
-            if(user) { updateUserUI(); navTo('menu'); }
-        };
+        window.onload = () => { setupMasks(); document.getElementById('pixKeyDisplay').value = PIX_KEY; if(user) { updateUserUI(); navTo('menu'); } };
 
         function navTo(screen) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -211,235 +139,109 @@
             if(screen === 'history') renderHistory();
         }
 
-        // --- LOGIN E VALIDAÇÃO ---
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const phone = document.getElementById('inputPhone').value.replace(/\D/g, '');
             const doc = document.getElementById('inputDoc').value.replace(/\D/g, '');
-            
-            if(phone.length !== 11 || phone[2] !== '9') return alert("Telefone inválido. Use (DD) 9xxxx-xxxx");
+            if(phone.length !== 11 || phone[2] !== '9') return alert("Telefone inválido.");
             if(docMode === 'cpf' && doc.length !== 11) return alert("CPF inválido.");
-
-            user = {
-                name: document.getElementById('inputName').value,
-                doc: document.getElementById('inputDoc').value,
-                email: document.getElementById('inputEmail').value,
-                phone: document.getElementById('inputPhone').value
-            };
+            user = { name: document.getElementById('inputName').value, doc: document.getElementById('inputDoc').value, email: document.getElementById('inputEmail').value, phone: document.getElementById('inputPhone').value };
             localStorage.setItem('wb_user', JSON.stringify(user));
-            updateUserUI();
-            navTo('menu');
+            updateUserUI(); navTo('menu');
         });
 
-        function logout() {
-            localStorage.removeItem('wb_user');
-            user = null;
-            document.getElementById('userHeader').classList.add('hidden');
-            navTo('login');
-        }
-
-        function updateUserUI() {
-            document.getElementById('headerUserName').innerText = user.name.split(' ')[0];
-            document.getElementById('userHeader').classList.remove('hidden');
-        }
-
-        // --- MÁSCARAS ---
+        function logout() { localStorage.removeItem('wb_user'); user = null; document.getElementById('userHeader').classList.add('hidden'); navTo('login'); }
+        function updateUserUI() { document.getElementById('headerUserName').innerText = user.name.split(' ')[0]; document.getElementById('userHeader').classList.remove('hidden'); }
         function setupMasks() {
-            document.getElementById('inputPhone').addEventListener('input', e => {
-                let v = e.target.value.replace(/\D/g, "").slice(0,11);
-                if(v.length > 7) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-                else if(v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
-                e.target.value = v;
-            });
-            document.getElementById('inputDoc').addEventListener('input', e => {
-                if(docMode === 'cpf') {
-                    let v = e.target.value.replace(/\D/g, "").slice(0,11);
-                    v = v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-                    e.target.value = v;
-                } else {
-                    e.target.value = e.target.value.toUpperCase();
-                }
-            });
+            document.getElementById('inputPhone').addEventListener('input', e => { let v = e.target.value.replace(/\D/g, "").slice(0,11); if(v.length>7) v=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`; else if(v.length>2) v=`(${v.slice(0,2)}) ${v.slice(2)}`; e.target.value = v; });
+            document.getElementById('inputDoc').addEventListener('input', e => { if(docMode === 'cpf') { let v = e.target.value.replace(/\D/g, "").slice(0,11); v=v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); e.target.value=v; } else { e.target.value = e.target.value.toUpperCase(); } });
         }
-        function toggleDocMask(type) {
-            docMode = type;
-            document.getElementById('inputDoc').value = '';
-            document.getElementById('inputDoc').placeholder = type === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000';
-        }
+        function toggleDocMask(type) { docMode = type; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = type === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
 
-        // --- AGENDAMENTO ---
         document.getElementById('datePicker').addEventListener('change', function() {
             const date = this.value;
             const day = new Date(date).getUTCDay();
             if(day === 0 || day === 6) { alert('Apenas Seg-Sex.'); this.value=''; return; }
-            selection.date = date;
-            selection.slots = [];
-            renderSlots();
-            document.getElementById('slotsContainer').classList.remove('hidden');
+            selection.date = date; selection.slots = []; renderSlots(); document.getElementById('slotsContainer').classList.remove('hidden');
         });
 
         function renderSlots() {
-            const grid = document.getElementById('slotsGrid');
-            grid.innerHTML = '';
+            const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
             const hours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
             hours.forEach(h => {
-                const btn = document.createElement('button');
-                btn.className = 'slot-btn';
-                btn.innerText = h;
+                const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.innerText = h;
                 const isBusy = bookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
-                if(isBusy) { btn.disabled = true; } 
-                else {
-                    btn.onclick = () => {
-                        if(selection.slots.includes(h)) {
-                            selection.slots = selection.slots.filter(s => s !== h);
-                            btn.classList.remove('selected');
-                        } else {
-                            selection.slots.push(h);
-                            btn.classList.add('selected');
-                        }
-                        updateTotal();
-                    };
-                }
+                if(isBusy) { btn.disabled = true; } else { btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; }
                 grid.appendChild(btn);
             });
         }
 
-        function updateTotal() {
-            const total = selection.slots.length * HOUR_PRICE;
-            document.getElementById('totalPrice').innerText = `R$ ${total},00`;
-        }
+        function updateTotal() { document.getElementById('totalPrice').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; }
+        function goToCheckout() { if(selection.slots.length === 0) return alert("Selecione um horário."); document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; navTo('checkout'); }
+        function payMercadoPago() { window.open(MP_LINK, '_blank'); finalizeBooking('Mercado Pago'); }
+        function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
+        function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
 
-        function goToCheckout() {
-            if(selection.slots.length === 0) return alert("Selecione um horário.");
-            const total = selection.slots.length * HOUR_PRICE;
-            document.getElementById('checkoutTotal').innerText = `R$ ${total},00`;
-            document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`;
-            navTo('checkout');
-        }
-
-        // --- PAGAMENTO E FINALIZAÇÃO ---
-        function payMercadoPago() {
-            window.open(MP_LINK, '_blank');
-            finalizeBooking('Mercado Pago');
-        }
-
-        function copyPix() {
-            const key = document.getElementById('pixKeyDisplay');
-            key.select();
-            document.execCommand('copy');
-            alert("Chave Pix copiada!");
-        }
-
-        // FUNÇÃO ATUALIZADA PARA LER ARQUIVO (PDF/IMAGEM) E ENVIAR
         function finalizeBooking(method) {
             const fileInput = document.getElementById('proofFile');
             const file = fileInput.files[0];
-
-            if(method === 'PIX' && !file) return alert("Por favor, anexe o comprovante (PDF ou Imagem).");
+            if(method === 'PIX' && !file) return alert("Por favor, anexe o comprovante.");
             
-            // Feedback visual
             const btn = document.getElementById(method === 'PIX' ? 'btnFinalizePix' : 'checkoutDesc'); 
             const originalText = btn.innerText;
-            
-            if(method === 'PIX') {
-                btn.innerText = "Enviando Arquivo...";
-                btn.disabled = true;
-            }
+            if(method === 'PIX') { btn.innerText = "Enviando..."; btn.disabled = true; }
 
-            // Preparar dados
+            // LÓGICA GOOGLE CALENDAR
+            selection.slots.sort(); // Garante ordem 09:00, 10:00
+            const firstSlot = selection.slots[0];
+            const lastSlot = selection.slots[selection.slots.length - 1];
+            
+            // Cria Data ISO (YYYY-MM-DDTHH:mm:ss)
+            const googleStart = `${selection.date}T${firstSlot}:00`;
+            
+            // Calcula Fim (+1 hora do último slot)
+            let endHour = parseInt(lastSlot.split(':')[0]) + 1;
+            let endHourStr = endHour < 10 ? `0${endHour}:00:00` : `${endHour}:00:00`;
+            const googleEnd = `${selection.date}T${endHourStr}`;
+
             const bookingData = {
-                id: Date.now(),
-                userDoc: user.doc,
-                userName: user.name,
-                userPhone: user.phone,
-                userEmail: user.email,
-                date: selection.date,
-                slots: selection.slots,
-                total: selection.slots.length * HOUR_PRICE,
-                method: method,
-                status: 'Aguardando',
-                createdAt: new Date().toISOString()
+                id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+                date: selection.date, slots: selection.slots, total: selection.slots.length * HOUR_PRICE,
+                method: method, status: 'Aguardando', createdAt: new Date().toISOString(),
+                googleStart: googleStart, // CAMPO NOVO
+                googleEnd: googleEnd      // CAMPO NOVO
             };
 
-            // Se tiver arquivo, ler como Base64
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    bookingData.fileName = file.name;
-                    bookingData.fileData = e.target.result; // Conteúdo do arquivo
+                    bookingData.fileName = file.name; bookingData.fileData = e.target.result;
                     sendToWebhook(bookingData, btn, originalText);
                 };
-                reader.readAsDataURL(file); // Lê o PDF/Imagem
-            } else {
-                sendToWebhook(bookingData, btn, originalText);
-            }
+                reader.readAsDataURL(file);
+            } else { sendToWebhook(bookingData, btn, originalText); }
         }
 
         async function sendToWebhook(data, btn, originalText) {
-            // 1. Salva Local
-            bookings.push(data);
-            localStorage.setItem('wb_bookings', JSON.stringify(bookings));
-            
-            // 2. Envia para Make.com
-            if (WEBHOOK_URL) {
-                try {
-                    await fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                } catch (error) {
-                    console.error("Erro envio:", error);
-                }
-            }
-
-            alert("Reserva Solicitada! Verifique seu histórico.");
-            
-            // Reset
-            selection = { date: null, slots: [] };
-            document.getElementById('datePicker').value = '';
-            document.getElementById('proofFile').value = '';
-            
-            if(btn) {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-            
+            bookings.push(data); localStorage.setItem('wb_bookings', JSON.stringify(bookings));
+            if (WEBHOOK_URL) { try { await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); } catch (error) { console.error("Erro envio:", error); } }
+            alert("Reserva Solicitada! Aguarde confirmação.");
+            selection = { date: null, slots: [] }; document.getElementById('datePicker').value = ''; document.getElementById('proofFile').value = '';
+            if(btn) { btn.innerText = originalText; btn.disabled = false; }
             navTo('history');
         }
 
         function renderHistory() {
-            const list = document.getElementById('bookingList');
-            list.innerHTML = '';
+            const list = document.getElementById('bookingList'); list.innerHTML = '';
             const myData = bookings.filter(b => b.userDoc === user.doc).sort((a,b) => b.id - a.id);
             if(myData.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center">Sem reservas.</p>'; return; }
             myData.forEach(b => {
-                const div = document.createElement('div');
-                div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
-                div.innerHTML = `
-                    <div>
-                        <div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div>
-                        <div class="text-gray-400 text-xs">${b.slots.join(', ')}</div>
-                        <div class="text-gray-500 text-[10px] mt-1">${b.method} - ${b.status}</div>
-                    </div>
-                    ${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}
-                `;
+                const div = document.createElement('div'); div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
+                div.innerHTML = `<div><div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div><div class="text-gray-400 text-xs">${b.slots.join(', ')}</div><div class="text-gray-500 text-[10px] mt-1">${b.method} - ${b.status}</div></div>${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}`;
                 list.appendChild(div);
             });
         }
-
-        function cancelBooking(id) {
-            if(confirm("Cancelar reserva?")) {
-                const idx = bookings.findIndex(b => b.id === id);
-                bookings[idx].status = 'Cancelado';
-                localStorage.setItem('wb_bookings', JSON.stringify(bookings));
-                renderHistory();
-            }
-        }
-
-        function openSupport() {
-            window.open(SUPPORT_LINK, '_blank');
-        }
+        function cancelBooking(id) { if(confirm("Cancelar reserva?")) { const idx = bookings.findIndex(b => b.id === id); bookings[idx].status = 'Cancelado'; localStorage.setItem('wb_bookings', JSON.stringify(bookings)); renderHistory(); } }
     </script>
 </body>
 </html>
