@@ -33,7 +33,7 @@
         .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; background: #000; }
         
         /* Ajuste do Brick para ficar bonito no fundo preto */
-        #payment-brick_container { min-height: 300px; }
+        #payment-brick_container { min-height: 300px; margin-top: 20px; }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
@@ -123,9 +123,9 @@
     <footer class="py-6 text-center border-t border-wb-gray/30 bg-black mt-auto"><p class="text-wb-gold text-xs font-bold tracking-widest">WB COWORKING</p></footer>
 
     <script>
-        // --- CONFIGURAÇÕES DO RENATO ---
+        // --- CONFIGURAÇÕES ---
         const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
-        const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417"; // Sua chave
+        const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417"; // Sua Chave
         const PIX_KEY = "chriskaires@gmail.com"; 
         const SUPPORT_LINK = "https://w.app/wbcoworking";
         const HOUR_PRICE = 50;
@@ -156,14 +156,13 @@
             document.getElementById(`screen-${screen}`).classList.add('active');
             window.scrollTo(0,0);
             if(screen === 'history') renderHistory();
-            if(screen === 'checkout') renderBrick(); // Renderiza o pagamento
+            if(screen === 'checkout') renderBrick(); // <--- CHAMA O PAGAMENTO AQUI
         }
 
         // LOGIN E MÁSCARAS
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const phone = document.getElementById('inputPhone').value.replace(/\D/g, '');
-            const doc = document.getElementById('inputDoc').value.replace(/\D/g, '');
             if(phone.length < 10) return alert("Telefone inválido.");
             
             user = { 
@@ -210,36 +209,46 @@
         function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
         function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
 
-        // --- INTEGRAÇÃO MERCADO PAGO BRICK ---
+        // --- INTEGRAÇÃO MERCADO PAGO BRICK CORRIGIDA ---
         async function renderBrick() {
             const container = document.getElementById('payment-brick_container');
+            
+            // 1. Limpa o container e remove instância anterior para não travar
             container.innerHTML = '';
+            if(window.paymentBrickController) {
+                try { await window.paymentBrickController.unmount(); } catch(e) {}
+            }
+
             if(!bricksBuilder) return;
+
+            // 2. Calcula valor exato (EVITA O ERRO CINZA)
+            const amountValue = Number(selection.slots.length * HOUR_PRICE);
 
             const settings = {
                 initialization: {
-                    amount: selection.slots.length * HOUR_PRICE,
-                    preferenceId: null, // Corrige erro de carregamento
+                    amount: amountValue, // Número puro (50, 100...)
+                    preferenceId: null,
                     payer: { email: user.email }
                 },
                 customization: {
-                    visual: { style: { theme: 'dark' } }, // Modo Escuro
+                    visual: { style: { theme: 'dark' } },
                     paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" }
                 },
                 callbacks: {
                     onSubmit: ({ selectedPaymentMethod, formData }) => {
                         return new Promise((resolve, reject) => {
-                            // Pagamento aprovado visualmente -> Envia para o Make
                             sendDataToMake("Mercado Pago", null).then(resolve).catch(reject);
                         });
                     },
                     onError: (error) => console.error(error)
                 }
             };
+            
+            // 3. Cria o Brick
             window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
         }
 
-        // --- ENVIO COM ARQUIVO (PIX MANUAL) ---
+        // --- ENVIO MANUAL ---
         function finalizeBookingWithFile() {
             const fileInput = document.getElementById('proofFile');
             const file = fileInput.files[0];
@@ -255,15 +264,12 @@
             reader.readAsDataURL(file);
         }
 
-        // --- LÓGICA CENTRAL DE ENVIO (MAKE + GOOGLE) ---
+        // --- LÓGICA DE ENVIO ---
         async function sendDataToMake(method, fileInfo, btnReset = null) {
-            
-            // 1. Lógica Google Agenda (googleStart/End)
             selection.slots.sort(); 
             const firstSlot = selection.slots[0];
             const lastSlot = selection.slots[selection.slots.length - 1];
             
-            // Hora Final = Último slot + 1 hora
             let endH = parseInt(lastSlot.split(':')[0]) + 1;
             let endHStr = endH < 10 ? `0${endH}:00:00` : `${endH}:00:00`;
             
@@ -274,19 +280,18 @@
                 id: Date.now(),
                 userDoc: user.doc, 
                 userName: user.name, 
-                userPhone: user.phone.replace(/\D/g, ''), // Limpa telefone
+                userPhone: user.phone.replace(/\D/g, ''),
                 userEmail: user.email,
                 date: selection.date, 
                 slots: selection.slots, 
                 total: selection.slots.length * HOUR_PRICE,
                 method: method, 
                 status: 'Confirmado', 
-                googleStart: googleStart, // Correção V23
-                googleEnd: googleEnd,     // Correção V23
-                ...(fileInfo || {})       // Adiciona arquivo se houver
+                googleStart: googleStart,
+                googleEnd: googleEnd,
+                ...(fileInfo || {})
             };
 
-            // 2. Salva local e Envia
             bookings.push(bookingData); 
             localStorage.setItem('wb_bookings', JSON.stringify(bookings));
             
@@ -299,8 +304,6 @@
             } catch (error) { console.error("Erro envio:", error); }
             
             alert("✅ Reserva Confirmada!");
-            
-            // Limpa tudo
             selection = { date: null, slots: [] }; 
             document.getElementById('datePicker').value = '';
             document.getElementById('proofFile').value = '';
