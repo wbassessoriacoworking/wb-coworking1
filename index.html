@@ -1,431 +1,325 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WB Coworking | Exclusive Law</title>
+    <title>WB Coworking | Sistema Oficial</title>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <style>
-        :root {
-            --bg-main: #000000;
-            --bg-card: #111111;
-            --text-gold: #D4AF37;
-            --text-white: #ffffff;
-            --text-gray: #888888;
-            --input-bg: #1a1a1a;
-            --input-border: #333333;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333' } },
+                    fontFamily: { serif: ['Playfair Display', 'serif'], sans: ['Inter', 'sans-serif'] }
+                }
+            }
         }
-        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--bg-main); color: var(--text-white); display: flex; flex-direction: column; min-height: 100vh; }
-        
-        /* HEADER */
-        .header { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-bottom: 1px solid #222; }
-        .logo { color: var(--text-gold); font-weight: bold; letter-spacing: 2px; font-size: 1.2rem; }
-        .user-area { font-size: 0.8rem; color: var(--text-gray); text-align: right; }
-        .btn-sair { background: none; border: 1px solid #444; color: #666; padding: 2px 10px; cursor: pointer; margin-left: 10px; border-radius: 4px; }
-
-        /* CONTENT */
-        .main-container { flex: 1; padding: 20px; width: 100%; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; }
-        
-        /* CARDS & TEXTS */
-        .title-gold { color: var(--text-gold); text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .subtitle { text-align: center; color: var(--text-gray); margin-bottom: 25px; font-size: 0.9rem; }
-        .dark-card { background: var(--bg-card); padding: 25px; border-radius: 10px; border: 1px solid var(--input-border); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        
-        /* INPUTS */
-        label { display: block; color: var(--text-gold); font-size: 0.75rem; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px; margin-top: 15px; }
-        input, select { width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-white); border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
-        input:focus { border-color: var(--text-gold); outline: none; }
-        
-        /* BUTTONS */
-        .btn-gold { width: 100%; padding: 15px; background: linear-gradient(135deg, #D4AF37, #bfa030); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 20px; transition: 0.3s; }
-        .btn-gold:hover { opacity: 0.9; transform: translateY(-2px); }
-        .btn-link { background: none; border: none; color: var(--text-gray); text-decoration: underline; cursor: pointer; width: 100%; margin-top: 15px; }
-        .btn-back { background: none; border: none; color: var(--text-gold); cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; font-size: 0.9rem; }
-
-        /* DASHBOARD GRID */
-        .dash-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        .dash-btn { background: var(--bg-card); padding: 20px; border: 1px solid var(--input-border); border-radius: 8px; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
-        .dash-btn:hover { border-color: var(--text-gold); background: #151515; }
-        .dash-icon { font-size: 1.5rem; margin-right: 15px; color: var(--text-gold); }
-        .dash-text h4 { margin: 0; color: white; }
-        .dash-text p { margin: 2px 0 0 0; font-size: 0.8rem; color: #666; }
-
-        /* UTILS */
-        .hidden { display: none; }
-        section { animation: fadeIn 0.4s; }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #050505; color: #e5e5e5; }
+        .input-wb { background: #0a0a0a; border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; }
+        .input-wb:focus { border-color: #d4af37; box-shadow: 0 0 0 1px #d4af37; }
+        .btn-gold { background: linear-gradient(to right, #d4af37, #c5a028); color: #000; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; width: 100%; padding: 14px; border-radius: 8px; }
+        .btn-gold:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn-gold:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
+        .screen { display: none; opacity: 0; animation: fadeIn 0.4s forwards; }
+        .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* SLOTS (Horários) */
-        .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .slot { background: #222; color: #fff; padding: 10px; text-align: center; border-radius: 4px; cursor: pointer; border: 1px solid #333; font-size: 0.9rem; }
-        .slot:hover { border-color: var(--text-gold); }
-        .slot.selected { background: var(--text-gold); color: #000; border-color: var(--text-gold); font-weight: bold; }
+        .slot-btn { background: #111; border: 1px solid #333; color: #888; padding: 10px; border-radius: 6px; transition: 0.2s; }
+        .slot-btn:hover:not(:disabled) { border-color: #d4af37; color: #d4af37; }
+        .slot-btn.selected { background: #d4af37; color: #000; border-color: #d4af37; font-weight: bold; }
+        .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; background: #000; }
+        
+        /* Ajuste do Brick para ficar bonito no fundo preto */
+        #payment-brick_container { min-height: 300px; }
     </style>
 </head>
-<body>
+<body class="flex flex-col min-h-screen">
 
-    <header class="header">
-        <div class="logo">WB | ADV</div>
-        <div id="userInfo" class="user-area hidden">
-            Olá, <span id="headerUserName">Dr.</span>
-            <button class="btn-sair" onclick="doLogout()">Sair</button>
+    <header class="border-b border-wb-gray/50 bg-black/95 sticky top-0 z-50 backdrop-blur-sm">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-serif font-bold text-wb-gold tracking-widest">WB COWORKING</h1>
+            <div id="userHeader" class="hidden flex items-center gap-4">
+                <span id="headerUserName" class="text-sm font-bold text-wb-gold hidden md:block">User</span>
+                <button onclick="logout()" class="text-xs border border-gray-600 px-3 py-1 rounded text-gray-400 hover:text-white transition">SAIR</button>
+            </div>
         </div>
     </header>
 
-    <main class="main-container">
+    <main class="flex-grow container mx-auto px-4 py-8 relative">
+        <section id="screen-login" class="screen active max-w-lg mx-auto mt-10">
+            <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray/50 shadow-2xl">
+                <h2 class="text-3xl font-serif text-white mb-6 text-center">Acesso Exclusivo</h2>
+                <form id="loginForm" class="space-y-5">
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">Nome</label><input type="text" id="inputName" required class="input-wb" placeholder="Dr. Nome Sobrenome"></div>
+                    <div>
+                        <div class="flex gap-4 mb-2">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-300"><input type="radio" name="docType" value="cpf" checked onchange="toggleDocMask('cpf')" class="accent-wb-gold"> CPF</label>
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-300"><input type="radio" name="docType" value="oab" onchange="toggleDocMask('oab')" class="accent-wb-gold"> OAB</label>
+                        </div>
+                        <input type="text" id="inputDoc" required class="input-wb" placeholder="000.000.000-00">
+                    </div>
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">E-mail</label><input type="email" id="inputEmail" required list="emailList" class="input-wb" placeholder="seu@email.com"><datalist id="emailList"><option value="@gmail.com"><option value="@hotmail.com"><option value="@outlook.com"><option value="@adv.oabsp.org.br"></datalist></div>
+                    <div><label class="text-xs font-bold text-wb-gold uppercase">WhatsApp</label><input type="tel" id="inputPhone" required class="input-wb" placeholder="(11) 9xxxx-xxxx"></div>
+                    <button type="submit" class="btn-gold mt-4">ENTRAR</button>
+                </form>
+            </div>
+        </section>
 
-        <section id="screen-login" class="active">
-            <h2 class="title-gold">Acesso Restrito</h2>
-            <p class="subtitle">Área exclusiva para advogados associados.</p>
-            
-            <div class="dark-card">
-                <label>E-MAIL</label>
-                <input type="email" id="loginEmail" placeholder="seu@email.com">
-                <label>SENHA</label>
-                <input type="password" id="loginPass" placeholder="••••••">
+        <section id="screen-menu" class="screen max-w-4xl mx-auto pt-8">
+            <h2 class="text-2xl font-serif text-white text-center mb-8">Painel do Advogado</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div onclick="navTo('booking')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">📅</div><h3 class="text-lg font-bold text-white">Nova Reserva</h3><p class="text-xs text-gray-500 mt-2">Agendar horários</p></div>
+                <div onclick="navTo('history')" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">📂</div><h3 class="text-lg font-bold text-white">Minhas Reservas</h3><p class="text-xs text-gray-500 mt-2">Ver histórico</p></div>
+                <div onclick="openSupport()" class="group bg-wb-panel p-6 rounded-xl border border-wb-gray hover:border-wb-gold cursor-pointer transition text-center"><div class="text-4xl mb-4 group-hover:scale-110 transition">💬</div><h3 class="text-lg font-bold text-white">Suporte</h3><p class="text-xs text-gray-500 mt-2">WhatsApp Oficial</p></div>
+            </div>
+        </section>
+
+        <section id="screen-booking" class="screen max-w-3xl mx-auto">
+            <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
+            <div class="bg-wb-panel p-6 rounded-xl border border-wb-gray">
+                <h3 class="text-2xl font-serif text-wb-gold mb-6">Agendar Sala</h3>
+                <div class="mb-8"><label class="block text-sm text-white mb-2">Data</label><input type="date" id="datePicker" class="input-wb text-white [color-scheme:dark]"></div>
+                <div id="slotsContainer" class="hidden">
+                    <p class="text-sm text-gray-400 mb-3">Horários Disponíveis</p>
+                    <div id="slotsGrid" class="grid grid-cols-4 gap-3 mb-6"></div>
+                    <div class="border-t border-wb-gray pt-6 flex justify-between items-center">
+                        <div><p class="text-xs text-gray-500 uppercase">Total</p><p id="totalPrice" class="text-2xl font-serif text-wb-gold">R$ 0,00</p></div>
+                        <button onclick="goToCheckout()" class="btn-gold w-auto px-8">PAGAR</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-checkout" class="screen max-w-lg mx-auto">
+            <button onclick="navTo('booking')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
+            <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray text-center">
+                <h2 class="text-2xl font-serif text-wb-gold mb-2">Finalizar Reserva</h2>
+                <div class="bg-black p-4 rounded mb-6 border border-wb-gray/50"><p class="text-gray-500 text-xs">Valor Total</p><p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p><p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p></div>
                 
-                <button class="btn-gold" onclick="doLogin()">ENTRAR</button>
-                <button class="btn-link" onclick="goTo('screen-register')">Não tem cadastro? Clique aqui.</button>
-            </div>
-        </section>
+                <div id="payment-brick_container"></div>
 
-        <section id="screen-register" class="hidden">
-            <h2 class="title-gold">Novo Associado</h2>
-            <p class="subtitle">Preencha seus dados profissionais.</p>
-            
-            <div class="dark-card">
-                <label>NOME COMPLETO</label>
-                <input type="text" id="regName" placeholder="Dr. Fulano de Tal">
-
-                <label>CPF</label>
-                <input type="text" id="regCPF" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
-
-                <label>OAB (UF/NÚMERO)</label>
-                <input type="text" id="regOAB" placeholder="SP/123456" maxlength="10" oninput="maskOAB(this)">
-
-                <label>WHATSAPP</label>
-                <input type="tel" id="regPhone" placeholder="(11) 99999-9999" maxlength="15" oninput="maskPhone(this)">
-
-                <label>E-MAIL</label>
-                <input type="email" id="regEmail" placeholder="exemplo@gmail.com">
-
-                <label>SENHA</label>
-                <input type="password" id="regPass" placeholder="Crie uma senha segura">
-
-                <button class="btn-gold" onclick="doRegister()">FINALIZAR CADASTRO</button>
-                <button class="btn-link" onclick="goTo('screen-login')">Já tenho conta. Voltar.</button>
-            </div>
-        </section>
-
-        <section id="screen-home" class="hidden">
-            <h2 class="title-gold">Painel do Advogado</h2>
-            <p class="subtitle">Bem-vindo, <span id="dashName">Doutor</span>.</p>
-            
-            <div class="dash-grid">
-                <div class="dash-btn" onclick="goTo('screen-booking')">
-                    <span class="dash-icon">📅</span>
-                    <div class="dash-text">
-                        <h4>Nova Reserva</h4>
-                        <p>Agende sala de reunião ou estação.</p>
-                    </div>
-                </div>
+                <div class="relative py-4 mt-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou Enviar Comprovante Manual</span></div></div>
                 
-                <div class="dash-btn" onclick="goTo('screen-appointments')">
-                    <span class="dash-icon">⚖️</span>
-                    <div class="dash-text">
-                        <h4>Minhas Reservas</h4>
-                        <p>Consulte seus horários agendados.</p>
-                    </div>
-                </div>
-
-                <div class="dash-btn" onclick="goTo('screen-support')">
-                    <span class="dash-icon">💬</span>
-                    <div class="dash-text">
-                        <h4>Suporte WB</h4>
-                        <p>Contato direto via WhatsApp.</p>
-                    </div>
+                <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30">
+                    <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (EMAIL)</p>
+                    <div class="flex gap-2 mb-3"><input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900"><button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button></div>
+                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF/IMG)</label>
+                    <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2 cursor-pointer">
+                    <button id="btnFinalizePix" onclick="finalizeBookingWithFile()" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">Enviar Comprovante</button>
                 </div>
             </div>
         </section>
 
-        <section id="screen-booking" class="hidden">
-            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
-            <h2 class="title-gold">Reservar Sala</h2>
-            
-            <div class="dark-card">
-                <label>DATA</label>
-                <input type="date" id="dateInput" style="color-scheme: dark;">
-
-                <div id="timeSection" class="hidden">
-                    <label>HORÁRIO DISPONÍVEL</label>
-                    <div class="slots" id="slotsContainer"></div>
-                </div>
-
-                <div id="paymentSection" class="hidden" style="margin-top:20px; border-top:1px solid #333; padding-top:20px;">
-                    <p style="color:white; text-align:center;">Confirmação para: <strong id="confirmName" style="color:var(--text-gold)">Dr.</strong></p>
-                    <div id="payment-brick_container"></div>
-                </div>
-            </div>
+        <section id="screen-history" class="screen max-w-3xl mx-auto">
+            <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
+            <h3 class="text-2xl font-serif text-white mb-6">Histórico</h3>
+            <div id="bookingList" class="space-y-4"></div>
         </section>
-
-        <section id="screen-appointments" class="hidden">
-            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
-            <h2 class="title-gold">Meus Agendamentos</h2>
-            <div id="appointmentsList" style="margin-top: 20px;"></div>
-        </section>
-
-        <section id="screen-support" class="hidden">
-            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
-            <h2 class="title-gold">Fale Conosco</h2>
-            <div class="dark-card" style="text-align: center;">
-                <p>WB ASSESSORIA & COWORKING</p>
-                <p style="color: var(--text-gold); font-size: 1.2rem; margin: 20px 0;">(11) 99999-9999</p>
-                <p style="color:#666; font-size:0.9rem;">Atendimento exclusivo para advogados.</p>
-            </div>
-        </section>
-
     </main>
 
-<script>
-    // --- CONFIGURAÇÕES DO RENATO ---
-    const MP_PUBLIC_KEY = 'APP_USR-4509a478-fbe8-424c-ba34-f0de01106417'; 
-    const WEBHOOK_URL = 'https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g'; 
-    
-    // --- ESTADO ---
-    let currentUser = null;
-    let selectedDate = null;
-    let selectedTime = null;
-    let mp = null;
-    let bricksBuilder = null;
+    <footer class="py-6 text-center border-t border-wb-gray/30 bg-black mt-auto"><p class="text-wb-gold text-xs font-bold tracking-widest">WB COWORKING</p></footer>
 
-    // --- MÁSCARAS DE INPUT (MAGIA ACONTECE AQUI) ---
-    function maskCPF(i) {
-        let v = i.value.replace(/\D/g, "");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        i.value = v;
-    }
-    
-    function maskPhone(i) {
-        let v = i.value.replace(/\D/g,"");
-        v = v.replace(/^(\d{2})(\d)/g,"($1) $2");
-        v = v.replace(/(\d)(\d{4})$/,"$1-$2");
-        i.value = v;
-    }
-
-    function maskOAB(i) {
-        let v = i.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); 
-        // Formato UF/12345
-        if(v.length > 2) {
-            v = v.substring(0,2) + "/" + v.substring(2);
-        }
-        i.value = v;
-    }
-
-    // --- SISTEMA DE CADASTRO E LOGIN ---
-    function doRegister() {
-        const name = document.getElementById('regName').value;
-        const cpf = document.getElementById('regCPF').value;
-        const oab = document.getElementById('regOAB').value;
-        const phone = document.getElementById('regPhone').value;
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-
-        if(!name || cpf.length < 14 || !oab || phone.length < 14 || !email || !pass) {
-            alert("Por favor, preencha todos os dados corretamente.");
-            return;
-        }
-
-        const user = { name, cpf, oab, phone, email, pass };
-        localStorage.setItem('wbUser_' + email, JSON.stringify(user));
+    <script>
+        // --- CONFIGURAÇÕES DO RENATO ---
+        const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
+        const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417"; // Sua chave
+        const PIX_KEY = "chriskaires@gmail.com"; 
+        const SUPPORT_LINK = "https://w.app/wbcoworking";
+        const HOUR_PRICE = 50;
         
-        alert("Cadastro realizado com sucesso! Faça login.");
-        goTo('screen-login');
-    }
+        // ESTADO
+        let user = JSON.parse(localStorage.getItem('wb_user')) || null;
+        let bookings = JSON.parse(localStorage.getItem('wb_bookings')) || [];
+        let selection = { date: null, slots: [] };
+        let docMode = 'cpf';
+        let mp = null;
+        let bricksBuilder = null;
 
-    function doLogin() {
-        const email = document.getElementById('loginEmail').value;
-        const pass = document.getElementById('loginPass').value;
-        
-        const storedUser = localStorage.getItem('wbUser_' + email);
-        
-        if(storedUser) {
-            const user = JSON.parse(storedUser);
-            if(user.pass === pass) {
-                currentUser = user;
-                loginSuccess();
-            } else {
-                alert("Senha incorreta.");
-            }
-        } else {
-            alert("Usuário não encontrado. Faça seu cadastro.");
-        }
-    }
-
-    function loginSuccess() {
-        document.getElementById('headerUserName').innerText = currentUser.name.split(' ')[0];
-        document.getElementById('dashName').innerText = currentUser.name;
-        document.getElementById('userInfo').classList.remove('hidden');
-        goTo('screen-home');
-    }
-
-    function doLogout() {
-        currentUser = null;
-        document.getElementById('userInfo').classList.add('hidden');
-        document.getElementById('loginPass').value = '';
-        goTo('screen-login');
-    }
-
-    // --- NAVEGAÇÃO ---
-    function goTo(id) {
-        document.querySelectorAll('section').forEach(s => {
-            s.classList.add('hidden');
-            s.classList.remove('active');
-        });
-        const el = document.getElementById(id);
-        el.classList.remove('hidden');
-        el.classList.add('active');
-
-        if(id === 'screen-appointments') loadAppointments();
-    }
-
-    // --- AGENDAMENTO (MERCADO PAGO + MAKE) ---
-    try {
-        mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-        bricksBuilder = mp.bricks();
-    } catch(e) { console.error("Erro MP:", e); }
-
-    const dateInput = document.getElementById('dateInput');
-    dateInput.addEventListener('change', (e) => {
-        selectedDate = e.target.value;
-        if(selectedDate) {
-            document.getElementById('timeSection').classList.remove('hidden');
-            generateSlots();
-        }
-    });
-
-    function generateSlots() {
-        const c = document.getElementById('slotsContainer');
-        c.innerHTML = '';
-        for(let i=9; i<18; i++) {
-            const time = `${i<10?'0'+i:i}:00`;
-            const div = document.createElement('div');
-            div.className = 'slot';
-            div.innerText = time;
-            div.onclick = () => selectTime(time, div);
-            c.appendChild(div);
-        }
-    }
-
-    function selectTime(time, el) {
-        document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-        el.classList.add('selected');
-        selectedTime = time;
-        document.getElementById('paymentSection').classList.remove('hidden');
-        document.getElementById('confirmName').innerText = currentUser.name;
-        renderBrick();
-    }
-
-    async function renderBrick() {
-        const container = document.getElementById('payment-brick_container');
-        container.innerHTML = ''; // Limpa antes de criar
-
-        if(!bricksBuilder) return;
-
-        const settings = {
-            initialization: { 
-                amount: 50.00,
-                preferenceId: null, // <--- ESSA LINHA CONSERTA O ERRO DE CARREGAMENTO
-                payer: {
-                    email: currentUser.email, // Ajuda o MP a identificar
-                }
-            },
-            customization: { 
-                visual: { 
-                    style: { theme: 'dark' } // Tenta manter dark
-                },
-                paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" } 
-            },
-            callbacks: {
-                onSubmit: ({ selectedPaymentMethod, formData }) => {
-                    return new Promise((resolve, reject) => {
-                        sendToMake().then(resolve).catch(reject);
-                    });
-                },
-                onError: (e) => console.error("Erro Brick:", e)
-            }
-        };
-        
-        try {
-            window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
-        } catch(e) {
-            console.error("Falha ao criar Brick:", e);
-        }
-    }
-
-    async function sendToMake() {
-        const [h, m] = selectedTime.split(':').map(Number);
-        let endH = h + 1;
-        
-        const googleStart = `${selectedDate}T${selectedTime}:00`;
-        const googleEnd   = `${selectedDate}T${endH<10?'0'+endH:endH}:${m<10?'0'+m:m}:00`;
-        const cleanPhone  = currentUser.phone.replace(/\D/g, ''); 
-
-        const payload = {
-            userName: currentUser.name,
-            userPhone: cleanPhone,
-            userEmail: currentUser.email,
-            userCPF: currentUser.cpf,
-            userOAB: currentUser.oab,
-            date: selectedDate,
-            time: selectedTime,
-            googleStart: googleStart,
-            googleEnd: googleEnd,
-            status: "approved"
-        };
-
-        try {
-            await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        window.onload = () => { 
+            setupMasks(); 
+            document.getElementById('pixKeyDisplay').value = PIX_KEY; 
             
-            // Salvar localmente
-            const apps = JSON.parse(localStorage.getItem('wbApps_' + currentUser.email) || '[]');
-            apps.push({ date: selectedDate, time: selectedTime });
-            localStorage.setItem('wbApps_' + currentUser.email, JSON.stringify(apps));
+            // Inicializa Mercado Pago
+            try {
+                mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+                bricksBuilder = mp.bricks();
+            } catch(e) { console.error("Erro MP", e); }
 
-            alert("✅ Agendamento Confirmado!");
-            goTo('screen-appointments');
+            if(user) { updateUserUI(); navTo('menu'); } 
+        };
 
-        } catch (error) {
-            console.error(error);
-            alert("Erro de conexão, mas tentamos registrar.");
+        function navTo(screen) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(`screen-${screen}`).classList.add('active');
+            window.scrollTo(0,0);
+            if(screen === 'history') renderHistory();
+            if(screen === 'checkout') renderBrick(); // Renderiza o pagamento
         }
-    }
 
-    function loadAppointments() {
-        const list = document.getElementById('appointmentsList');
-        if(!currentUser) return;
+        // LOGIN E MÁSCARAS
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('inputPhone').value.replace(/\D/g, '');
+            const doc = document.getElementById('inputDoc').value.replace(/\D/g, '');
+            if(phone.length < 10) return alert("Telefone inválido.");
+            
+            user = { 
+                name: document.getElementById('inputName').value, 
+                doc: document.getElementById('inputDoc').value, 
+                email: document.getElementById('inputEmail').value, 
+                phone: document.getElementById('inputPhone').value 
+            };
+            localStorage.setItem('wb_user', JSON.stringify(user));
+            updateUserUI(); navTo('menu');
+        });
+
+        function logout() { localStorage.removeItem('wb_user'); user = null; document.getElementById('userHeader').classList.add('hidden'); navTo('login'); }
+        function updateUserUI() { document.getElementById('headerUserName').innerText = user.name.split(' ')[0]; document.getElementById('userHeader').classList.remove('hidden'); }
         
-        const apps = JSON.parse(localStorage.getItem('wbApps_' + currentUser.email) || '[]');
-        
-        if(apps.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color:#666;">Nenhum agendamento.</p>';
-        } else {
-            list.innerHTML = '';
-            apps.reverse().forEach(a => {
-                list.innerHTML += `
-                    <div class="dark-card" style="margin-bottom:10px; border-left:4px solid var(--text-gold);">
-                        <strong style="color:white;">${a.date.split('-').reverse().join('/')} às ${a.time}</strong>
-                        <div style="color:var(--text-gold); font-size:0.8rem; margin-top:5px;">SALA PRIVATIVA CONFIRMADA</div>
-                    </div>
-                `;
+        function setupMasks() {
+            document.getElementById('inputPhone').addEventListener('input', e => { let v = e.target.value.replace(/\D/g, "").slice(0,11); if(v.length>7) v=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`; else if(v.length>2) v=`(${v.slice(0,2)}) ${v.slice(2)}`; e.target.value = v; });
+            document.getElementById('inputDoc').addEventListener('input', e => { if(docMode === 'cpf') { let v = e.target.value.replace(/\D/g, "").slice(0,11); v=v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); e.target.value=v; } else { e.target.value = e.target.value.toUpperCase(); } });
+        }
+        function toggleDocMask(type) { docMode = type; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = type === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
+
+        // SELEÇÃO DE DATA
+        document.getElementById('datePicker').addEventListener('change', function() {
+            const date = this.value;
+            const day = new Date(date).getUTCDay();
+            if(day === 0 || day === 6) { alert('Apenas Seg-Sex.'); this.value=''; return; }
+            selection.date = date; selection.slots = []; renderSlots(); document.getElementById('slotsContainer').classList.remove('hidden');
+        });
+
+        function renderSlots() {
+            const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
+            const hours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+            hours.forEach(h => {
+                const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.innerText = h;
+                const isBusy = bookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
+                if(isBusy) { btn.disabled = true; } else { btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; }
+                grid.appendChild(btn);
             });
         }
-    }
-</script>
+
+        function updateTotal() { document.getElementById('totalPrice').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; }
+        function goToCheckout() { if(selection.slots.length === 0) return alert("Selecione um horário."); document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; navTo('checkout'); }
+        
+        function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
+        function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
+
+        // --- INTEGRAÇÃO MERCADO PAGO BRICK ---
+        async function renderBrick() {
+            const container = document.getElementById('payment-brick_container');
+            container.innerHTML = '';
+            if(!bricksBuilder) return;
+
+            const settings = {
+                initialization: {
+                    amount: selection.slots.length * HOUR_PRICE,
+                    preferenceId: null, // Corrige erro de carregamento
+                    payer: { email: user.email }
+                },
+                customization: {
+                    visual: { style: { theme: 'dark' } }, // Modo Escuro
+                    paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" }
+                },
+                callbacks: {
+                    onSubmit: ({ selectedPaymentMethod, formData }) => {
+                        return new Promise((resolve, reject) => {
+                            // Pagamento aprovado visualmente -> Envia para o Make
+                            sendDataToMake("Mercado Pago", null).then(resolve).catch(reject);
+                        });
+                    },
+                    onError: (error) => console.error(error)
+                }
+            };
+            window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
+        }
+
+        // --- ENVIO COM ARQUIVO (PIX MANUAL) ---
+        function finalizeBookingWithFile() {
+            const fileInput = document.getElementById('proofFile');
+            const file = fileInput.files[0];
+            if(!file) return alert("Anexe o comprovante.");
+            
+            const btn = document.getElementById('btnFinalizePix');
+            btn.innerText = "Enviando..."; btn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                sendDataToMake("PIX Manual", { fileName: file.name, fileData: e.target.result }, btn);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- LÓGICA CENTRAL DE ENVIO (MAKE + GOOGLE) ---
+        async function sendDataToMake(method, fileInfo, btnReset = null) {
+            
+            // 1. Lógica Google Agenda (googleStart/End)
+            selection.slots.sort(); 
+            const firstSlot = selection.slots[0];
+            const lastSlot = selection.slots[selection.slots.length - 1];
+            
+            // Hora Final = Último slot + 1 hora
+            let endH = parseInt(lastSlot.split(':')[0]) + 1;
+            let endHStr = endH < 10 ? `0${endH}:00:00` : `${endH}:00:00`;
+            
+            const googleStart = `${selection.date}T${firstSlot}:00`;
+            const googleEnd = `${selection.date}T${endHStr}`;
+
+            const bookingData = {
+                id: Date.now(),
+                userDoc: user.doc, 
+                userName: user.name, 
+                userPhone: user.phone.replace(/\D/g, ''), // Limpa telefone
+                userEmail: user.email,
+                date: selection.date, 
+                slots: selection.slots, 
+                total: selection.slots.length * HOUR_PRICE,
+                method: method, 
+                status: 'Confirmado', 
+                googleStart: googleStart, // Correção V23
+                googleEnd: googleEnd,     // Correção V23
+                ...(fileInfo || {})       // Adiciona arquivo se houver
+            };
+
+            // 2. Salva local e Envia
+            bookings.push(bookingData); 
+            localStorage.setItem('wb_bookings', JSON.stringify(bookings));
+            
+            try { 
+                await fetch(WEBHOOK_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(bookingData) 
+                }); 
+            } catch (error) { console.error("Erro envio:", error); }
+            
+            alert("✅ Reserva Confirmada!");
+            
+            // Limpa tudo
+            selection = { date: null, slots: [] }; 
+            document.getElementById('datePicker').value = '';
+            document.getElementById('proofFile').value = '';
+            if(btnReset) { btnReset.innerText = "Enviar Comprovante"; btnReset.disabled = false; }
+            
+            navTo('history');
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('bookingList'); list.innerHTML = '';
+            const myData = bookings.filter(b => b.userDoc === user.doc).sort((a,b) => b.id - a.id);
+            if(myData.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center">Sem reservas.</p>'; return; }
+            myData.forEach(b => {
+                const div = document.createElement('div'); div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
+                div.innerHTML = `<div><div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div><div class="text-gray-400 text-xs">${b.slots.join(', ')}</div><div class="text-gray-500 text-[10px] mt-1">${b.method} - ${b.status}</div></div>${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}`;
+                list.appendChild(div);
+            });
+        }
+        function cancelBooking(id) { if(confirm("Cancelar reserva?")) { const idx = bookings.findIndex(b => b.id === id); bookings[idx].status = 'Cancelado'; localStorage.setItem('wb_bookings', JSON.stringify(bookings)); renderHistory(); } }
+    </script>
 </body>
 </html>
