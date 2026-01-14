@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WB Coworking | Área Exclusiva</title>
+    <title>WB Coworking | Exclusive Law</title>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
         :root {
@@ -17,217 +17,307 @@
         }
         body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: var(--bg-main); color: var(--text-white); display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* CABEÇALHO E RODAPÉ */
-        .header { display: flex; justify-content: space-between; padding: 20px; align-items: center; }
-        .logo { color: var(--text-gold); font-weight: bold; letter-spacing: 1px; }
-        .user-area { text-align: right; font-size: 0.8rem; color: var(--text-gray); }
-        .user-name { color: var(--text-gold); display: block; font-weight: bold; }
-        .btn-sair { background: transparent; border: 1px solid var(--text-gray); color: var(--text-gray); padding: 5px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px; }
-        .footer { text-align: center; padding: 20px; margin-top: auto; color: var(--text-gold); font-size: 0.8rem; }
-        .footer small { color: var(--text-gray); }
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; padding: 20px; align-items: center; border-bottom: 1px solid #222; }
+        .logo { color: var(--text-gold); font-weight: bold; letter-spacing: 2px; font-size: 1.2rem; }
+        .user-area { font-size: 0.8rem; color: var(--text-gray); text-align: right; }
+        .btn-sair { background: none; border: 1px solid #444; color: #666; padding: 2px 10px; cursor: pointer; margin-left: 10px; border-radius: 4px; }
 
-        /* CONTAINER CENTRAL */
-        .main-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; width: 100%; max-width: 600px; margin: 0 auto; }
+        /* CONTENT */
+        .main-container { flex: 1; padding: 20px; width: 100%; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; }
         
-        /* TELAS E CARDS */
-        section { display: none; width: 100%; animation: fadeIn 0.5s; }
-        section.active { display: block; }
-        .title-gold { color: var(--text-gold); text-align: center; margin-bottom: 10px; }
-        .subtitle { text-align: center; color: var(--text-gray); margin-bottom: 30px; }
-        .dark-card { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--input-border); }
-
-        /* INPUTS E BOTÕES */
-        label { display: block; color: var(--text-gold); font-size: 0.8rem; margin-bottom: 8px; font-weight: bold; }
-        input, select { width: 100%; padding: 15px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-white); border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; }
+        /* CARDS & TEXTS */
+        .title-gold { color: var(--text-gold); text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .subtitle { text-align: center; color: var(--text-gray); margin-bottom: 25px; font-size: 0.9rem; }
+        .dark-card { background: var(--bg-card); padding: 25px; border-radius: 10px; border: 1px solid var(--input-border); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        /* INPUTS */
+        label { display: block; color: var(--text-gold); font-size: 0.75rem; margin-bottom: 5px; font-weight: bold; letter-spacing: 0.5px; margin-top: 15px; }
+        input, select { width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-white); border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
         input:focus { border-color: var(--text-gold); outline: none; }
-        .btn-gold { width: 100%; padding: 15px; background: var(--text-gold); color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .btn-gold:hover { opacity: 0.9; }
-        .btn-back { background: none; border: none; color: var(--text-gray); cursor: pointer; margin-bottom: 20px; display: flex; align-items: center; }
-        .btn-back:before { content: '← '; margin-right: 5px; }
+        
+        /* BUTTONS */
+        .btn-gold { width: 100%; padding: 15px; background: linear-gradient(135deg, #D4AF37, #bfa030); color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 20px; transition: 0.3s; }
+        .btn-gold:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-link { background: none; border: none; color: var(--text-gray); text-decoration: underline; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn-back { background: none; border: none; color: var(--text-gold); cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; font-size: 0.9rem; }
 
         /* DASHBOARD GRID */
-        .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .dash-card { background: var(--bg-card); padding: 30px; border-radius: 12px; text-align: center; border: 1px solid var(--input-border); cursor: pointer; transition: 0.3s; }
-        .dash-card:hover { border-color: var(--text-gold); }
-        .dash-icon { font-size: 3rem; margin-bottom: 15px; display: block; }
-        .dash-title { color: var(--text-white); font-weight: bold; margin-bottom: 10px; }
-        .dash-desc { color: var(--text-gray); font-size: 0.9rem; }
+        .dash-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .dash-btn { background: var(--bg-card); padding: 20px; border: 1px solid var(--input-border); border-radius: 8px; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
+        .dash-btn:hover { border-color: var(--text-gold); background: #151515; }
+        .dash-icon { font-size: 1.5rem; margin-right: 15px; color: var(--text-gold); }
+        .dash-text h4 { margin: 0; color: white; }
+        .dash-text p { margin: 2px 0 0 0; font-size: 0.8rem; color: #666; }
 
-        /* HORÁRIOS */
-        .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .slot { background: var(--input-bg); color: var(--text-white); padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; border: 1px solid var(--input-border); }
-        .slot:hover { border-color: var(--text-gold); }
-        .slot.selected { background: var(--text-gold); color: #000; font-weight: bold; }
+        /* UTILS */
         .hidden { display: none; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        section { animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* SLOTS (Horários) */
+        .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .slot { background: #222; color: #fff; padding: 10px; text-align: center; border-radius: 4px; cursor: pointer; border: 1px solid #333; font-size: 0.9rem; }
+        .slot:hover { border-color: var(--text-gold); }
+        .slot.selected { background: var(--text-gold); color: #000; border-color: var(--text-gold); font-weight: bold; }
     </style>
 </head>
 <body>
 
     <header class="header">
-        <div class="logo">WB COWORKING</div>
-        <div class="user-area hidden" id="loggedUserArea">
-            <small>ADVOGADO(A)</small>
-            <span class="user-name" id="userNameDisplay">Dr. Usuário</span>
-            <button class="btn-sair" onclick="doLogout()">SAIR</button>
+        <div class="logo">WB | ADV</div>
+        <div id="userInfo" class="user-area hidden">
+            Olá, <span id="headerUserName">Dr.</span>
+            <button class="btn-sair" onclick="doLogout()">Sair</button>
         </div>
     </header>
 
     <main class="main-container">
-        
+
         <section id="screen-login" class="active">
-            <h2 class="title-gold">Bem-vindo</h2>
-            <p class="subtitle">Identifique-se para acessar sua área exclusiva.</p>
+            <h2 class="title-gold">Acesso Restrito</h2>
+            <p class="subtitle">Área exclusiva para advogados associados.</p>
+            
             <div class="dark-card">
-                <label>E-MAIL PROFISSIONAL</label>
+                <label>E-MAIL</label>
                 <input type="email" id="loginEmail" placeholder="seu@email.com">
                 <label>SENHA</label>
                 <input type="password" id="loginPass" placeholder="••••••">
-                <button class="btn-gold" onclick="doLogin()">ACESSAR SISTEMA</button>
+                
+                <button class="btn-gold" onclick="doLogin()">ENTRAR</button>
+                <button class="btn-link" onclick="goTo('screen-register')">Não tem cadastro? Clique aqui.</button>
             </div>
         </section>
 
-        <section id="screen-home">
-            <h2 class="title-gold">O que deseja fazer?</h2>
-            <p class="subtitle">Selecione uma opção abaixo.</p>
-            <div class="dash-grid">
-                <div class="dash-card" onclick="goTo('screen-booking')">
-                    <span class="dash-icon">📅</span>
-                    <div class="dash-title">Agendar Sala</div>
-                    <div class="dash-desc">Reservar horários avulsos ou diária completa.</div>
-                </div>
-                <div class="dash-card" onclick="goTo('screen-my-appointments')">
-                    <span class="dash-icon">📂</span>
-                    <div class="dash-title">Minhas Reservas</div>
-                    <div class="dash-desc">Ver histórico e comprovantes.</div>
-                </div>
-                <div class="dash-card" onclick="goTo('screen-support')">
-                    <span class="dash-icon">💬</span>
-                    <div class="dash-title">Suporte VIP</div>
-                    <div class="dash-desc">Falar com a recepção no WhatsApp.</div>
-                </div>
-            </div>
-        </section>
-
-        <section id="screen-booking">
-            <button class="btn-back" onclick="goTo('screen-home')">Voltar</button>
-            <h2 class="title-gold">Nova Reserva</h2>
+        <section id="screen-register" class="hidden">
+            <h2 class="title-gold">Novo Associado</h2>
+            <p class="subtitle">Preencha seus dados profissionais.</p>
             
             <div class="dark-card">
-                <label>SELECIONE O DIA</label>
-                <input type="date" id="dateInput" style="color-scheme: dark;"> <div id="timeSection" class="hidden">
-                    <label style="margin-top: 20px;">SELECIONE O HORÁRIO</label>
+                <label>NOME COMPLETO</label>
+                <input type="text" id="regName" placeholder="Dr. Fulano de Tal">
+
+                <label>CPF</label>
+                <input type="text" id="regCPF" placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)">
+
+                <label>OAB (UF/NÚMERO)</label>
+                <input type="text" id="regOAB" placeholder="SP/123456" maxlength="10" oninput="maskOAB(this)">
+
+                <label>WHATSAPP</label>
+                <input type="tel" id="regPhone" placeholder="(11) 99999-9999" maxlength="15" oninput="maskPhone(this)">
+
+                <label>E-MAIL</label>
+                <input type="email" id="regEmail" placeholder="exemplo@gmail.com">
+
+                <label>SENHA</label>
+                <input type="password" id="regPass" placeholder="Crie uma senha segura">
+
+                <button class="btn-gold" onclick="doRegister()">FINALIZAR CADASTRO</button>
+                <button class="btn-link" onclick="goTo('screen-login')">Já tenho conta. Voltar.</button>
+            </div>
+        </section>
+
+        <section id="screen-home" class="hidden">
+            <h2 class="title-gold">Painel do Advogado</h2>
+            <p class="subtitle">Bem-vindo, <span id="dashName">Doutor</span>.</p>
+            
+            <div class="dash-grid">
+                <div class="dash-btn" onclick="goTo('screen-booking')">
+                    <span class="dash-icon">📅</span>
+                    <div class="dash-text">
+                        <h4>Nova Reserva</h4>
+                        <p>Agende sala de reunião ou estação.</p>
+                    </div>
+                </div>
+                
+                <div class="dash-btn" onclick="goTo('screen-appointments')">
+                    <span class="dash-icon">⚖️</span>
+                    <div class="dash-text">
+                        <h4>Minhas Reservas</h4>
+                        <p>Consulte seus horários agendados.</p>
+                    </div>
+                </div>
+
+                <div class="dash-btn" onclick="goTo('screen-support')">
+                    <span class="dash-icon">💬</span>
+                    <div class="dash-text">
+                        <h4>Suporte WB</h4>
+                        <p>Contato direto via WhatsApp.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-booking" class="hidden">
+            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
+            <h2 class="title-gold">Reservar Sala</h2>
+            
+            <div class="dark-card">
+                <label>DATA</label>
+                <input type="date" id="dateInput" style="color-scheme: dark;">
+
+                <div id="timeSection" class="hidden">
+                    <label>HORÁRIO DISPONÍVEL</label>
                     <div class="slots" id="slotsContainer"></div>
                 </div>
 
-                <div id="formSection" class="hidden" style="margin-top: 30px; border-top: 1px solid var(--input-border); padding-top: 20px;">
-                    <label>NOME COMPLETO</label>
-                    <input type="text" id="bookingName" placeholder="Dr. Seu Nome">
-                    <label>WHATSAPP (CELULAR)</label>
-                    <input type="tel" id="bookingPhone" placeholder="(11) 99999-9999">
-                    
+                <div id="paymentSection" class="hidden" style="margin-top:20px; border-top:1px solid #333; padding-top:20px;">
+                    <p style="color:white; text-align:center;">Confirmação para: <strong id="confirmName" style="color:var(--text-gold)">Dr.</strong></p>
                     <div id="payment-brick_container"></div>
                 </div>
             </div>
         </section>
 
-        <section id="screen-my-appointments">
-            <button class="btn-back" onclick="goTo('screen-home')">Voltar</button>
-            <h2 class="title-gold" style="text-align: left;">Meus Agendamentos</h2>
-            <div id="appointmentsList" style="margin-top: 30px;">
-                </div>
+        <section id="screen-appointments" class="hidden">
+            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
+            <h2 class="title-gold">Meus Agendamentos</h2>
+            <div id="appointmentsList" style="margin-top: 20px;"></div>
         </section>
 
-        <section id="screen-support">
-            <button class="btn-back" onclick="goTo('screen-home')">Voltar</button>
-            <h2 class="title-gold">Suporte VIP</h2>
+        <section id="screen-support" class="hidden">
+            <button class="btn-back" onclick="goTo('screen-home')">⬅ Voltar</button>
+            <h2 class="title-gold">Fale Conosco</h2>
             <div class="dark-card" style="text-align: center;">
-                <p>Canal exclusivo para advogados.</p>
-                <p style="color: var(--text-gold); font-size: 1.2rem; margin: 20px 0;">📞 (11) 99999-9999</p>
-                <p>contato@wbcoworking.com.br</p>
+                <p>WB ASSESSORIA & COWORKING</p>
+                <p style="color: var(--text-gold); font-size: 1.2rem; margin: 20px 0;">(11) 99999-9999</p>
+                <p style="color:#666; font-size:0.9rem;">Atendimento exclusivo para advogados.</p>
             </div>
         </section>
 
     </main>
 
-    <footer class="footer">
-        WB COWORKING
-        <br><small>SISTEMA EXCLUSIVO PARA ADVOGADOS</small>
-    </footer>
-
 <script>
-    // --- SUAS CHAVES (Reais) ---
+    // --- CONFIGURAÇÕES ---
     const MP_PUBLIC_KEY = 'APP_USR-4509a478-fbe8-424c-ba34-f0de01106417'; 
     const WEBHOOK_URL = 'https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g'; 
     
-    // --- LÓGICA DO SISTEMA ---
+    // --- ESTADO ---
+    let currentUser = null;
     let selectedDate = null;
     let selectedTime = null;
     let mp = null;
     let bricksBuilder = null;
 
-    // Inicializa MP
-    try {
-        mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-        bricksBuilder = mp.bricks();
-    } catch (e) { console.error("Erro MP", e); }
+    // --- MÁSCARAS DE INPUT (MAGIA ACONTECE AQUI) ---
+    function maskCPF(i) {
+        let v = i.value.replace(/\D/g, "");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        i.value = v;
+    }
+    
+    function maskPhone(i) {
+        let v = i.value.replace(/\D/g,"");
+        v = v.replace(/^(\d{2})(\d)/g,"($1) $2");
+        v = v.replace(/(\d)(\d{4})$/,"$1-$2");
+        i.value = v;
+    }
 
-    // Verificar Login ao abrir
-    checkLogin();
-
-    function checkLogin() {
-        const email = localStorage.getItem('userEmail');
-        if(email) {
-            document.getElementById('userNameDisplay').innerText = "Dr. " + email.split('@')[0];
-            document.getElementById('loggedUserArea').classList.remove('hidden');
-            goTo('screen-home');
-        } else {
-            goTo('screen-login');
+    function maskOAB(i) {
+        let v = i.value.toUpperCase();
+        // Remove tudo que não é letra ou número
+        v = v.replace(/[^A-Z0-9]/g, ""); 
+        // Coloca a barra depois das duas letras da UF
+        if(v.length > 2) {
+            v = v.substring(0,2) + "/" + v.substring(2);
         }
+        i.value = v;
+    }
+
+    // --- SISTEMA DE CADASTRO E LOGIN ---
+    function doRegister() {
+        const name = document.getElementById('regName').value;
+        const cpf = document.getElementById('regCPF').value;
+        const oab = document.getElementById('regOAB').value;
+        const phone = document.getElementById('regPhone').value;
+        const email = document.getElementById('regEmail').value;
+        const pass = document.getElementById('regPass').value;
+
+        if(!name || cpf.length < 14 || !oab || phone.length < 14 || !email || !pass) {
+            alert("Por favor, preencha todos os dados corretamente.");
+            return;
+        }
+
+        // Salvar no navegador (Simulando Banco de Dados)
+        const user = { name, cpf, oab, phone, email, pass };
+        localStorage.setItem('wbUser_' + email, JSON.stringify(user));
+        
+        alert("Cadastro realizado com sucesso! Faça login.");
+        goTo('screen-login');
     }
 
     function doLogin() {
         const email = document.getElementById('loginEmail').value;
-        if(email.includes('@')) {
-            localStorage.setItem('userEmail', email);
-            checkLogin();
+        const pass = document.getElementById('loginPass').value;
+        
+        const storedUser = localStorage.getItem('wbUser_' + email);
+        
+        if(storedUser) {
+            const user = JSON.parse(storedUser);
+            if(user.pass === pass) {
+                currentUser = user;
+                loginSuccess();
+            } else {
+                alert("Senha incorreta.");
+            }
         } else {
-            alert("Digite um e-mail válido.");
+            alert("Usuário não encontrado. Faça seu cadastro.");
         }
     }
 
+    function loginSuccess() {
+        document.getElementById('headerUserName').innerText = currentUser.name.split(' ')[0];
+        document.getElementById('dashName').innerText = currentUser.name;
+        document.getElementById('userInfo').classList.remove('hidden');
+        goTo('screen-home');
+    }
+
     function doLogout() {
-        localStorage.removeItem('userEmail');
-        location.reload();
+        currentUser = null;
+        document.getElementById('userInfo').classList.add('hidden');
+        document.getElementById('loginPass').value = ''; // Limpa senha
+        goTo('screen-login');
     }
 
-    function goTo(screenId) {
-        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-        if(screenId === 'screen-my-appointments') loadAppointments();
+    // --- NAVEGAÇÃO ---
+    function goTo(id) {
+        document.querySelectorAll('section').forEach(s => {
+            s.classList.add('hidden');
+            s.classList.remove('active');
+        });
+        const el = document.getElementById(id);
+        el.classList.remove('hidden');
+        el.classList.add('active');
+
+        if(id === 'screen-appointments') loadAppointments();
     }
 
-    // --- LÓGICA DE AGENDAMENTO (Preto/Dourado) ---
+    // --- AGENDAMENTO (MERCADO PAGO + MAKE) ---
+    try {
+        mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+        bricksBuilder = mp.bricks();
+    } catch(e) { console.error(e); }
+
     const dateInput = document.getElementById('dateInput');
     dateInput.addEventListener('change', (e) => {
         selectedDate = e.target.value;
         if(selectedDate) {
             document.getElementById('timeSection').classList.remove('hidden');
-            document.getElementById('formSection').classList.add('hidden');
             generateSlots();
         }
     });
 
     function generateSlots() {
-        const container = document.getElementById('slotsContainer');
-        container.innerHTML = '';
+        const c = document.getElementById('slotsContainer');
+        c.innerHTML = '';
         for(let i=9; i<18; i++) {
-            const time = `${i < 10 ? '0'+i : i}:00`;
+            const time = `${i<10?'0'+i:i}:00`;
             const div = document.createElement('div');
             div.className = 'slot';
             div.innerText = time;
             div.onclick = () => selectTime(time, div);
-            container.appendChild(div);
+            c.appendChild(div);
         }
     }
 
@@ -235,90 +325,91 @@
         document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
         el.classList.add('selected');
         selectedTime = time;
-        document.getElementById('formSection').classList.remove('hidden');
+        document.getElementById('paymentSection').classList.remove('hidden');
+        document.getElementById('confirmName').innerText = currentUser.name;
         renderBrick();
     }
 
     async function renderBrick() {
         document.getElementById('payment-brick_container').innerHTML = '';
         if(!bricksBuilder) return;
-        
-        // Estilização escura para o Mercado Pago
+
         const settings = {
             initialization: { amount: 50.00 },
             customization: { 
-                visual: {
-                    style: {
-                        theme: 'dark', // Tenta forçar tema escuro nativo
-                    }
-                },
+                visual: { style: { theme: 'dark' } },
                 paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" } 
             },
             callbacks: {
                 onSubmit: ({ selectedPaymentMethod, formData }) => {
                     return new Promise((resolve, reject) => {
-                        const name = document.getElementById('bookingName').value;
-                        const phone = document.getElementById('bookingPhone').value;
-                        const email = localStorage.getItem('userEmail');
-
-                        if(!name || !phone) { alert("Preencha os dados do Dr(a)."); reject(); return; }
-
-                        sendToMake(name, phone, email).then(() => resolve()).catch(reject);
+                        sendToMake().then(resolve).catch(reject);
                     });
                 },
-                onError: (error) => console.error(error)
+                onError: (e) => console.error(e)
             }
         };
         window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
     }
 
-    // --- FUNÇÃO DE ENVIO (CORRIGIDA V23) ---
-    async function sendToMake(name, phone, email) {
+    async function sendToMake() {
         const [h, m] = selectedTime.split(':').map(Number);
         let endH = h + 1;
         
+        // Dados formatados para o Google Calendar e Wapi
         const googleStart = `${selectedDate}T${selectedTime}:00`;
-        const googleEnd   = `${selectedDate}T${endH < 10 ? '0'+endH : endH}:${m < 10 ? '0'+m : m}:00`;
-        const cleanPhone  = phone.replace(/\D/g, '');
+        const googleEnd   = `${selectedDate}T${endH<10?'0'+endH:endH}:${m<10?'0'+m:m}:00`;
+        const cleanPhone  = currentUser.phone.replace(/\D/g, ''); // Usa o telefone do cadastro
 
         const payload = {
-            userName: name, userPhone: cleanPhone, userEmail: email,
-            date: selectedDate, time: selectedTime,
-            googleStart: googleStart, googleEnd: googleEnd, status: "approved"
+            userName: currentUser.name,
+            userPhone: cleanPhone,
+            userEmail: currentUser.email,
+            userCPF: currentUser.cpf,
+            userOAB: currentUser.oab, // Envia OAB para o Make também!
+            date: selectedDate,
+            time: selectedTime,
+            googleStart: googleStart,
+            googleEnd: googleEnd,
+            status: "approved"
         };
 
         try {
-            await fetch(WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
             
-            // Salva local
-            const bookings = JSON.parse(localStorage.getItem('wbBookingsDark') || '[]');
-            bookings.push({ date: selectedDate, time: selectedTime, name: name });
-            localStorage.setItem('wbBookingsDark', JSON.stringify(bookings));
+            // Salvar localmente
+            const apps = JSON.parse(localStorage.getItem('wbApps_' + currentUser.email) || '[]');
+            apps.push({ date: selectedDate, time: selectedTime });
+            localStorage.setItem('wbApps_' + currentUser.email, JSON.stringify(apps));
 
-            alert("✅ Reserva Confirmada para Dr(a). " + name);
-            goTo('screen-my-appointments');
+            alert("✅ Agendamento Confirmado!");
+            goTo('screen-appointments');
 
         } catch (error) {
             console.error(error);
-            alert("Reserva registrada (Instabilidade de rede).");
+            alert("Erro de conexão, mas tentamos registrar.");
         }
     }
 
     function loadAppointments() {
         const list = document.getElementById('appointmentsList');
-        const bookings = JSON.parse(localStorage.getItem('wbBookingsDark') || '[]');
+        if(!currentUser) return;
         
-        if(bookings.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color: var(--text-gray);">Nenhuma reserva encontrada.</p>';
+        const apps = JSON.parse(localStorage.getItem('wbApps_' + currentUser.email) || '[]');
+        
+        if(apps.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#666;">Nenhum agendamento.</p>';
         } else {
             list.innerHTML = '';
-            bookings.reverse().forEach(b => {
-                const ptDate = b.date.split('-').reverse().join('/');
+            apps.reverse().forEach(a => {
                 list.innerHTML += `
-                    <div class="dark-card" style="margin-bottom: 15px; border-left: 4px solid var(--text-gold);">
-                        <div style="color:var(--text-white); font-weight:bold; font-size:1.1rem;">${ptDate} - ${b.time}</div>
-                        <div style="color:var(--text-gray); margin-top: 5px;">Sala Privativa</div>
-                        <div style="color:var(--text-gold); font-size:0.9rem; margin-top:10px;">CONFIRMADO</div>
+                    <div class="dark-card" style="margin-bottom:10px; border-left:4px solid var(--text-gold);">
+                        <strong style="color:white;">${a.date.split('-').reverse().join('/')} às ${a.time}</strong>
+                        <div style="color:var(--text-gold); font-size:0.8rem; margin-top:5px;">SALA PRIVATIVA CONFIRMADA</div>
                     </div>
                 `;
             });
