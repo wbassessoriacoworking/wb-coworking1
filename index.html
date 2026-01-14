@@ -3,115 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WB Coworking - Agendamento</title>
+    <title>WB Coworking - App</title>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
         :root {
-            --primary: #004aad; /* Azul Profissional */
+            --primary: #004aad;
             --secondary: #f4f4f4;
             --text: #333;
-            --success: #28a745;
+            --white: #ffffff;
         }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: var(--secondary); color: var(--text); }
-        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); }
-        h3 { margin-top: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: var(--secondary); color: var(--text); }
         
-        /* Calendário */
-        input[type="date"] { width: 100%; padding: 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; margin-top: 10px; }
+        /* Container Principal (Simula Celular) */
+        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--white); box-shadow: 0 0 15px rgba(0,0,0,0.1); position: relative; }
         
-        /* Horários */
-        .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
-        .slot { padding: 10px; border: 1px solid #ccc; text-align: center; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-        .slot:hover { background: #e0e0e0; }
-        .slot.selected { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: bold; }
-        .slot.disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+        /* Cabeçalho */
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+        
+        /* Telas (Sections) */
+        section { padding: 20px; display: none; /* Esconde tudo por padrão */ }
+        section.active { display: block; animation: fadeIn 0.3s; }
+        
+        /* Botões e Inputs */
+        .btn { display: block; width: 100%; padding: 15px; margin-top: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; text-align: center; text-decoration: none; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn:hover { opacity: 0.9; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
 
-        /* Formulário */
-        .form-group { margin-top: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="email"], input[type="tel"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        /* Menu Inferior (Navegação) */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 10px 0; display: none; }
+        .nav-item { font-size: 0.8rem; color: #666; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        /* Botão e Pagamento */
-        #payment-brick_container { margin-top: 20px; }
-        .hidden { display: none; }
+        /* Estilos do Agendamento (Slots) */
+        .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .slot { background: #eee; padding: 10px; text-align: center; border-radius: 4px; cursor: pointer; }
+        .slot.selected { background: var(--primary); color: white; }
+
+        /* Animação */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .hidden { display: none !important; }
+
+        /* Lista de Agendamentos */
+        .appointment-card { background: #f9f9f9; border-left: 5px solid var(--primary); padding: 15px; margin-bottom: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>WB Coworking</h1>
-    <p style="text-align:center; color:#666;">Agende sua sala privativa</p>
-
-    <h3>1. Escolha a Data</h3>
-    <input type="date" id="dateInput">
-
-    <div id="timeSection" class="hidden">
-        <h3>2. Escolha o Horário</h3>
-        <div class="slots" id="slotsContainer">
-            </div>
-    </div>
-
-    <div id="formSection" class="hidden">
-        <h3>3. Seus Dados</h3>
-        <div class="form-group">
-            <label>Nome Completo</label>
-            <input type="text" id="userName" placeholder="Ex: Renato Caires">
+<div class="app-container">
+    
+    <section id="screen-login" class="active">
+        <div style="text-align: center; margin-top: 50px;">
+            <h1 style="color: var(--primary);">WB Coworking</h1>
+            <p>Bem-vindo ao seu espaço.</p>
         </div>
-        <div class="form-group">
-            <label>WhatsApp</label>
-            <input type="tel" id="userPhone" placeholder="Ex: 11999998888">
-        </div>
-        <div class="form-group">
+        <div style="margin-top: 40px;">
             <label>E-mail</label>
-            <input type="email" id="userEmail" placeholder="Ex: renato@email.com">
+            <input type="email" id="loginEmail" placeholder="seu@email.com">
+            <label>Senha</label>
+            <input type="password" id="loginPass" placeholder="******">
+            <button class="btn" onclick="doLogin()">Entrar</button>
         </div>
-        
-        <div id="payment-brick_container"></div>
-    </div>
+    </section>
+
+    <section id="screen-home">
+        <header>Olá, <span id="displayUserName">Usuário</span> 👋</header>
+        <div style="margin-top: 30px;">
+            <button class="btn" onclick="goTo('screen-booking')">📅 Nova Reserva</button>
+            <button class="btn btn-outline" onclick="goTo('screen-my-appointments')">📂 Meus Agendamentos</button>
+            <button class="btn btn-outline" onclick="goTo('screen-support')">💬 Suporte / Ajuda</button>
+            <button class="btn" style="background:#d9534f; margin-top:30px;" onclick="doLogout()">Sair</button>
+        </div>
+    </section>
+
+    <section id="screen-booking">
+        <h3>Nova Reserva</h3>
+        <p style="font-size:0.9rem; color:#666;">Selecione data e hora para sua sala.</p>
+
+        <label>Data:</label>
+        <input type="date" id="dateInput">
+
+        <div id="timeSection" class="hidden">
+            <label>Horário:</label>
+            <div class="slots" id="slotsContainer"></div>
+        </div>
+
+        <div id="formSection" class="hidden">
+            <div style="background:#efffef; padding:10px; border-radius:5px; margin:10px 0; font-size:0.9rem;">
+                Resumo: <strong id="summaryDate">--/--</strong> às <strong id="summaryTime">--:--</strong>
+            </div>
+            
+            <label>Nome Completo</label>
+            <input type="text" id="bookingName">
+            
+            <label>WhatsApp</label>
+            <input type="tel" id="bookingPhone" placeholder="11999998888">
+            
+            <div id="payment-brick_container"></div>
+        </div>
+
+        <button class="btn btn-outline" style="margin-top:20px;" onclick="goTo('screen-home')">Voltar</button>
+    </section>
+
+    <section id="screen-my-appointments">
+        <h3>Meus Agendamentos</h3>
+        <div id="appointmentsList">
+            <p style="color:#777; text-align:center; margin-top:20px;">Nenhum agendamento encontrado.</p>
+        </div>
+        <button class="btn btn-outline" style="margin-top:20px;" onclick="goTo('screen-home')">Voltar</button>
+    </section>
+
+    <section id="screen-support">
+        <h3>Suporte</h3>
+        <p>Precisa de ajuda? Fale conosco.</p>
+        <div class="appointment-card">
+            <strong>📞 WhatsApp:</strong> (11) 99999-9999<br>
+            <strong>📧 E-mail:</strong> contato@wbcoworking.com.br
+        </div>
+        <button class="btn btn-outline" onclick="goTo('screen-home')">Voltar ao Início</button>
+    </section>
+
 </div>
 
 <script>
-    // --- CONFIGURAÇÕES JÁ INSERIDAS ---
+    // --- SUAS CONFIGURAÇÕES (JÁ INSERIDAS) ---
     const MP_PUBLIC_KEY = 'APP_USR-4509a478-fbe8-424c-ba34-f0de01106417'; 
     const WEBHOOK_URL = 'https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g'; 
     
-    // --- LÓGICA DO SISTEMA ---
-    const dateInput = document.getElementById('dateInput');
-    const timeSection = document.getElementById('timeSection');
-    const slotsContainer = document.getElementById('slotsContainer');
-    const formSection = document.getElementById('formSection');
+    // VARIÁVEIS GLOBAIS
     let selectedDate = null;
     let selectedTime = null;
     let mp = null;
     let bricksBuilder = null;
 
-    // Inicializa Mercado Pago
+    // --- LÓGICA DE NAVEGAÇÃO ---
+    function goTo(screenId) {
+        // Esconde todas as sections
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        // Mostra a desejada
+        document.getElementById(screenId).classList.add('active');
+        
+        // Se for tela de meus agendamentos, carrega a lista
+        if(screenId === 'screen-my-appointments') loadAppointments();
+    }
+
+    function doLogin() {
+        const email = document.getElementById('loginEmail').value;
+        if(email) {
+            localStorage.setItem('userEmail', email); // Salva email
+            document.getElementById('displayUserName').innerText = email.split('@')[0];
+            goTo('screen-home');
+        } else {
+            alert("Digite um e-mail para entrar.");
+        }
+    }
+
+    function doLogout() {
+        localStorage.clear();
+        location.reload();
+    }
+
+    // --- LÓGICA DO AGENDAMENTO (CÓDIGO NOVO CORRIGIDO) ---
+    
+    // Iniciar Mercado Pago
     try {
         mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
         bricksBuilder = mp.bricks();
-    } catch (e) {
-        console.error("Erro ao iniciar MP:", e);
-    }
+    } catch (e) { console.error("Erro MP:", e); }
 
-    // Ao escolher data
+    const dateInput = document.getElementById('dateInput');
+    const timeSection = document.getElementById('timeSection');
+    const slotsContainer = document.getElementById('slotsContainer');
+    const formSection = document.getElementById('formSection');
+
     dateInput.addEventListener('change', (e) => {
         selectedDate = e.target.value;
         if(selectedDate) {
             timeSection.classList.remove('hidden');
+            formSection.classList.add('hidden');
             generateSlots();
-            formSection.classList.add('hidden'); // Esconde form se trocar data
-            document.getElementById('payment-brick_container').innerHTML = ''; // Limpa pagamento anterior
         }
     });
 
-    // Gerar horários (09:00 as 18:00)
     function generateSlots() {
         slotsContainer.innerHTML = '';
-        const startHour = 9;
-        const endHour = 18;
-
-        for(let i = startHour; i < endHour; i++) {
+        for(let i=9; i<18; i++) {
             const time = `${i < 10 ? '0'+i : i}:00`;
             const div = document.createElement('div');
             div.className = 'slot';
@@ -121,91 +198,59 @@
         }
     }
 
-    // Selecionar horário
-    function selectTime(time, element) {
-        // Remove seleção anterior
+    function selectTime(time, el) {
         document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-        element.classList.add('selected');
+        el.classList.add('selected');
         selectedTime = time;
         
+        // Atualiza resumo visual
+        document.getElementById('summaryDate').innerText = selectedDate.split('-').reverse().join('/');
+        document.getElementById('summaryTime').innerText = time;
+
         formSection.classList.remove('hidden');
-        renderPaymentBrick();
+        renderBrick();
     }
 
-    // Renderizar Botão de Pagamento
-    async function renderPaymentBrick() {
-        const container = document.getElementById('payment-brick_container');
-        container.innerHTML = ''; // Limpa para não duplicar
-
-        if (!bricksBuilder) return;
+    async function renderBrick() {
+        document.getElementById('payment-brick_container').innerHTML = '';
+        if(!bricksBuilder) return;
 
         const settings = {
-            initialization: {
-                amount: 50.00, // VALOR DA RESERVA
-                preferenceId: null, // Deixe null para Brick padrão
-            },
-            customization: {
-                paymentMethods: {
-                    ticket: "all",
-                    bankTransfer: "all", // Pix
-                    creditCard: "all",
-                    debitCard: "all",
-                    mercadoPago: "all"
-                },
-            },
+            initialization: { amount: 50.00 },
+            customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" } },
             callbacks: {
-                onReady: () => {
-                    // Brick carregou
-                },
                 onSubmit: ({ selectedPaymentMethod, formData }) => {
-                    // Simular envio de pagamento para o MP
                     return new Promise((resolve, reject) => {
-                        
-                        // 1. Validar campos
-                        const name = document.getElementById('userName').value;
-                        const phone = document.getElementById('userPhone').value;
-                        const email = document.getElementById('userEmail').value;
+                        const name = document.getElementById('bookingName').value;
+                        const phone = document.getElementById('bookingPhone').value;
+                        const email = localStorage.getItem('userEmail') || "cliente@email.com"; // Pega email do login
 
-                        if(!name || !phone || !email) {
-                            alert("Por favor, preencha nome, telefone e e-mail.");
-                            reject();
-                            return;
-                        }
+                        if(!name || !phone) { alert("Preencha nome e telefone!"); reject(); return; }
 
-                        // 2. Preparar dados para o Make
                         sendToMake(name, phone, email).then(() => {
-                            resolve(); // Sucesso no pagamento visual
-                        }).catch(() => {
-                            reject(); // Erro
-                        });
+                            resolve();
+                        }).catch(reject);
                     });
                 },
-                onError: (error) => {
-                    console.error(error);
-                },
-            },
+                onError: (error) => console.error(error)
+            }
         };
-        
-        window.paymentBrickController = await bricksBuilder.create(
-            "payment",
-            "payment-brick_container",
-            settings
-        );
+        window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
     }
 
-    // Enviar dados para o Make (Webhook)
+    // --- FUNÇÃO DE ENVIO COM AS CORREÇÕES (Google Calendar + Wapi) ---
     async function sendToMake(name, phone, email) {
         
-        // --- CÁLCULO DE DATA/HORA PARA O GOOGLE ---
+        // 1. Cálculos de Hora para o Google
         const [h, m] = selectedTime.split(':').map(Number);
         let endH = h + 1;
         const endTime = `${endH < 10 ? '0'+endH : endH}:${m < 10 ? '0'+m : m}`;
 
-        // Criar formato ISO exato para o Google Calendar: "YYYY-MM-DDTHH:mm:ss"
+        // 2. Formato ISO Perfeito (Correção do Erro Vermelho)
         const googleStart = `${selectedDate}T${selectedTime}:00`;
         const googleEnd   = `${selectedDate}T${endTime}:00`;
 
-        // Limpar telefone (apenas números para o Wapi)
+        // 3. Limpeza do Telefone (Correção Wapi)
         const cleanPhone = phone.replace(/\D/g, ''); 
 
         const payload = {
@@ -214,26 +259,60 @@
             userEmail: email,
             date: selectedDate,
             time: selectedTime,
-            googleStart: googleStart, // ENVIA CERTINHO
-            googleEnd: googleEnd,     // ENVIA CERTINHO
+            googleStart: googleStart, // O segredo do sucesso
+            googleEnd: googleEnd,
             status: "approved"
         };
 
         try {
+            // Envia para o Make
             await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
-            alert(`✅ Reserva Confirmada!\nDia: ${selectedDate}\nHorário: ${selectedTime}`);
-            location.reload(); // Recarrega para limpar
+
+            // Salva no "Banco de Dados" Local do navegador (para aparecer em Meus Agendamentos)
+            saveLocalBooking(selectedDate, selectedTime, name);
+
+            alert("✅ Reserva Confirmada com Sucesso!");
+            goTo('screen-my-appointments'); // Leva para a tela de agendamentos
 
         } catch (error) {
-            console.error("Erro no Webhook:", error);
-            alert("Reserva registrada, mas houve um erro de conexão.");
+            console.error("Erro Webhook:", error);
+            alert("Reserva feita, mas houve instabilidade na conexão.");
         }
     }
+
+    // --- SIMULAÇÃO DE BANCO DE DADOS (LOCALSTORAGE) ---
+    function saveLocalBooking(date, time, name) {
+        const bookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
+        bookings.push({ date, time, name, id: Date.now() });
+        localStorage.setItem('myBookings', JSON.stringify(bookings));
+    }
+
+    function loadAppointments() {
+        const list = document.getElementById('appointmentsList');
+        const bookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
+        
+        if(bookings.length === 0) {
+            list.innerHTML = '<p style="color:#777; text-align:center;">Você ainda não tem reservas.</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        bookings.reverse().forEach(b => {
+            const dataFormatada = b.date.split('-').reverse().join('/');
+            list.innerHTML += `
+                <div class="appointment-card">
+                    <h3>🗓️ ${dataFormatada} às ${b.time}</h3>
+                    <p>Sala Privativa - Confirmado ✅</p>
+                    <small>Titular: ${b.name}</small>
+                </div>
+            `;
+        });
+    }
+
 </script>
 
 </body>
