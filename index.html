@@ -187,7 +187,7 @@
     </main>
 
 <script>
-    // --- CONFIGURAÇÕES ---
+    // --- CONFIGURAÇÕES DO RENATO ---
     const MP_PUBLIC_KEY = 'APP_USR-4509a478-fbe8-424c-ba34-f0de01106417'; 
     const WEBHOOK_URL = 'https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g'; 
     
@@ -215,10 +215,8 @@
     }
 
     function maskOAB(i) {
-        let v = i.value.toUpperCase();
-        // Remove tudo que não é letra ou número
-        v = v.replace(/[^A-Z0-9]/g, ""); 
-        // Coloca a barra depois das duas letras da UF
+        let v = i.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); 
+        // Formato UF/12345
         if(v.length > 2) {
             v = v.substring(0,2) + "/" + v.substring(2);
         }
@@ -239,7 +237,6 @@
             return;
         }
 
-        // Salvar no navegador (Simulando Banco de Dados)
         const user = { name, cpf, oab, phone, email, pass };
         localStorage.setItem('wbUser_' + email, JSON.stringify(user));
         
@@ -276,7 +273,7 @@
     function doLogout() {
         currentUser = null;
         document.getElementById('userInfo').classList.add('hidden');
-        document.getElementById('loginPass').value = ''; // Limpa senha
+        document.getElementById('loginPass').value = '';
         goTo('screen-login');
     }
 
@@ -297,7 +294,7 @@
     try {
         mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
         bricksBuilder = mp.bricks();
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Erro MP:", e); }
 
     const dateInput = document.getElementById('dateInput');
     dateInput.addEventListener('change', (e) => {
@@ -331,13 +328,23 @@
     }
 
     async function renderBrick() {
-        document.getElementById('payment-brick_container').innerHTML = '';
+        const container = document.getElementById('payment-brick_container');
+        container.innerHTML = ''; // Limpa antes de criar
+
         if(!bricksBuilder) return;
 
         const settings = {
-            initialization: { amount: 50.00 },
+            initialization: { 
+                amount: 50.00,
+                preferenceId: null, // <--- ESSA LINHA CONSERTA O ERRO DE CARREGAMENTO
+                payer: {
+                    email: currentUser.email, // Ajuda o MP a identificar
+                }
+            },
             customization: { 
-                visual: { style: { theme: 'dark' } },
+                visual: { 
+                    style: { theme: 'dark' } // Tenta manter dark
+                },
                 paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" } 
             },
             callbacks: {
@@ -346,27 +353,31 @@
                         sendToMake().then(resolve).catch(reject);
                     });
                 },
-                onError: (e) => console.error(e)
+                onError: (e) => console.error("Erro Brick:", e)
             }
         };
-        window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
+        
+        try {
+            window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
+        } catch(e) {
+            console.error("Falha ao criar Brick:", e);
+        }
     }
 
     async function sendToMake() {
         const [h, m] = selectedTime.split(':').map(Number);
         let endH = h + 1;
         
-        // Dados formatados para o Google Calendar e Wapi
         const googleStart = `${selectedDate}T${selectedTime}:00`;
         const googleEnd   = `${selectedDate}T${endH<10?'0'+endH:endH}:${m<10?'0'+m:m}:00`;
-        const cleanPhone  = currentUser.phone.replace(/\D/g, ''); // Usa o telefone do cadastro
+        const cleanPhone  = currentUser.phone.replace(/\D/g, ''); 
 
         const payload = {
             userName: currentUser.name,
             userPhone: cleanPhone,
             userEmail: currentUser.email,
             userCPF: currentUser.cpf,
-            userOAB: currentUser.oab, // Envia OAB para o Make também!
+            userOAB: currentUser.oab,
             date: selectedDate,
             time: selectedTime,
             googleStart: googleStart,
