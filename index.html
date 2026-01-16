@@ -4,39 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WB Coworking | Sistema Oficial</title>
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333' } },
+                    colors: { wb: { bg: '#050505', panel: '#101010', gold: '#d4af37', goldHover: '#b5952f', gray: '#333', success: '#10b981' } },
                     fontFamily: { serif: ['Playfair Display', 'serif'], sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body { background-color: #050505; color: #e5e5e5; }
         .input-wb { background: #0a0a0a; border: 1px solid #333; color: white; width: 100%; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; }
         .input-wb:focus { border-color: #d4af37; box-shadow: 0 0 0 1px #d4af37; }
+        
         .btn-gold { background: linear-gradient(to right, #d4af37, #c5a028); color: #000; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; width: 100%; padding: 14px; border-radius: 8px; }
         .btn-gold:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .btn-gold:disabled { opacity: 0.7; cursor: not-allowed; filter: grayscale(0.5); }
+        
         .screen { display: none; opacity: 0; animation: fadeIn 0.4s forwards; }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .slot-btn { background: #111; border: 1px solid #333; color: #888; padding: 10px; border-radius: 6px; transition: 0.2s; }
         .slot-btn:hover:not(:disabled) { border-color: #d4af37; color: #d4af37; }
         .slot-btn.selected { background: #d4af37; color: #000; border-color: #d4af37; font-weight: bold; }
         .slot-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: line-through; background: #000; }
         
-        /* Ajuste do Brick para ficar bonito no fundo preto */
-        #payment-brick_container { min-height: 300px; margin-top: 20px; }
+        .status-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .status-paid { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .status-pending { background: #451a03; color: #fbbf24; border: 1px solid #b45309; }
+
+        /* MODAL E ANIMAÇÕES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: 0.3s; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-box { background: #151515; border: 1px solid #333; padding: 2rem; border-radius: 1rem; max-width: 90%; width: 400px; transform: scale(0.9); transition: 0.3s; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal-overlay.open .modal-box { transform: scale(1); }
+        
+        /* Check Animation */
+        .checkmark-circle { width: 80px; height: 80px; position: relative; display: inline-block; vertical-align: top; margin-bottom: 20px; }
+        .checkmark-circle .background { width: 80px; height: 80px; border-radius: 50%; background: #10b981; position: absolute; }
+        .checkmark-circle .checkmark { border-radius: 5px; }
+        .checkmark-circle .checkmark.draw:after { animation-duration: 800ms; animation-timing-function: ease; animation-name: checkmark; transform: scaleX(-1) rotate(135deg); }
+        .checkmark-circle .checkmark:after { opacity: 1; height: 40px; width: 20px; transform-origin: left top; border-right: 4px solid white; border-top: 4px solid white; content: ''; left: 22px; top: 40px; position: absolute; }
+        @keyframes checkmark { 0% { height: 0; width: 0; opacity: 1; } 20% { height: 0; width: 20px; opacity: 1; } 40% { height: 40px; width: 20px; opacity: 1; } 100% { height: 40px; width: 20px; opacity: 1; } }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
+
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-box text-center">
+            <h3 class="text-xl font-serif text-wb-gold mb-6">Como deseja pagar?</h3>
+            <div class="space-y-3">
+                <button onclick="goToMp('Pix/QR Code')" class="w-full bg-[#111] hover:bg-[#222] border border-gray-700 hover:border-[#32bcad] text-white p-4 rounded-lg flex items-center gap-4 transition group">
+                    <span class="text-2xl">💠</span>
+                    <div class="text-left"><p class="font-bold text-sm">Pix / QR Code</p><p class="text-[10px] text-gray-400">Aprovação Imediata</p></div>
+                </button>
+                <button onclick="goToMp('Cartão de Crédito')" class="w-full bg-[#111] hover:bg-[#222] border border-gray-700 hover:border-blue-500 text-white p-4 rounded-lg flex items-center gap-4 transition group">
+                    <span class="text-2xl">💳</span>
+                    <div class="text-left"><p class="font-bold text-sm">Cartão de Crédito</p><p class="text-[10px] text-gray-400">Até 12x</p></div>
+                </button>
+                <button onclick="goToMp('Boleto')" class="w-full bg-[#111] hover:bg-[#222] border border-gray-700 hover:border-yellow-500 text-white p-4 rounded-lg flex items-center gap-4 transition group">
+                    <span class="text-2xl">📄</span>
+                    <div class="text-left"><p class="font-bold text-sm">Boleto Bancário</p><p class="text-[10px] text-gray-400">1 a 2 dias úteis</p></div>
+                </button>
+            </div>
+            <button onclick="closeModal('paymentModal')" class="mt-6 text-gray-500 text-xs hover:text-white underline">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-box text-center bg-[#0a0a0a] border border-green-900/50">
+            <div class="checkmark-circle">
+                <div class="background"></div>
+                <div class="checkmark draw"></div>
+            </div>
+            <h3 class="text-2xl font-serif text-white mb-2">Tudo Certo!</h3>
+            <p class="text-gray-400 text-sm mb-6">Sua reserva foi enviada com sucesso.</p>
+            
+            <button onclick="sendToWhatsapp()" class="btn-gold mb-3 flex items-center justify-center gap-2">
+                <span>💬</span> CONFIRMAR NO WHATSAPP
+            </button>
+            
+            <button onclick="finishSuccess()" class="text-xs text-gray-500 underline hover:text-white">
+                Fechar e ver histórico
+            </button>
+        </div>
+    </div>
 
     <header class="border-b border-wb-gray/50 bg-black/95 sticky top-0 z-50 backdrop-blur-sm">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
@@ -87,7 +150,7 @@
                     <div id="slotsGrid" class="grid grid-cols-4 gap-3 mb-6"></div>
                     <div class="border-t border-wb-gray pt-6 flex justify-between items-center">
                         <div><p class="text-xs text-gray-500 uppercase">Total</p><p id="totalPrice" class="text-2xl font-serif text-wb-gold">R$ 0,00</p></div>
-                        <button onclick="goToCheckout()" class="btn-gold w-auto px-8">PAGAR</button>
+                        <button onclick="goToCheckout()" class="btn-gold w-auto px-8">AVANÇAR</button>
                     </div>
                 </div>
             </div>
@@ -96,26 +159,31 @@
         <section id="screen-checkout" class="screen max-w-lg mx-auto">
             <button onclick="navTo('booking')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
             <div class="bg-wb-panel p-8 rounded-xl border border-wb-gray text-center">
-                <h2 class="text-2xl font-serif text-wb-gold mb-2">Finalizar Reserva</h2>
-                <div class="bg-black p-4 rounded mb-6 border border-wb-gray/50"><p class="text-gray-500 text-xs">Valor Total</p><p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p><p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p></div>
+                <h2 class="text-2xl font-serif text-wb-gold mb-6">Finalizar</h2>
+                <div class="bg-black p-4 rounded mb-8 border border-wb-gray/50"><p class="text-gray-500 text-xs">Valor Total</p><p id="checkoutTotal" class="text-3xl font-bold text-white">R$ 0,00</p><p id="checkoutDesc" class="text-gray-500 text-xs mt-1">...</p></div>
                 
-                <div id="payment-brick_container"></div>
+                <button onclick="openPaymentModal()" class="w-full btn-gold mb-4 text-lg py-4 shadow-xl shadow-yellow-900/20">
+                    PAGAR AGORA
+                </button>
+                
+                <button id="btnConfirmManual" onclick="showSuccessManual()" class="hidden w-full bg-green-900/30 border border-green-600 text-green-400 py-3 rounded text-xs mt-4 hover:bg-green-900/50">
+                    Já paguei, confirmar manualmente
+                </button>
 
-                <div class="relative py-4 mt-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou Enviar Comprovante Manual</span></div></div>
+                <div class="relative py-8"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-wb-gray/30"></div></div><div class="relative flex justify-center text-xs uppercase"><span class="bg-wb-panel px-2 text-gray-500">Ou via Pix</span></div></div>
                 
-                <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30">
-                    <p class="text-wb-gold text-xs font-bold mb-1">CHAVE PIX (EMAIL)</p>
+                <div class="text-left bg-black/50 p-4 rounded border border-wb-gray/30 opacity-75 hover:opacity-100 transition">
+                    <p class="text-gray-400 text-[10px] font-bold mb-1">PAGAMENTO MANUAL (CHAVE PIX)</p>
                     <div class="flex gap-2 mb-3"><input type="text" id="pixKeyDisplay" readonly class="input-wb text-xs h-8 py-1 bg-gray-900"><button onclick="copyPix()" class="bg-wb-gray hover:bg-white hover:text-black text-white px-3 rounded text-xs border border-gray-600">Copiar</button></div>
-                    <label class="block text-gray-500 text-[10px] mb-1">ANEXAR COMPROVANTE (PDF/IMG)</label>
-                    <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full file:bg-wb-gray file:text-white file:border-0 file:rounded file:px-2 file:text-xs file:mr-2 cursor-pointer">
-                    <button id="btnFinalizePix" onclick="finalizeBookingWithFile()" class="w-full border border-wb-gold text-wb-gold hover:bg-wb-gold hover:text-black py-2 rounded text-xs font-bold uppercase transition mt-2">Enviar Comprovante</button>
+                    <input type="file" id="proofFile" accept=".pdf, .jpg, .jpeg, .png" class="text-xs text-gray-500 mb-2 w-full">
+                    <button id="btnFinalizePix" onclick="finalizeBooking('PIX Manual')" class="w-full border border-gray-600 text-gray-400 hover:bg-gray-800 py-2 rounded text-xs uppercase">Enviar Comprovante</button>
                 </div>
             </div>
         </section>
 
         <section id="screen-history" class="screen max-w-3xl mx-auto">
             <button onclick="navTo('menu')" class="mb-6 text-gray-500 hover:text-wb-gold flex items-center text-sm">← Voltar</button>
-            <h3 class="text-2xl font-serif text-white mb-6">Histórico</h3>
+            <h3 class="text-2xl font-serif text-white mb-6">Minhas Solicitações</h3>
             <div id="bookingList" class="space-y-4"></div>
         </section>
     </main>
@@ -125,30 +193,36 @@
     <script>
         // --- CONFIGURAÇÕES ---
         const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
-        const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417"; // Sua Chave
+        const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417";
+        const MP_LINK = "https://mpago.la/1fQzmFN"; 
         const PIX_KEY = "chriskaires@gmail.com"; 
+        
+        // >>> SEU NÚMERO (Configurado para notificação) <<<
+        const WHATSAPP_ADMIN = "5511962826658"; 
+        
         const SUPPORT_LINK = "https://w.app/wbcoworking";
         const HOUR_PRICE = 50;
+
+        // Inicializa Mercado Pago
+        const mp = new MercadoPago(MP_PUBLIC_KEY);
         
-        // ESTADO
         let user = JSON.parse(localStorage.getItem('wb_user')) || null;
         let bookings = JSON.parse(localStorage.getItem('wb_bookings')) || [];
         let selection = { date: null, slots: [] };
         let docMode = 'cpf';
-        let mp = null;
-        let bricksBuilder = null;
+        let tempBooking = JSON.parse(localStorage.getItem('wb_temp_booking')) || null;
 
         window.onload = () => { 
-            setupMasks(); 
-            document.getElementById('pixKeyDisplay').value = PIX_KEY; 
-            
-            // Inicializa Mercado Pago
-            try {
-                mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-                bricksBuilder = mp.bricks();
-            } catch(e) { console.error("Erro MP", e); }
+            setupMasks(); document.getElementById('pixKeyDisplay').value = PIX_KEY; 
+            if(user) { updateUserUI(); navTo('menu'); }
 
-            if(user) { updateUserUI(); navTo('menu'); } 
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('collection_status') === 'approved' && tempBooking) {
+                document.getElementById('successModal').classList.add('open');
+                tempBooking.status = "PAGO - Confirmado";
+                sendToWebhook(tempBooking, null, null, false);
+                localStorage.removeItem('wb_temp_booking');
+            }
         };
 
         function navTo(screen) {
@@ -156,35 +230,66 @@
             document.getElementById(`screen-${screen}`).classList.add('active');
             window.scrollTo(0,0);
             if(screen === 'history') renderHistory();
-            if(screen === 'checkout') renderBrick(); // <--- CHAMA O PAGAMENTO AQUI
         }
 
-        // LOGIN E MÁSCARAS
+        function openPaymentModal() { document.getElementById('paymentModal').classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+        function goToMp(methodType) {
+            closeModal('paymentModal');
+            const booking = prepareBookingData(methodType, 'Aguardando Pagamento');
+            localStorage.setItem('wb_temp_booking', JSON.stringify(booking));
+            window.open(MP_LINK, '_blank');
+            document.getElementById('btnConfirmManual').classList.remove('hidden');
+        }
+
+        function showSuccessManual() {
+            document.getElementById('successModal').classList.add('open');
+            if(tempBooking) {
+                tempBooking.status = "PAGO - Confirmado";
+                sendToWebhook(tempBooking, null, null, false);
+                localStorage.removeItem('wb_temp_booking');
+            }
+        }
+
+        function finishSuccess() {
+            closeModal('successModal');
+            navTo('history');
+            document.getElementById('btnConfirmManual').classList.add('hidden');
+        }
+
+        // --- FUNÇÃO WHATSAPP (Avisar você da reserva) ---
+        function sendToWhatsapp() {
+            let bookingData = tempBooking; 
+            if(!bookingData && bookings.length > 0) bookingData = bookings[bookings.length - 1];
+            
+            if(!bookingData) return alert("Nenhuma reserva recente encontrada.");
+
+            const text = `Olá, WB Coworking! \n\nAcabei de fazer uma reserva: \n📅 Data: ${bookingData.date.split('-').reverse().join('/')} \n⏰ Horários: ${bookingData.slots.join(', ')} \n💰 Valor: R$ ${bookingData.total},00 \n👤 Nome: ${bookingData.userName} \n\nSegue meu comprovante!`;
+            
+            const url = `https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const phone = document.getElementById('inputPhone').value.replace(/\D/g, '');
-            if(phone.length < 10) return alert("Telefone inválido.");
-            
-            user = { 
-                name: document.getElementById('inputName').value, 
-                doc: document.getElementById('inputDoc').value, 
-                email: document.getElementById('inputEmail').value, 
-                phone: document.getElementById('inputPhone').value 
-            };
+            const doc = document.getElementById('inputDoc').value.replace(/\D/g, '');
+            if(phone.length !== 11 || phone[2] !== '9') return alert("Telefone inválido.");
+            if(docMode === 'cpf' && doc.length !== 11) return alert("CPF inválido.");
+            user = { name: document.getElementById('inputName').value, doc: document.getElementById('inputDoc').value, email: document.getElementById('inputEmail').value, phone: document.getElementById('inputPhone').value };
             localStorage.setItem('wb_user', JSON.stringify(user));
             updateUserUI(); navTo('menu');
         });
 
         function logout() { localStorage.removeItem('wb_user'); user = null; document.getElementById('userHeader').classList.add('hidden'); navTo('login'); }
         function updateUserUI() { document.getElementById('headerUserName').innerText = user.name.split(' ')[0]; document.getElementById('userHeader').classList.remove('hidden'); }
-        
         function setupMasks() {
             document.getElementById('inputPhone').addEventListener('input', e => { let v = e.target.value.replace(/\D/g, "").slice(0,11); if(v.length>7) v=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`; else if(v.length>2) v=`(${v.slice(0,2)}) ${v.slice(2)}`; e.target.value = v; });
             document.getElementById('inputDoc').addEventListener('input', e => { if(docMode === 'cpf') { let v = e.target.value.replace(/\D/g, "").slice(0,11); v=v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); e.target.value=v; } else { e.target.value = e.target.value.toUpperCase(); } });
         }
         function toggleDocMask(type) { docMode = type; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = type === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
 
-        // SELEÇÃO DE DATA
         document.getElementById('datePicker').addEventListener('change', function() {
             const date = this.value;
             const day = new Date(date).getUTCDay();
@@ -198,131 +303,105 @@
             hours.forEach(h => {
                 const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.innerText = h;
                 const isBusy = bookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
-                if(isBusy) { btn.disabled = true; } else { btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; }
+                if(isBusy) { btn.disabled = true; btn.innerText = h + " (X)"; } 
+                else { btn.onclick = () => { if(selection.slots.includes(h)) { selection.slots = selection.slots.filter(s => s !== h); btn.classList.remove('selected'); } else { selection.slots.push(h); btn.classList.add('selected'); } updateTotal(); }; }
                 grid.appendChild(btn);
             });
         }
 
         function updateTotal() { document.getElementById('totalPrice').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; }
         function goToCheckout() { if(selection.slots.length === 0) return alert("Selecione um horário."); document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; navTo('checkout'); }
-        
         function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
         function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
 
-        // --- INTEGRAÇÃO MERCADO PAGO BRICK CORRIGIDA ---
-        async function renderBrick() {
-            const container = document.getElementById('payment-brick_container');
+        function prepareBookingData(method, status) {
+            selection.slots.sort(); 
+            // Removed Google Calendar Logic
             
-            // 1. Limpa o container e remove instância anterior para não travar
-            container.innerHTML = '';
-            if(window.paymentBrickController) {
-                try { await window.paymentBrickController.unmount(); } catch(e) {}
-            }
-
-            if(!bricksBuilder) return;
-
-            // 2. Calcula valor exato (EVITA O ERRO CINZA)
-            const amountValue = Number(selection.slots.length * HOUR_PRICE);
-
-            const settings = {
-                initialization: {
-                    amount: amountValue, // Número puro (50, 100...)
-                    preferenceId: null,
-                    payer: { email: user.email }
-                },
-                customization: {
-                    visual: { style: { theme: 'dark' } },
-                    paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all" }
-                },
-                callbacks: {
-                    onSubmit: ({ selectedPaymentMethod, formData }) => {
-                        return new Promise((resolve, reject) => {
-                            sendDataToMake("Mercado Pago", null).then(resolve).catch(reject);
-                        });
-                    },
-                    onError: (error) => console.error(error)
-                }
+            return {
+                id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+                date: selection.date, slots: selection.slots, total: selection.slots.length * HOUR_PRICE,
+                method: method, status: status, createdAt: new Date().toISOString()
+                // Payload limpo para Webhook e Planilha
             };
-            
-            // 3. Cria o Brick
-            window.paymentBrickController = await bricksBuilder.create("payment", "payment-brick_container", settings);
         }
 
-        // --- ENVIO MANUAL ---
-        function finalizeBookingWithFile() {
+        function finalizeBooking(method) {
             const fileInput = document.getElementById('proofFile');
             const file = fileInput.files[0];
-            if(!file) return alert("Anexe o comprovante.");
+            if(method.includes('Manual') && !file) return alert("Por favor, anexe o comprovante.");
             
             const btn = document.getElementById('btnFinalizePix');
+            const originalText = btn.innerText;
             btn.innerText = "Enviando..."; btn.disabled = true;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                sendDataToMake("PIX Manual", { fileName: file.name, fileData: e.target.result }, btn);
-            };
-            reader.readAsDataURL(file);
+            const bookingData = prepareBookingData(method, 'EM ANÁLISE');
+            tempBooking = bookingData; // Salva para uso no WhatsApp
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    bookingData.fileName = file.name; bookingData.fileData = e.target.result;
+                    sendToWebhook(bookingData, btn, originalText);
+                };
+                reader.readAsDataURL(file);
+            } else { sendToWebhook(bookingData, btn, originalText); }
         }
-
-        // --- LÓGICA DE ENVIO ---
-        async function sendDataToMake(method, fileInfo, btnReset = null) {
-            selection.slots.sort(); 
-            const firstSlot = selection.slots[0];
-            const lastSlot = selection.slots[selection.slots.length - 1];
-            
-            let endH = parseInt(lastSlot.split(':')[0]) + 1;
-            let endHStr = endH < 10 ? `0${endH}:00:00` : `${endH}:00:00`;
-            
-            const googleStart = `${selection.date}T${firstSlot}:00`;
-            const googleEnd = `${selection.date}T${endHStr}`;
-
-            const bookingData = {
-                id: Date.now(),
-                userDoc: user.doc, 
-                userName: user.name, 
-                userPhone: user.phone.replace(/\D/g, ''),
-                userEmail: user.email,
-                date: selection.date, 
-                slots: selection.slots, 
-                total: selection.slots.length * HOUR_PRICE,
-                method: method, 
-                status: 'Confirmado', 
-                googleStart: googleStart,
-                googleEnd: googleEnd,
-                ...(fileInfo || {})
-            };
-
-            bookings.push(bookingData); 
-            localStorage.setItem('wb_bookings', JSON.stringify(bookings));
-            
-            try { 
-                await fetch(WEBHOOK_URL, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(bookingData) 
-                }); 
-            } catch (error) { console.error("Erro envio:", error); }
-            
-            alert("✅ Reserva Confirmada!");
-            selection = { date: null, slots: [] }; 
-            document.getElementById('datePicker').value = '';
-            document.getElementById('proofFile').value = '';
-            if(btnReset) { btnReset.innerText = "Enviar Comprovante"; btnReset.disabled = false; }
-            
-            navTo('history');
-        }
-
+        
         function renderHistory() {
             const list = document.getElementById('bookingList'); list.innerHTML = '';
-            const myData = bookings.filter(b => b.userDoc === user.doc).sort((a,b) => b.id - a.id);
-            if(myData.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center">Sem reservas.</p>'; return; }
-            myData.forEach(b => {
-                const div = document.createElement('div'); div.className = "bg-wb-panel border border-wb-gray p-4 rounded flex justify-between items-center";
-                div.innerHTML = `<div><div class="text-wb-gold font-bold">${b.date.split('-').reverse().join('/')}</div><div class="text-gray-400 text-xs">${b.slots.join(', ')}</div><div class="text-gray-500 text-[10px] mt-1">${b.method} - ${b.status}</div></div>${b.status !== 'Cancelado' ? `<button onclick="cancelBooking(${b.id})" class="text-red-400 text-xs underline">Cancelar</button>` : '<span class="text-red-500 text-xs">CANCELADO</span>'}`;
-                list.appendChild(div);
+            bookings.sort((a,b) => b.id - a.id);
+            if(bookings.length === 0) { list.innerHTML = '<p class="text-gray-500 text-center text-sm">Nenhuma reserva encontrada.</p>'; return; }
+            
+            bookings.forEach(b => {
+                let badgeClass = 'status-pending';
+                if(b.status.includes('Confirmado') || b.status.includes('PAGO')) badgeClass = 'status-paid';
+                
+                const item = document.createElement('div');
+                item.className = 'bg-wb-panel p-4 rounded border border-wb-gray/50 flex justify-between items-center';
+                item.innerHTML = `
+                    <div>
+                        <p class="text-wb-gold font-serif text-lg">${b.date.split('-').reverse().join('/')}</p>
+                        <p class="text-xs text-gray-400">${b.slots.join(', ')}</p>
+                        <p class="text-[10px] text-gray-500 mt-1">Ref: ${b.id}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-badge ${badgeClass}">${b.status}</span>
+                        <p class="text-white font-bold mt-1">R$ ${b.total},00</p>
+                    </div>
+                `;
+                list.appendChild(item);
             });
         }
-        function cancelBooking(id) { if(confirm("Cancelar reserva?")) { const idx = bookings.findIndex(b => b.id === id); bookings[idx].status = 'Cancelado'; localStorage.setItem('wb_bookings', JSON.stringify(bookings)); renderHistory(); } }
+
+        async function sendToWebhook(data, btn, originalText, showAlert = true) {
+            const existingIndex = bookings.findIndex(b => b.id === data.id);
+            if(existingIndex >= 0) bookings[existingIndex] = data;
+            else bookings.push(data);
+            
+            localStorage.setItem('wb_bookings', JSON.stringify(bookings));
+
+            if (WEBHOOK_URL) { 
+                try { 
+                    await fetch(WEBHOOK_URL, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(data) 
+                    }); 
+                } catch (error) { console.error("Erro envio:", error); } 
+            }
+            
+            if(showAlert) {
+                // Abre o modal de sucesso direto
+                document.getElementById('successModal').classList.add('open');
+            }
+            
+            selection = { date: null, slots: [] }; 
+            document.getElementById('datePicker').value = ''; 
+            document.getElementById('proofFile').value = '';
+            
+            if(btn) { btn.innerText = originalText; btn.disabled = false; }
+        }
     </script>
 </body>
 </html>
