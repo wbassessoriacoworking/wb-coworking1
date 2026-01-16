@@ -167,19 +167,18 @@
     <footer class="py-6 text-center border-t border-wb-gray/30 bg-black mt-auto"><p class="text-wb-gold text-xs font-bold tracking-widest">WB COWORKING</p></footer>
 
     <script>
-        // --- CONFIGURAÇÕES ---
+        // --- CONFIGURAÇÕES DO SISTEMA ---
         const WEBHOOK_URL = "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g"; 
         const MP_PUBLIC_KEY = "APP_USR-4509a478-fbe8-424c-ba34-f0de01106417";
         const MP_LINK = "https://mpago.la/1fQzmFN"; 
         const PIX_KEY = "chriskaires@gmail.com"; 
         const WHATSAPP_ADMIN = "5511962826658"; 
-        
-        // >>> LINK ATUALIZADO <<<
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSKIriMJfh3BAPRRYcEfj8LQdI7arCsrOCUZk5i7cnlMtIFZijCpshiafeKhWz-BnONuqvaNAtZzSAj/pub?output=csv"; 
         
         const HOUR_PRICE = 50;
         const mp = new MercadoPago(MP_PUBLIC_KEY);
         
+        // --- ESTADO DO SISTEMA ---
         let user = JSON.parse(localStorage.getItem('wb_user')) || null;
         let myBookings = JSON.parse(localStorage.getItem('wb_bookings')) || [];
         let allBookingsGlobal = []; 
@@ -187,12 +186,15 @@
         let docMode = 'cpf';
         let tempBooking = JSON.parse(localStorage.getItem('wb_temp_booking')) || null;
 
+        // --- INICIALIZAÇÃO ---
         window.onload = () => { 
             setupMasks(); 
             document.getElementById('pixKeyDisplay').value = PIX_KEY; 
-            fetchGlobalBookings();
+            fetchGlobalBookings(); // Carrega agenda global
+            
             if(user) { updateUserUI(); navTo('menu'); }
 
+            // Verifica se voltou do Mercado Pago
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('collection_status') === 'approved' && tempBooking) {
                 document.getElementById('successModal').classList.add('open');
@@ -202,7 +204,7 @@
             }
         };
 
-        // --- FUNÇÃO AJUSTADA PARA SUA PLANILHA (A, B, C, D, E, F) ---
+        // --- LÓGICA DE SINCRONIZAÇÃO DA PLANILHA ---
         async function fetchGlobalBookings() {
             if(!SHEET_CSV_URL) return;
             const loading = document.getElementById('loadingSheet');
@@ -215,14 +217,11 @@
                 
                 allBookingsGlobal = rows.map(row => {
                     const cols = row.split(',');
-                    // SUA PLANILHA: 
-                    // Col A (0) = Data
-                    // Col D (3) = Horários
-                    if(cols.length < 4) return null; // Precisa ter pelo menos até a D
+                    if(cols.length < 4) return null; // Validação da planilha
                     
                     const date = cols[0].replace(/"/g, '').trim(); 
-                    const slotsStr = cols[3].replace(/"/g, '').trim(); // Lendo coluna D
-                    const status = cols[5] ? cols[5].replace(/"/g, '').trim() : 'Pendente'; // Lendo coluna F
+                    const slotsStr = cols[3].replace(/"/g, '').trim(); // Lendo coluna D (Horários)
+                    const status = cols[5] ? cols[5].replace(/"/g, '').trim() : 'Pendente'; // Lendo coluna F (Status)
                     
                     if(!date || !slotsStr) return null;
 
@@ -235,7 +234,7 @@
                     return { date: formattedDate, slots: slotsStr, status: status };
                 }).filter(b => b !== null && !b.status.toLowerCase().includes('cancelado'));
                 
-                console.log("Reservas lidas:", allBookingsGlobal);
+                console.log("Reservas lidas da planilha:", allBookingsGlobal);
             } catch (err) {
                 console.error("Erro ao ler planilha:", err);
             } finally {
@@ -244,17 +243,20 @@
             }
         }
 
+        // --- NAVEGAÇÃO ---
         function navTo(screen) {
             document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
             document.getElementById(`screen-${screen}`).classList.add('active');
             window.scrollTo(0,0);
             if(screen === 'history') renderHistory();
-            if(screen === 'booking') fetchGlobalBookings(); 
+            if(screen === 'booking') fetchGlobalBookings(); // Atualiza sempre que entrar na reserva
         }
 
+        // --- MODAIS ---
         function openPaymentModal() { document.getElementById('paymentModal').classList.add('open'); }
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+        // --- PAGAMENTOS ---
         function goToMp(methodType) {
             closeModal('paymentModal');
             const booking = prepareBookingData(methodType, 'Aguardando Pagamento');
@@ -262,6 +264,7 @@
             window.open(MP_LINK, '_blank');
             document.getElementById('btnConfirmManual').classList.remove('hidden');
         }
+
         function showSuccessManual() {
             document.getElementById('successModal').classList.add('open');
             if(tempBooking) {
@@ -270,20 +273,32 @@
                 localStorage.removeItem('wb_temp_booking');
             }
         }
+
         function finishSuccess() {
             closeModal('successModal');
             navTo('history');
             document.getElementById('btnConfirmManual').classList.add('hidden');
         }
+
+        // --- WHATSAPP CORRIGIDO ---
         function sendToWhatsapp() {
             let bookingData = tempBooking; 
+            // Se não tiver temporário, pega o último do histórico
             if(!bookingData && myBookings.length > 0) bookingData = myBookings[myBookings.length - 1];
+            
             if(!bookingData) return alert("Nenhuma reserva recente encontrada.");
-            const text = `Olá, WB Coworking! \n\nAcabei de fazer uma reserva: \n📅 Data: ${bookingData.date.split('-').reverse().join('/')} \n⏰ Horários: ${bookingData.slots.join(', ')} \n💰 Valor: R$ ${bookingData.total},00 \n👤 Nome: ${bookingData.userName} \n\nSegue meu comprovante!`;
+
+            // Formata a data para BR (DD/MM/YYYY)
+            const dateFormatted = bookingData.date.split('-').reverse().join('/');
+
+            // Mensagem Personalizada
+            const text = `Olá, meu nome é ${bookingData.userName}. Reservei o horário ${bookingData.slots.join(', ')} na data ${dateFormatted}. Segue o comprovante de pagamento.`;
+            
             const url = `https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank');
         }
 
+        // --- LOGIN & CADASTRO ---
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const phone = document.getElementById('inputPhone').value.replace(/\D/g, '');
@@ -303,6 +318,7 @@
         }
         function toggleDocMask(type) { docMode = type; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = type === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
 
+        // --- SELEÇÃO DE DATA E HORÁRIOS ---
         document.getElementById('datePicker').addEventListener('change', function() {
             const date = this.value;
             const day = new Date(date).getUTCDay();
@@ -322,7 +338,9 @@
                 btn.innerText = h;
                 
                 let isBusy = false;
+                // Verifica na planilha (Global)
                 if (allBookingsGlobal.some(b => b.date === selection.date && b.slots.includes(h))) isBusy = true;
+                // Verifica local (Local)
                 if (myBookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado')) isBusy = true;
 
                 if(isBusy) { 
@@ -347,10 +365,18 @@
         }
 
         function updateTotal() { document.getElementById('totalPrice').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; }
-        function goToCheckout() { if(selection.slots.length === 0) return alert("Selecione um horário."); document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; navTo('checkout'); }
+        
+        function goToCheckout() { 
+            if(selection.slots.length === 0) return alert("Selecione um horário."); 
+            document.getElementById('checkoutTotal').innerText = `R$ ${selection.slots.length * HOUR_PRICE},00`; 
+            document.getElementById('checkoutDesc').innerText = `${selection.slots.length} horas - ${selection.date.split('-').reverse().join('/')}`; 
+            navTo('checkout'); 
+        }
+
         function copyPix() { const key = document.getElementById('pixKeyDisplay'); key.select(); document.execCommand('copy'); alert("Chave Pix copiada!"); }
         function openSupport() { window.open(SUPPORT_LINK, '_blank'); }
 
+        // --- FINALIZAÇÃO E ENVIO ---
         function prepareBookingData(method, status) {
             selection.slots.sort(); 
             return {
@@ -411,7 +437,7 @@
             document.getElementById('datePicker').value = ''; 
             document.getElementById('proofFile').value = '';
             if(btn) { btn.innerText = originalText; btn.disabled = false; }
-            fetchGlobalBookings();
+            fetchGlobalBookings(); // Atualiza a tela
         }
     </script>
 </body>
