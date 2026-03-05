@@ -235,7 +235,12 @@
     <div class="modal-box" style="text-align:center">
         <div class="success-icon">✓</div>
         <div class="modal-title">Reserva Enviada!</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.</p>
+        <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left">
+            <p style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">📶 Wi-Fi do Espaço</p>
+            <p style="font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.05em" id="successWifi">—</p>
+            <p style="font-size:10px;color:var(--muted);margin-top:4px">📍 Av. Amador Bueno da Veiga, 1970 — Sala 19 · Penha</p>
+        </div>
         <button onclick="sendToWhatsapp()" class="btn-gold" style="margin-bottom:10px">💬 &nbsp;Confirmar pelo WhatsApp</button>
         <button onclick="downloadReceipt()" style="width:100%;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📄 &nbsp;Baixar Recibo em PDF</button>
         <button onclick="finishSuccess()" class="modal-cancel">Fechar e ver minhas reservas</button>
@@ -348,9 +353,21 @@
         <div class="menu-card" onclick="openModal('termsModal')"><div class="menu-icon">📋</div><div><h3>Regras</h3><p>Termos de uso do espaço</p></div></div>
     </div>
     <div class="menu-summary">
-        <div class="summary-box"><span style="font-size:18px">📍</span><div><div class="lbl">Endereço</div><div class="val" id="infoAddress">—</div></div></div>
+        <div class="summary-box" style="cursor:pointer" onclick="window.open(CFG.mapsUrl,'_blank')">
+            <span style="font-size:18px">📍</span>
+            <div><div class="lbl">Endereço</div><div class="val" id="infoAddress">—</div><div style="font-size:10px;color:var(--gold);margin-top:2px">Ver no Maps →</div></div>
+        </div>
         <div class="summary-box"><span style="font-size:18px">🕘</span><div><div class="lbl">Funcionamento</div><div class="val">Seg–Sex · 09h–18h</div></div></div>
-        <div class="summary-box"><span style="font-size:18px">💰</span><div><div class="lbl">Valor/hora</div><div class="val" id="infoPrice">—</div></div></div>
+        <div class="summary-box" style="cursor:pointer" onclick="copyWifi()">
+            <span style="font-size:18px">📶</span>
+            <div><div class="lbl">Wi-Fi</div><div class="val" id="wifiDisplay">Toque para ver</div><div style="font-size:10px;color:var(--gold);margin-top:2px" id="wifiHint">📋 copiar senha</div></div>
+        </div>
+    </div>
+    <div class="menu-summary" style="margin-top:12px">
+        <div class="summary-box"><span style="font-size:18px">🔒</span><div><div class="lbl">Sala Particular</div><div class="val">R$ 60,00 / hora</div></div></div>
+        <div class="summary-box"><span style="font-size:18px">🤝</span><div><div class="lbl">Sala Compartilhada</div><div class="val">R$ 40,00 / hora</div></div></div>
+        <div class="summary-box"><span style="font-size:18px">🛋️</span><div><div class="lbl">Recepção / Espera</div><div class="val">R$ 30,00 / hora</div></div></div>
+    </div>
     
         <!-- CAROUSEL -->
         <div style="max-width:900px;margin:28px auto 0">
@@ -379,6 +396,11 @@
         <h2 class="section-title">Agendar <span>Sala</span></h2>
         <div id="syncBadge"><div class="spinner"></div>Sincronizando agenda...</div>
         <div class="card card-sm">
+            <!-- Seleção de sala -->
+            <div class="field" style="margin-bottom:20px">
+                <label class="field-label">Escolha a sala</label>
+                <div id="salaGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px"></div>
+            </div>
             <div class="field"><label class="field-label" for="datePicker">Selecione a data</label><input type="date" id="datePicker" class="input"></div>
             <div id="slotsSection" class="slots-section" style="display:none">
                 <p class="slots-label">Horários disponíveis</p>
@@ -399,6 +421,7 @@
         <button class="btn-back" onclick="navTo('booking')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4L6 8l4 4"/></svg>Voltar</button>
         <h2 class="section-title">Finalizar <span>Reserva</span></h2>
         <div class="order-summary">
+            <div class="order-row"><span style="color:var(--muted)">Sala</span><span id="co-sala" style="color:var(--gold)">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Data</span><span id="co-date">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Horários</span><span id="co-slots" style="font-size:12px;text-align:right;max-width:200px">—</span></div>
             <div class="order-row total"><span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Total</span><span id="co-total" class="val">R$ 0,00</span></div>
@@ -451,15 +474,22 @@
 //  CONFIGURAÇÕES
 // ══════════════════════════════════════════════
 const CFG = {
-    webhookUrl:    "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g",
-    mpLink:        "https://mpago.la/1fQzmFN",
-    pixKey:        "chriskaires@gmail.com",
-    whatsappAdmin: "5511962826658",
-    appsScriptUrl: "https://script.google.com/macros/s/AKfycbzHKFtOzCWASWkZ83Vzg2OMHMyajV4aLEkGoI67I40RIqoDnTXEq_cNMvItBTtTjS-7/exec",
-    adminPassword: "wb2024admin",   // ← TROQUE ESTA SENHA
-    hourPrice:     50,
-    address:       "Rua Exemplo, 123 — Sala 45",
-    hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00']
+    webhookUrl:        "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g",
+
+    mpLink:            "https://mpago.la/1fQzmFN",
+    pixKey:            "chriskaires@gmail.com",
+    whatsappAdmin:     "5511962826658",
+    appsScriptUrl:     "https://script.google.com/macros/s/AKfycbzHKFtOzCWASWkZ83Vzg2OMHMyajV4aLEkGoI67I40RIqoDnTXEq_cNMvItBTtTjS-7/exec",
+    adminPassword:     "wb2024admin",
+    wifiPassword:      "caires151826",
+    mapsUrl:           "https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+São+Paulo",
+    address:           "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
+    hours:             ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
+    salas: [
+        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: 'Sala privativa para atendimentos', price: 60 },
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: 'Sala com uso compartilhado',       price: 40 },
+        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: 'Sala de espera para clientes',    price: 30 }
+    ]
 };
 
 // ══════════════════════════════════════════════
@@ -475,6 +505,7 @@ let selection    = { date: null, slots: [] };
 let cancelTarget = null;
 let adminUnlocked = false;
 let adminFilter  = 'todos';
+let selectedSala = null; // { id, nome, price, emoji }
 
 // ══════════════════════════════════════════════
 //  INIT
@@ -484,7 +515,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('datePicker').min = today;
     document.getElementById('pixDisplay').value = CFG.pixKey;
     document.getElementById('infoAddress').textContent = CFG.address;
-    document.getElementById('infoPrice').textContent = `R$ ${CFG.hourPrice},00 / hora`;
     setupMasks();
     fetchGlobalBookings();
     const p = new URLSearchParams(window.location.search);
@@ -506,14 +536,20 @@ function navTo(screen) {
     document.getElementById('screen-' + screen).classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (screen === 'history') renderHistory();
-    if (screen === 'booking') fetchGlobalBookings();
+    if (screen === 'booking') { renderSalaGrid(); fetchGlobalBookings(); }
     if (screen === 'menu')    { updateMenuSummary(); setTimeout(carouselInit, 50); }
 }
 
 // ══════════════════════════════════════════════
 //  MODALS / TOAST
 // ══════════════════════════════════════════════
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    if (id === 'successModal') {
+        const el = document.getElementById('successWifi');
+        if (el) el.textContent = CFG.wifiPassword;
+    }
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 let _tt;
@@ -637,17 +673,25 @@ function toggleSlot(h, btn) {
     else { selection.slots.push(h); btn.classList.add('selected'); }
     updateTotal();
 }
-function updateTotal() { document.getElementById('totalPrice').textContent = formatBRL(selection.slots.length * CFG.hourPrice); }
+function updateTotal() {
+    const price = selectedSala ? selectedSala.price : CFG.salas[0].price;
+    document.getElementById('totalPrice').textContent = formatBRL(selection.slots.length * price);
+}
 
 // ══════════════════════════════════════════════
 //  CHECKOUT
 // ══════════════════════════════════════════════
 function goToCheckout() {
+    if (!selectedSala) return toast('Selecione uma sala primeiro.');
     if (!selection.slots.length) return toast('Selecione ao menos um horário.');
     selection.slots.sort();
+    const price = selectedSala.price;
     document.getElementById('co-date').textContent  = formatDateBR(selection.date);
     document.getElementById('co-slots').textContent = selection.slots.join(' · ');
-    document.getElementById('co-total').textContent = formatBRL(selection.slots.length * CFG.hourPrice);
+    document.getElementById('co-total').textContent = formatBRL(selection.slots.length * price);
+    // Show sala in summary
+    const salaRow = document.getElementById('co-sala');
+    if (salaRow) salaRow.textContent = selectedSala.emoji + ' ' + selectedSala.nome;
     document.getElementById('termsCheckbox').checked = false;
     navTo('checkout');
 }
@@ -704,7 +748,11 @@ function finalizeBooking(method) {
 }
 
 function buildBooking(method, status) {
-    return { id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email, date: selection.date, slots: [...selection.slots].sort(), total: selection.slots.length * CFG.hourPrice, method, status, createdAt: new Date().toISOString() };
+    const sala  = selectedSala || CFG.salas[0];
+    const price = sala.price;
+    return { id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+        date: selection.date, slots: [...selection.slots].sort(), total: selection.slots.length * price,
+        sala: sala.nome, salaId: sala.id, method, status, createdAt: new Date().toISOString() };
 }
 
 // ══════════════════════════════════════════════
@@ -1058,6 +1106,55 @@ function carouselMove(dir) {
 function carouselAutoPlay() {
     clearInterval(_carouselTimer);
     _carouselTimer = setInterval(() => carouselGoTo(_carouselIdx + 1), 4000);
+}
+
+// ══════════════════════════════════════════════
+//  SALAS
+// ══════════════════════════════════════════════
+function renderSalaGrid() {
+    const grid = document.getElementById('salaGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    // Reset date/slots when sala changes
+    selection = { date: null, slots: [] };
+    document.getElementById('datePicker').value = '';
+    document.getElementById('slotsSection').style.display = 'none';
+    document.getElementById('noDateMsg').style.display = 'block';
+
+    CFG.salas.forEach(sala => {
+        const btn = document.createElement('div');
+        const isSelected = selectedSala && selectedSala.id === sala.id;
+        btn.style.cssText = 'background:' + (isSelected ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.02)') + ';border:1px solid ' + (isSelected ? 'var(--gold)' : 'var(--border)') + ';border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:.2s;text-align:center';
+        btn.innerHTML = '<div style="font-size:22px;margin-bottom:6px">' + sala.emoji + '</div>'
+            + '<div style="font-size:12px;font-weight:600;color:' + (isSelected ? 'var(--gold)' : 'var(--text)') + ';margin-bottom:3px">' + sala.nome + '</div>'
+            + '<div style="font-size:11px;color:var(--muted)">' + sala.desc + '</div>'
+            + '<div style="font-size:13px;font-weight:600;color:var(--gold);margin-top:6px">R$ ' + sala.price + '/h</div>';
+        btn.onclick = () => { selectedSala = sala; renderSalaGrid(); };
+        btn.onmouseenter = () => { if (!isSelected) btn.style.borderColor = 'var(--border-hover)'; };
+        btn.onmouseleave = () => { if (!isSelected) btn.style.borderColor = 'var(--border)'; };
+        grid.appendChild(btn);
+    });
+}
+
+// ══════════════════════════════════════════════
+//  WIFI
+// ══════════════════════════════════════════════
+let _wifiVisible = false;
+function copyWifi() {
+    _wifiVisible = !_wifiVisible;
+    const el   = document.getElementById('wifiDisplay');
+    const hint = document.getElementById('wifiHint');
+    if (_wifiVisible) {
+        el.textContent   = CFG.wifiPassword;
+        el.style.color   = 'var(--gold)';
+        if (hint) hint.textContent = '📋 copiar';
+        navigator.clipboard?.writeText(CFG.wifiPassword).then(() => {
+            toast('Senha Wi-Fi copiada!');
+        }).catch(() => {});
+    } else {
+        el.textContent = 'Toque para ver';
+        el.style.color = '';
+    }
 }
 
 // ══════════════════════════════════════════════
