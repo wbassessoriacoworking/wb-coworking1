@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
             --bg: #060608; --panel: #0e0e12; --panel2: #13131a;
@@ -209,6 +210,31 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 480px) { .card { padding: 20px; } .booking-footer { flex-direction: column; align-items: flex-start; } .booking-footer .btn-gold { width: 100%; } }
+
+        /* ── ADMIN EXTRAS ── */
+        .admin-tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .admin-tab { flex: 1; padding: 10px; background: transparent; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: .2s; text-align: center; letter-spacing: .04em; }
+        .admin-tab.active { background: var(--gold-dim); color: var(--gold); }
+        .admin-tab:hover:not(.active) { background: rgba(255,255,255,0.03); color: var(--text); }
+        .search-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+        .search-bar .input { flex: 1; height: 40px; padding: 8px 14px; font-size: 13px; }
+        .status-select { background: var(--panel2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; outline: none; }
+        .status-select:focus { border-color: var(--gold); }
+        /* Weekly calendar */
+        .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .week-nav button { background: var(--panel2); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12px; transition: .2s; }
+        .week-nav button:hover { border-color: var(--border-hover); }
+        .week-grid { display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 2px; background: var(--border); border-radius: var(--radius); overflow: hidden; }
+        .week-cell { background: var(--panel); padding: 6px 4px; min-height: 32px; font-size: 10px; }
+        .week-cell.header { background: var(--panel2); font-weight: 600; text-align: center; color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 8px 4px; }
+        .week-cell.header.today-col { color: var(--gold); background: var(--gold-dim); }
+        .week-cell.time-label { color: var(--muted); font-size: 10px; text-align: right; padding-right: 8px; display: flex; align-items: center; justify-content: flex-end; background: var(--panel2); }
+        .week-booking { background: var(--gold-dim); border: 1px solid rgba(212,175,55,0.3); border-radius: 4px; padding: 3px 5px; font-size: 9px; color: var(--gold); font-weight: 600; margin: 1px 0; line-height: 1.3; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .week-booking.confirmado { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #22c55e; }
+        .week-cell.today-col { background: rgba(212,175,55,0.03); }
+        /* Chart */
+        .chart-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+        .chart-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
     
         /* ── CAROUSEL ── */
         .carousel-wrap { position: relative; width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #000; margin-bottom: 28px; aspect-ratio: 16/7; }
@@ -505,6 +531,8 @@ let selection    = { date: null, slots: [] };
 let cancelTarget = null;
 let adminUnlocked = false;
 let adminFilter  = 'todos';
+let weekOffset   = 0;
+let adminSearch  = '';
 let selectedSala = null; // { id, nome, price, emoji }
 
 // ══════════════════════════════════════════════
@@ -972,69 +1000,264 @@ async function renderAdminPanel() {
     const paid = all.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
     const pend = all.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); });
     const rev  = paid.reduce((s,b) => s + (Number(b.total)||0), 0);
+    const revPend = pend.reduce((s,b) => s + (Number(b.total)||0), 0);
 
-    document.getElementById('adminContent').innerHTML =
-        '<div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px">' +
-        '<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:30px;font-weight:300;color:var(--text)">Painel <em style="color:var(--gold);font-style:italic">Admin</em></h2>' +
-        '<div style="display:flex;gap:10px;align-items:center">' +
-        '<span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase">Acesso Restrito</span>' +
-        '<button class="btn-text" onclick="adminUnlocked=false;navTo(\'menu\')">Sair do Admin</button>' +
-        '</div></div>' +
-        '<div class="admin-stats">' +
-        '<div class="stat-box"><div class="stat-num">' + all.length + '</div><div class="stat-lbl">Total</div></div>' +
-        '<div class="stat-box"><div class="stat-num" style="color:#22c55e">' + paid.length + '</div><div class="stat-lbl">Confirmadas</div></div>' +
-        '<div class="stat-box"><div class="stat-num" style="color:#fbbf24">' + pend.length + '</div><div class="stat-lbl">Pendentes</div></div>' +
-        '<div class="stat-box"><div class="stat-num" style="font-size:22px">R$' + rev + '</div><div class="stat-lbl">Receita</div></div>' +
-        '</div>' +
-        '<div class="admin-filters">' +
-        ['todos','confirmado','pendente','cancelado'].map(f =>
-            '<button class="filter-btn' + (adminFilter===f?' active':'') + '" onclick="adminFilter=\'' + f + '\';renderAdminPanel()">' +
-            ({todos:'Todas',confirmado:'Confirmadas',pendente:'Pendentes',cancelado:'Canceladas'}[f]) + '</button>'
-        ).join('') +
-        '</div>' +
-        '<div style="overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius)">' +
-        '<table class="admin-table"><thead><tr><th>Data</th><th>Cliente</th><th>Horários</th><th>Valor</th><th>Método</th><th>Status</th></tr></thead>' +
-        '<tbody id="adminTBody"></tbody></table></div>' +
-        '<div class="block-section">' +
-        '<h4>🚫 Datas Bloqueadas</h4>' +
-        '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">Bloqueie datas para feriados ou manutenção.</p>' +
-        '<div class="block-add"><input type="date" id="blockDateInput" class="input" style="max-width:200px"><button class="btn-gold" style="width:auto;padding:10px 20px" onclick="addBlockedDate()">Bloquear</button></div>' +
-        '<div class="block-list" id="blockList"></div>' +
-        '</div></div>';
+    // Receita por mês (últimos 6 meses)
+    const revenueByMonth = {};
+    all.forEach(b => {
+        if (!b.date) return;
+        const mon = b.date.slice(0,7);
+        if (!revenueByMonth[mon]) revenueByMonth[mon] = { total: 0, conf: 0 };
+        revenueByMonth[mon].total += Number(b.total)||0;
+        if ((b.status||'').includes('PAGO')||(b.status||'').includes('Confirmado'))
+            revenueByMonth[mon].conf += Number(b.total)||0;
+    });
+    const months = Object.keys(revenueByMonth).sort().slice(-6);
+    const maxRev = Math.max(...months.map(m => revenueByMonth[m].total), 1);
 
-    document.getElementById('blockDateInput').min = new Date().toISOString().split('T')[0];
+    // Reservas de hoje
+    const today = new Date().toISOString().split('T')[0];
+    const todayBookings = all.filter(b => b.date === today);
 
-    // Preenche tabela
-    const tbody = document.getElementById('adminTBody');
-    const filtered = all.filter(b => {
+    document.getElementById('adminContent').innerHTML = `
+    <div>
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--text)">Painel <em style="color:var(--gold);font-style:italic">Admin</em></h2>
+            <div style="display:flex;gap:10px;align-items:center">
+                <span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;text-transform:uppercase">Acesso Restrito</span>
+                <button class="btn-text" onclick="adminUnlocked=false;navTo('menu')">Sair do Admin</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="admin-stats">
+            <div class="stat-box"><div class="stat-num">${all.length}</div><div class="stat-lbl">Total</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#22c55e">${paid.length}</div><div class="stat-lbl">Confirmadas</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#fbbf24">${pend.length}</div><div class="stat-lbl">Pendentes</div></div>
+            <div class="stat-box"><div class="stat-num" style="font-size:20px;color:#22c55e">R$${rev}</div><div class="stat-lbl">Receita Conf.</div></div>
+            <div class="stat-box"><div class="stat-num" style="font-size:20px;color:#fbbf24">R$${revPend}</div><div class="stat-lbl">Pendente</div></div>
+        </div>
+
+        <!-- Hoje -->
+        ${todayBookings.length > 0 ? `
+        <div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:10px">📅 Reservas de Hoje (${todayBookings.length})</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+                ${todayBookings.map(b => `<span style="background:var(--panel2);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:12px;color:var(--text)">${b.slots||'—'} · ${b.name||b.userName||'—'} · <span style="color:var(--gold)">${b.sala||'Sala'}</span></span>`).join('')}
+            </div>
+        </div>` : ''}
+
+        <!-- Gráfico de receita -->
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:16px">📊 Receita Mensal (últimos 6 meses)</p>
+            <div style="display:flex;align-items:flex-end;gap:10px;height:100px">
+                ${months.length === 0 ? '<p style="color:var(--muted);font-size:12px">Nenhum dado ainda.</p>' :
+                months.map(m => {
+                    const d = revenueByMonth[m];
+                    const pct = Math.round((d.total / maxRev) * 100);
+                    const confPct = Math.round((d.conf / maxRev) * 100);
+                    const label = m.slice(5) + '/' + m.slice(2,4);
+                    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                        <div style="font-size:10px;color:var(--gold)">R$${d.conf}</div>
+                        <div style="width:100%;background:var(--panel2);border-radius:4px;overflow:hidden;height:${Math.max(pct,4)}px;position:relative">
+                            <div style="position:absolute;bottom:0;width:100%;height:${confPct}%;background:linear-gradient(to top,#d4af37,#f0d060);border-radius:4px"></div>
+                            <div style="position:absolute;bottom:${confPct}%;width:100%;height:${pct-confPct}%;background:rgba(251,191,36,0.2);border-radius:4px"></div>
+                        </div>
+                        <div style="font-size:9px;color:var(--muted)">${label}</div>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px">
+                <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--gold);border-radius:2px;display:inline-block"></span>Confirmado</span>
+                <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(251,191,36,0.2);border:1px solid #fbbf24;border-radius:2px;display:inline-block"></span>Pendente</span>
+            </div>
+        </div>
+
+        <!-- Agenda semanal -->
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;overflow-x:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+                <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">🗓️ Agenda Semanal</p>
+                <div style="display:flex;gap:8px">
+                    <button class="filter-btn" onclick="weekOffset--;renderAdminPanel()">← Anterior</button>
+                    <button class="filter-btn active" onclick="weekOffset=0;renderAdminPanel()">Hoje</button>
+                    <button class="filter-btn" onclick="weekOffset++;renderAdminPanel()">Próxima →</button>
+                </div>
+            </div>
+            <div id="weekGrid" style="min-width:560px"></div>
+        </div>
+
+        <!-- Busca + Filtros -->
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <input type="text" id="adminSearch" class="input" placeholder="🔍  Buscar por nome ou data (DD/MM/AAAA)..." style="flex:1;min-width:200px;font-size:13px" oninput="filterAdminTable()" value="${adminSearch}">
+            <button class="btn-pdf" style="white-space:nowrap" onclick="exportCSV()">⬇️ Exportar CSV</button>
+        </div>
+        <div class="admin-filters" id="adminFilterBtns">
+            ${['todos','confirmado','pendente','cancelado'].map(f =>
+                `<button class="filter-btn${adminFilter===f?' active':''}" onclick="adminFilter='${f}';adminSearch='';renderAdminPanel()">${{todos:'Todas',confirmado:'Confirmadas',pendente:'Pendentes',cancelado:'Canceladas'}[f]}</button>`
+            ).join('')}
+        </div>
+
+        <!-- Tabela -->
+        <div style="overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius)">
+            <table class="admin-table">
+                <thead><tr><th>Data</th><th>Cliente</th><th>Sala</th><th>Horários</th><th>Valor</th><th>Método</th><th>Status</th></tr></thead>
+                <tbody id="adminTBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Datas Bloqueadas -->
+        <div class="block-section">
+            <h4>🚫 Datas Bloqueadas</h4>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Bloqueie datas para feriados ou manutenção.</p>
+            <div class="block-add"><input type="date" id="blockDateInput" class="input" style="max-width:200px"><button class="btn-gold" style="width:auto;padding:10px 20px" onclick="addBlockedDate()">Bloquear</button></div>
+            <div class="block-list" id="blockList"></div>
+        </div>
+    </div>`;
+
+    document.getElementById('blockDateInput').min = today;
+
+    // Agenda semanal
+    renderWeekGrid(all, today);
+
+    // Tabela
+    adminAllData = all;
+    filterAdminTable();
+    renderBlockedDates();
+}
+
+// ── Agenda Semanal ──────────────────────────────
+function renderWeekGrid(all, today) {
+    const grid = document.getElementById('weekGrid'); if (!grid) return;
+    const base = new Date(today);
+    base.setDate(base.getDate() - base.getDay() + 1 + (weekOffset * 7)); // segunda
+    const days = [];
+    for (let i = 0; i < 5; i++) {
+        const d = new Date(base); d.setDate(d.getDate() + i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+    const hours = CFG.hours;
+    let headerHtml = '<div style="display:grid;grid-template-columns:52px repeat(5,1fr);gap:2px;margin-bottom:4px">';
+    headerHtml += '<div></div>';
+    days.forEach(d => {
+        const isToday = d === today;
+        const label = d.split('-').slice(1).reverse().join('/');
+        headerHtml += `<div style="text-align:center;font-size:11px;padding:4px;border-radius:4px;background:${isToday?'var(--gold-dim)':'transparent'};color:${isToday?'var(--gold)':'var(--muted)'};">${label}</div>`;
+    });
+    headerHtml += '</div>';
+
+    let bodyHtml = '<div style="display:grid;grid-template-columns:52px repeat(5,1fr);gap:2px">';
+    hours.forEach(h => {
+        bodyHtml += `<div style="font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:6px">${h}</div>`;
+        days.forEach(d => {
+            const booking = all.find(b => b.date === d && b.slots && b.slots.includes(h));
+            const isBlocked = blockedDates.includes(d);
+            let bg = 'rgba(255,255,255,0.02)'; let txt = ''; let color = 'var(--muted)';
+            if (isBlocked) { bg = 'rgba(239,68,68,0.08)'; txt = '✕'; color = 'rgba(239,68,68,0.4)'; }
+            else if (booking) {
+                const isPaid = (booking.status||'').includes('PAGO')||(booking.status||'').includes('Confirmado');
+                bg = isPaid ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.1)';
+                color = isPaid ? '#22c55e' : '#fbbf24';
+                txt = (booking.name||booking.userName||'').split(' ')[0].slice(0,6);
+            }
+            bodyHtml += `<div style="background:${bg};border-radius:3px;height:24px;display:flex;align-items:center;justify-content:center;font-size:9px;color:${color};overflow:hidden;cursor:default" title="${booking?(booking.name||'')+(booking.sala?' · '+booking.sala:''):''}">${txt}</div>`;
+        });
+    });
+    bodyHtml += '</div>';
+
+    grid.innerHTML = headerHtml + bodyHtml;
+
+    // Legenda
+    grid.innerHTML += `<div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(34,197,94,0.2);border-radius:2px;display:inline-block"></span>Confirmado</span>
+        <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(251,191,36,0.15);border-radius:2px;display:inline-block"></span>Pendente</span>
+        <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(239,68,68,0.1);border-radius:2px;display:inline-block"></span>Bloqueado</span>
+    </div>`;
+}
+
+// ── Filtro + Busca na tabela ────────────────────
+let adminAllData = [];
+let adminSearch  = '';
+
+function filterAdminTable() {
+    adminSearch = (document.getElementById('adminSearch')||{value:''}).value.toLowerCase();
+    const tbody = document.getElementById('adminTBody'); if (!tbody) return;
+
+    const filtered = adminAllData.filter(b => {
         const s = (b.status||'').toLowerCase();
-        if (adminFilter==='confirmado') return s.includes('pago')||s.includes('confirmado');
-        if (adminFilter==='pendente')   return s.includes('análise')||s.includes('aguardando');
-        if (adminFilter==='cancelado')  return s.includes('cancelado');
+        if (adminFilter==='confirmado' && !(s.includes('pago')||s.includes('confirmado'))) return false;
+        if (adminFilter==='pendente'   && !(s.includes('análise')||s.includes('aguardando'))) return false;
+        if (adminFilter==='cancelado'  && !s.includes('cancelado')) return false;
+        if (adminSearch) {
+            const nameMatch = (b.name||b.userName||'').toLowerCase().includes(adminSearch);
+            const dateMatch = formatDateBR(b.date).includes(adminSearch);
+            if (!nameMatch && !dateMatch) return false;
+        }
         return true;
     }).sort((a,c) => (c.date||'').localeCompare(a.date||''));
 
+    tbody.innerHTML = '';
     if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Nenhuma reserva encontrada.</td></tr>';
-    } else {
-        filtered.forEach(b => {
-            const s = b.status||'Pendente';
-            const bc = s.includes('PAGO')||s.includes('Confirmado') ? 'badge-paid' : s.toLowerCase().includes('cancelado') ? 'badge-cancelled' : 'badge-pending';
-            const tr = document.createElement('tr');
-            tr.innerHTML =
-                '<td style="color:var(--gold);font-family:\'Cormorant Garamond\',serif;font-size:16px">' + formatDateBR(b.date) + '</td>' +
-                '<td>' + (b.name||b.userName||'—') + '</td>' +
-                '<td style="color:var(--muted);font-size:12px">' + (b.slots||'—') + '</td>' +
-                '<td>R$ ' + (b.total||0) + '</td>' +
-                '<td style="color:var(--muted);font-size:12px">' + (b.method||'—') + '</td>' +
-                '<td><span class="badge ' + bc + '">' + s + '</span></td>';
-            tbody.appendChild(tr);
-        });
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px">Nenhuma reserva encontrada.</td></tr>';
+        return;
     }
 
-    renderBlockedDates();
+    filtered.forEach(b => {
+        const s  = b.status||'Pendente';
+        const bc = s.includes('PAGO')||s.includes('Confirmado') ? 'badge-paid' : s.toLowerCase().includes('cancelado') ? 'badge-cancelled' : 'badge-pending';
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            `<td style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:16px">${formatDateBR(b.date)}</td>
+            <td>${b.name||b.userName||'—'}</td>
+            <td style="color:var(--muted);font-size:12px">${b.sala||'—'}</td>
+            <td style="color:var(--muted);font-size:12px">${b.slots||'—'}</td>
+            <td>R$ ${b.total||0}</td>
+            <td style="color:var(--muted);font-size:12px">${b.method||'—'}</td>
+            <td>
+                <select class="status-select" onchange="updateStatus('${b.id}', this.value, this)">
+                    ${['EM ANÁLISE','Aguardando Pagamento','PAGO — Confirmado','Cancelado'].map(opt =>
+                        `<option value="${opt}" ${s===opt?'selected':''}>${opt}</option>`
+                    ).join('')}
+                </select>
+            </td>`;
+        tbody.appendChild(tr);
+    });
 }
+
+// ── Alterar status via planilha ─────────────────
+async function updateStatus(id, newStatus, selectEl) {
+    selectEl.disabled = true;
+    // Atualiza no array local
+    const item = adminAllData.find(b => String(b.id) === String(id));
+    if (item) item.status = newStatus;
+    // Atualiza na planilha
+    try {
+        await fetch(CFG.appsScriptUrl, {
+            method: 'POST', redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ ...item, status: newStatus })
+        });
+        toast('Status atualizado!');
+    } catch(e) { toast('Erro ao atualizar.'); }
+    selectEl.disabled = false;
+}
+
+// ── Exportar CSV ────────────────────────────────
+function exportCSV() {
+    const header = ['Data','Cliente','Telefone','Sala','Horários','Valor','Método','Status'];
+    const rows = adminAllData.map(b => [
+        formatDateBR(b.date), b.name||b.userName||'', b.userPhone||'',
+        b.sala||'', b.slots||'', b.total||0, b.method||'', b.status||''
+    ]);
+    const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'wb-reservas.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast('CSV exportado!');
+}
+
 
 function renderBlockedDates() {
     const list = document.getElementById('blockList'); if (!list) return;
