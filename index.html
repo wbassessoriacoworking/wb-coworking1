@@ -1235,6 +1235,12 @@ function updateTotal() {
 function goToCheckout() {
     if (!selectedSala) return toast('Selecione uma sala primeiro.');
     if (!selection.slots.length) return toast('Selecione ao menos um horário.');
+    // Verifica conflito de última hora antes de ir ao checkout
+    const hasConflict = selection.slots.some(h =>
+        globalBusy.some(b => b.date === selection.date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
+        myBookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado')
+    );
+    if (hasConflict) return toast('Um dos horários foi ocupado agora. Por favor, escolha outro.');
     selection.slots.sort();
     const price = selectedSala.price;
     document.getElementById('co-date').textContent  = formatDateBR(selection.date);
@@ -1439,6 +1445,10 @@ function updateMenuSummary() {
 async function confirmCancel() {
     if (!cancelTarget) return;
     const idx = myBookings.findIndex(b => b.id === cancelTarget); if (idx < 0) return;
+    const bk = myBookings[idx];
+    const firstSlot = (bk.slots && bk.slots[0]) ? bk.slots[0] : '09:00';
+    const hoursLeft = (new Date(bk.date + 'T' + firstSlot + ':00') - new Date()) / 3600000;
+    if (hoursLeft <= 0) { closeModal('cancelModal'); return toast('Não é possível cancelar uma reserva que já foi realizada.'); }
     myBookings[idx].status = 'Cancelado';
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
     await postToSheet(myBookings[idx]);
@@ -2219,6 +2229,7 @@ function setBookingMode(mode) {
     bookingMode = mode;
     selection = { date: null, slots: [] };
     selectedDow = null; weeklyDates = [];
+    activeCoupon = null;
     document.getElementById('typeAvulso').className  = mode === 'avulso' ? 'btn-gold' : 'btn-ghost';
     document.getElementById('typeSemanal').className = mode === 'semanal' ? 'btn-gold' : 'btn-ghost';
     document.getElementById('avulsoSection').style.display  = mode === 'avulso' ? 'block' : 'none';
@@ -2352,7 +2363,7 @@ function goToWeeklyCheckout() {
     document.getElementById('couponMsg').textContent   = '';
     document.getElementById('couponRow').style.display = 'none';
     // Guarda datas válidas para buildWeeklyBookings
-    weeklyGroupId = Date.now();
+    weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
     navTo('checkout');
 }
 
@@ -2447,19 +2458,27 @@ function goToNextAvailable() {
 //  F6 — GOOGLE CALENDAR
 // ══════════════════════════════════════════════
 function addToGoogleCalendar() {
-    const b = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
-    if (!b) return toast('Nenhuma reserva para adicionar.');
-    const date  = b.date.replace(/-/g, '');
-    const sh    = (b.slots[0] || '09:00').replace(':', '');
-    const lastH = parseInt((b.slots[b.slots.length - 1] || '09:00').split(':')[0]) + 1;
-    const eh    = String(lastH).padStart(2, '0') + '00';
-    const title = encodeURIComponent('WB Coworking — ' + (b.sala || 'Sala'));
-    const det   = encodeURIComponent('Reserva #' + b.id + '\nSala: ' + (b.sala || '—') + '\nHorários: ' + (b.slots || []).join(', ') + '\nTotal: ' + formatBRL(b.total));
-    const loc   = encodeURIComponent(CFG.address);
-    const url   = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title
-        + '&dates=' + date + 'T' + sh + '00/' + date + 'T' + eh + '00'
-        + '&details=' + det + '&location=' + loc;
-    window.open(url, '_blank');
+    // Para semanal, usa o grupo de bookings; para avulso, usa o último booking
+    const weeklyRaw = localStorage.getItem('wb_temp_weekly');
+    const weeklyGroup = weeklyRaw ? JSON.parse(weeklyRaw) : null;
+    const bookingsToAdd = (weeklyGroup && weeklyGroup.length) ? weeklyGroup
+        : [tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null)];
+    const first = bookingsToAdd[0];
+    if (!first) return toast('Nenhuma reserva para adicionar.');
+    bookingsToAdd.forEach(b => {
+        const date  = b.date.replace(/-/g, '');
+        const slots = Array.isArray(b.slots) ? b.slots : (b.slots||'').split(',').map(s=>s.trim());
+        const sh    = ((slots[0]) || '09:00').replace(':', '');
+        const lastH = parseInt(((slots[slots.length-1]) || '09:00').split(':')[0]) + 1;
+        const eh    = String(lastH).padStart(2,'0') + '00';
+        const title = encodeURIComponent('WB Coworking — ' + (b.sala || 'Sala'));
+        const det   = encodeURIComponent('Reserva #' + b.id + '\nSala: ' + (b.sala||'—') + '\nHorários: ' + slots.join(', ') + '\nTotal: ' + formatBRL(b.total));
+        const loc   = encodeURIComponent(CFG.address);
+        const url   = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title
+            + '&dates=' + date + 'T' + sh + '00/' + date + 'T' + eh + '00'
+            + '&details=' + det + '&location=' + loc;
+        window.open(url, '_blank');
+    });
 }
 
 // ══════════════════════════════════════════════
@@ -2561,9 +2580,12 @@ function shareBookingImage(id) {
     ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(48, 84); ctx.lineTo(592, 84); ctx.stroke();
     // Dados
+    const isWeekly = !!b.weeklyGroupId;
     const rows = [
-        ['Cliente', b.userName], ['Data', formatDateBR(b.date)],
-        ['Sala', b.sala || '—'], ['Horários', (b.slots || []).join('  ·  ')],
+        ['Cliente', b.userName],
+        isWeekly ? ['Plano', DOW_NAMES[b.weeklyDow]+'feiras · '+formatBRL(b.weeklyTotal)] : ['Data', formatDateBR(b.date)],
+        ['Sala', b.sala || '—'],
+        ['Horários', (Array.isArray(b.slots) ? b.slots : (b.slots||'').split(',')).join('  ·  ')],
         ['Status', b.status]
     ];
     ctx.textAlign = 'left'; let y = 112;
