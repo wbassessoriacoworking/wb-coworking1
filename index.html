@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
     /* ── MOBILE FIRST — WB Coworking ── */
     :root {
@@ -979,17 +980,17 @@
 //  CONFIGURAÇÕES
 // ══════════════════════════════════════════════
 const CFG = {
-    webhookUrl:        "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g",
-
-    mpLink:            "https://mpago.la/1fQzmFN",
-    pixKey:            "chriskaires@gmail.com",
-    whatsappAdmin:     "5511962826658",
-    appsScriptUrl:     "https://script.google.com/macros/s/AKfycbzHKFtOzCWASWkZ83Vzg2OMHMyajV4aLEkGoI67I40RIqoDnTXEq_cNMvItBTtTjS-7/exec",
-    adminPasswordHash: "d98b0b066f3f0ece5b97908c6d42d7813ad5b6e6cad437133da6fc27b09d61e0",
-    wifiPassword:      "caires151826",
-    mapsUrl:           "https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+São+Paulo",
-    address:           "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
-    hours:             ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
+    supabaseUrl:   "https://yampgxhrqleaetqgoewo.supabase.co",
+    supabaseKey:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbXBneGhycWxlYWV0cWdvZXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3Njk0NDMsImV4cCI6MjA5NTM0NTQ0M30.khTXI_in95tvOtGwY-Qu5gRD3bQRAEr81VBzaNDOt9M",
+    adminEmail:    "imigrac.contato@gmail.com",
+    webhookUrl:    "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g",
+    mpLink:        "https://mpago.la/1fQzmFN",
+    pixKey:        "chriskaires@gmail.com",
+    whatsappAdmin: "5511962826658",
+    wifiPassword:  "caires151826",
+    mapsUrl:       "https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+São+Paulo",
+    address:       "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
+    hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
     salas: [
         { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '❄️ AC · 📷 Câmera · Atendimento privativo', price: 60 },
         { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '❄️ AC · 📷 Câmera · Uso compartilhado',       price: 40 },
@@ -997,6 +998,8 @@ const CFG = {
     ],
     coupons: { 'PRIMERAVEZ': 15, 'WB10': 10, 'DESCONTO20': 20 }
 };
+
+const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
 
 // ══════════════════════════════════════════════
 //  ESTADO
@@ -1157,47 +1160,61 @@ function setupMasks() {
 function setDocMode(t) { docMode = t; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = t === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
 
 // ══════════════════════════════════════════════
-//  PLANILHA
+//  SUPABASE — DADOS
 // ══════════════════════════════════════════════
 async function fetchGlobalBookings() {
-    if (!CFG.appsScriptUrl) return;
     document.getElementById('syncBadge').classList.add('loading');
     try {
-        const res  = await fetch(CFG.appsScriptUrl + '?_t=' + Date.now(), { redirect: 'follow', cache: 'no-store' });
-        const json = await res.json();
-        if (json.ok) {
-            // Guarda apenas os campos necessários para verificar disponibilidade
-            // Dados pessoais (CPF, OAB, e-mail, telefone) NÃO ficam em globalBusy
-            globalBusy = json.data.filter(b => b.slots && b.date).map(b => ({
-                id:     b.id,
-                date:   b.date,
-                slots:  b.slots,
-                status: b.status,
-                sala:   b.sala,
-                salaId: b.salaId,
-                name:   (b.name || b.userName || '').split(' ')[0] // só primeiro nome, para a agenda semanal
-            }));
-            // Sincroniza datas bloqueadas da planilha
-            if (Array.isArray(json.bloqueadas)) {
-                blockedDates = json.bloqueadas.map(b => b.date).filter(Boolean);
-                localStorage.setItem('wb_blocked', JSON.stringify(blockedDates));
-            }
-            // Badge de pendentes no botão admin
-            const pendCount = globalBusy.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
-            const badge = document.getElementById('adminBadge');
-            if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
-        }
-    } catch(e) { console.warn('Planilha GET:', e); }
+        // Disponibilidade: função pública sem dados pessoais
+        const { data: avail } = await sb.rpc('get_booking_availability');
+        globalBusy = (avail || []).map(b => ({
+            id: b.id, date: b.date, slots: b.slots, status: b.status,
+            sala: b.sala, salaId: b.sala_id,
+            name: ''
+        }));
+        // Bloqueios
+        const { data: blocked } = await sb.from('blocked_dates').select('*');
+        blockedDates = (blocked || []).filter(x => !x.hour).map(x => x.date);
+        blockedHours = (blocked || []).filter(x => x.hour).map(x => ({ date: x.date, hour: x.hour }));
+        localStorage.setItem('wb_blocked', JSON.stringify(blockedDates));
+        localStorage.setItem('wb_blocked_hours', JSON.stringify(blockedHours));
+        // Badge de pendentes
+        const pendCount = globalBusy.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
+        const badge = document.getElementById('adminBadge');
+        if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
+    } catch(e) { console.warn('Supabase fetch:', e); }
     finally {
         document.getElementById('syncBadge').classList.remove('loading');
         if (selection.date) renderSlots();
     }
 }
 
-async function postToSheet(data) {
-    if (!CFG.appsScriptUrl) return;
-    try { await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) }); }
-    catch(e) { console.warn('Planilha POST:', e); }
+async function insertBooking(data) {
+    const row = {
+        id:              data.id,
+        user_doc:        data.userDoc,
+        user_name:       data.userName,
+        user_phone:      data.userPhone,
+        user_email:      data.userEmail,
+        date:            data.date,
+        slots:           Array.isArray(data.slots) ? data.slots : (data.slots||'').split(',').map(s=>s.trim()).filter(Boolean),
+        total:           data.total,
+        sala:            data.sala,
+        sala_id:         data.salaId,
+        method:          data.method,
+        status:          data.status,
+        coupon:          data.coupon || null,
+        discount:        data.discount || 0,
+        weekly_group_id: data.weeklyGroupId || null,
+        weekly_dow:      data.weeklyDow || null,
+        weekly_total:    data.weeklyTotal || null,
+        file_name:       data.fileName || null,
+        file_data:       data.fileData || null,
+    };
+    const { error } = await sb.from('bookings').upsert(row);
+    if (error) console.warn('Supabase insert:', error);
+    // Notificação Make.com (só para WhatsApp/email, não armazena dados)
+    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: data.id, userName: data.userName, userPhone: data.userPhone, date: data.date, sala: data.sala, slots: data.slots, total: data.total, status: data.status }) }); } catch(e) {}
 }
 
 // ══════════════════════════════════════════════
@@ -1364,14 +1381,13 @@ function buildBooking(method, status) {
 }
 
 // ══════════════════════════════════════════════
-//  SAVE + WEBHOOK
+//  SAVE
 // ══════════════════════════════════════════════
 async function saveAndWebhook(data, showModal = true) {
     const idx = myBookings.findIndex(b => b.id === data.id);
     if (idx >= 0) myBookings[idx] = data; else myBookings.push(data);
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    await postToSheet(data);
-    if (CFG.webhookUrl) { try { await fetch(CFG.webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); } catch(e) {} }
+    await insertBooking(data);
     resetBookingUI();
     if (showModal) openModal('successModal');
     fetchGlobalBookings();
@@ -1461,7 +1477,7 @@ async function confirmCancel() {
     if (hoursLeft <= 0) { closeModal('cancelModal'); return toast('Não é possível cancelar uma reserva que já foi realizada.'); }
     myBookings[idx].status = 'Cancelado';
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    await postToSheet(myBookings[idx]);
+    await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', myBookings[idx].id);
     closeModal('cancelModal');
     cancelTarget = null;
     toast('Reserva cancelada.');
@@ -1569,10 +1585,22 @@ function renderAdminLogin() {
 async function adminLogin() {
     const pass = document.getElementById('adminPassInput').value;
     if (!pass) return toast('Digite a senha.');
-    const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
-    const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
-    if (hashHex === CFG.adminPasswordHash) { adminUnlocked = true; renderAdminPanel(); }
-    else { toast('Senha incorreta.'); }
+    const btn = document.querySelector('#adminContent .btn-gold');
+    if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+    const { error } = await sb.auth.signInWithPassword({ email: CFG.adminEmail, password: pass });
+    if (error) {
+        toast('Senha incorreta.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Entrar no Painel'; }
+        return;
+    }
+    adminUnlocked = true;
+    renderAdminPanel();
+}
+
+async function adminLogout() {
+    await sb.auth.signOut();
+    adminUnlocked = false;
+    navTo('menu');
 }
 
 async function renderAdminPanel() {
@@ -1607,7 +1635,7 @@ async function renderAdminPanel() {
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--text)">Painel <em style="color:var(--gold);font-style:italic">Admin</em></h2>
             <div style="display:flex;gap:10px;align-items:center">
                 <span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;text-transform:uppercase">Acesso Restrito</span>
-                <button class="btn-text" onclick="adminUnlocked=false;navTo('menu')">Sair do Admin</button>
+                <button class="btn-text" onclick="adminLogout()">Sair do Admin</button>
             </div>
         </div>
 
@@ -1743,30 +1771,32 @@ async function renderAdminPanel() {
     filterAdminTable();
     renderBlockedDates();
 
-    // Atualiza em segundo plano sem bloquear a tela
-    if (CFG.appsScriptUrl) {
-        fetch(CFG.appsScriptUrl + '?_t=' + Date.now(), { redirect: 'follow' })
-            .then(r => r.json())
-            .then(json => {
-                if (!json.ok) return;
-                // Admin recebe dados completos em adminAllData
-                adminAllData = json.data;
-                // globalBusy só retém campos não-pessoais
-                globalBusy = json.data.filter(b => b.slots && b.date).map(b => ({
-                    id: b.id, date: b.date, slots: b.slots, status: b.status,
-                    sala: b.sala, salaId: b.salaId,
-                    name: (b.name || b.userName || '').split(' ')[0]
-                }));
-                filterAdminTable();
-                const today2 = new Date().toISOString().split('T')[0];
-                renderWeekGrid(json.data, today2);
-                // Atualiza badge
-                const pendCount = json.data.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
-                const badge = document.getElementById('adminBadge');
-                if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
-            })
-            .catch(() => {});
-    }
+    // Atualiza em segundo plano — admin autenticado lê dados completos
+    sb.from('bookings').select('*').order('date', { ascending: false })
+        .then(({ data }) => {
+            if (!data) return;
+            adminAllData = data.map(b => ({
+                id: b.id, date: b.date, slots: b.slots, status: b.status,
+                sala: b.sala, salaId: b.sala_id, sala_id: b.sala_id,
+                userDoc: b.user_doc, userName: b.user_name, name: b.user_name,
+                userPhone: b.user_phone, phone: b.user_phone,
+                userEmail: b.user_email, total: b.total, method: b.method,
+                coupon: b.coupon, discount: b.discount,
+                weeklyGroupId: b.weekly_group_id, weeklyDow: b.weekly_dow, weeklyTotal: b.weekly_total,
+                fileName: b.file_name, fileData: b.file_data,
+                createdAt: b.created_at
+            }));
+            globalBusy = adminAllData.filter(b => b.slots && b.date && b.status !== 'Cancelado').map(b => ({
+                id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: ''
+            }));
+            filterAdminTable();
+            const today2 = new Date().toISOString().split('T')[0];
+            renderWeekGrid(adminAllData, today2);
+            const pendCount = adminAllData.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
+            const badge = document.getElementById('adminBadge');
+            if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
+        })
+        .catch(() => {});
 }
 
 // ── Agenda Semanal ──────────────────────────────
@@ -1883,22 +1913,15 @@ function filterAdminTable() {
     });
 }
 
-// ── Alterar status via planilha ─────────────────
+// ── Alterar status ──────────────────────────────
 async function updateStatus(id, newStatus, selectEl) {
     selectEl.disabled = true;
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = newStatus;
-    // Libera ou bloqueia o horário no cache em memória
     const gb = globalBusy.find(b => String(b.id) === String(id));
     if (gb) gb.status = newStatus;
-    try {
-        await fetch(CFG.appsScriptUrl, {
-            method: 'POST', redirect: 'follow',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ ...item, status: newStatus })
-        });
-        toast('Status atualizado!');
-    } catch(e) { toast('Erro ao atualizar.'); }
+    const { error } = await sb.from('bookings').update({ status: newStatus }).eq('id', id);
+    if (error) toast('Erro ao atualizar.'); else toast('Status atualizado!');
     selectEl.disabled = false;
     filterAdminTable();
 }
@@ -1940,6 +1963,8 @@ async function addBlockedDate() {
     if (!val) return toast('Selecione uma data.');
     if (hour) {
         if (blockedHours.some(x => x.date === val && x.hour === hour)) return toast('Horário já bloqueado.');
+        const { error } = await sb.from('blocked_dates').insert({ date: val, hour });
+        if (error) return toast('Erro ao bloquear horário.');
         blockedHours.push({ date: val, hour });
         localStorage.setItem('wb_blocked_hours', JSON.stringify(blockedHours));
         renderBlockedDates();
@@ -1948,26 +1973,27 @@ async function addBlockedDate() {
         toast('Horário bloqueado!');
     } else {
         if (blockedDates.includes(val)) return toast('Data já bloqueada.');
+        const { error } = await sb.from('blocked_dates').insert({ date: val, hour: null });
+        if (error) return toast('Erro ao bloquear data.');
         blockedDates.push(val.trim());
         localStorage.setItem('wb_blocked', JSON.stringify(blockedDates));
         renderBlockedDates();
         document.getElementById('blockDateInput').value = '';
         toast('Data bloqueada com sucesso!');
-        try { await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'bloquear', date: val }) }); }
-        catch(e) { console.warn('Bloquear POST:', e); }
     }
 }
 
 async function removeBlockedDate(d) {
+    await sb.from('blocked_dates').delete().eq('date', d).is('hour', null);
     blockedDates = blockedDates.filter(x => x !== d);
     localStorage.setItem('wb_blocked', JSON.stringify(blockedDates));
     renderBlockedDates();
     toast('Data desbloqueada.');
-    try { await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ type: 'desbloquear', date: d }) }); }
-    catch(e) { console.warn('Desbloquear POST:', e); }
 }
 
-function removeBlockedHour(idx) {
+async function removeBlockedHour(idx) {
+    const h = blockedHours[idx];
+    await sb.from('blocked_dates').delete().eq('date', h.date).eq('hour', h.hour);
     blockedHours.splice(idx, 1);
     localStorage.setItem('wb_blocked_hours', JSON.stringify(blockedHours));
     renderBlockedDates();
@@ -1984,10 +2010,8 @@ async function adminConfirmBooking(id) {
     item.status = 'PAGO — Confirmado';
     const gb = globalBusy.find(b => String(b.id) === String(id));
     if (gb) gb.status = 'PAGO — Confirmado';
-    try {
-        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item }) });
-        toast('Reserva confirmada!');
-    } catch(e) { toast('Erro ao confirmar.'); }
+    const { error } = await sb.from('bookings').update({ status: 'PAGO — Confirmado' }).eq('id', id);
+    if (error) toast('Erro ao confirmar.'); else toast('Reserva confirmada!');
     filterAdminTable();
 }
 
@@ -1995,13 +2019,10 @@ async function adminRejectBooking(id) {
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (!item) return;
     item.status = 'Cancelado';
-    // Libera o horário no cache em memória imediatamente
     const gb = globalBusy.find(b => String(b.id) === String(id));
     if (gb) gb.status = 'Cancelado';
-    try {
-        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item }) });
-        toast('Reserva cancelada — horário liberado.');
-    } catch(e) { toast('Erro ao cancelar.'); }
+    const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', id);
+    if (error) toast('Erro ao cancelar.'); else toast('Reserva cancelada — horário liberado.');
     filterAdminTable();
 }
 
@@ -2411,10 +2432,7 @@ async function saveWeeklyAndWebhook(bookings, showModal) {
         if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
     });
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    // Envia cada uma para a planilha
-    for (const b of bookings) await postToSheet(b);
-    // Um único webhook com resumo
-    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ weekly: true, bookings }) }); } catch(e) {}
+    for (const b of bookings) await insertBooking(b);
     resetBookingUI();
     if (showModal) openModal('successModal');
     fetchGlobalBookings();
