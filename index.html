@@ -1627,9 +1627,10 @@ async function confirmCancel() {
     const firstSlot = (bk.slots && bk.slots[0]) ? bk.slots[0] : '09:00';
     const hoursLeft = (new Date(bk.date + 'T' + firstSlot + ':00') - new Date()) / 3600000;
     if (hoursLeft <= 0) { closeModal('cancelModal'); return toast('Não é possível cancelar uma reserva que já foi realizada.'); }
+    const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', bk.id);
+    if (error) { closeModal('cancelModal'); return toast('Erro ao cancelar. Tente novamente.'); }
     myBookings[idx].status = 'Cancelado';
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', myBookings[idx].id);
     closeModal('cancelModal');
     cancelTarget = null;
     toast('Reserva cancelada.');
