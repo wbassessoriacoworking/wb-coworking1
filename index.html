@@ -1131,8 +1131,9 @@ function applyUser() {
 }
 
 function logout() {
-    localStorage.removeItem('wb_user');
-    user = null; adminUnlocked = false;
+    ['wb_user','wb_bookings','wb_temp_booking','wb_temp_weekly','wb_temp_multi'].forEach(k => localStorage.removeItem(k));
+    user = null; myBookings = []; tempBooking = null; adminUnlocked = false;
+    selectedDates = []; selection = { date: null, slots: [] };
     document.getElementById('userChip').style.display = 'none';
     const nav = document.getElementById('bottomNav');
     const mainEl = document.querySelector('main');
@@ -1214,9 +1215,10 @@ async function insertBooking(data) {
         file_data:       data.fileData || null,
     };
     const { error } = await sb.from('bookings').upsert(row);
-    if (error) console.warn('Supabase insert:', error);
+    if (error) { console.warn('Supabase insert:', error); return false; }
     // Notificação Make.com (só para WhatsApp/email, não armazena dados)
     if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: data.id, userName: data.userName, userPhone: data.userPhone, date: data.date, sala: data.sala, slots: data.slots, total: data.total, status: data.status }) }); } catch(e) {}
+    return true;
 }
 
 // ══════════════════════════════════════════════
@@ -1522,7 +1524,8 @@ async function saveAndWebhook(data, showModal = true) {
     const idx = myBookings.findIndex(b => b.id === data.id);
     if (idx >= 0) myBookings[idx] = data; else myBookings.push(data);
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    await insertBooking(data);
+    const ok = await insertBooking(data);
+    if (!ok) { toast('⚠️ Erro ao salvar reserva. Tente novamente.'); return; }
     resetBookingUI();
     if (showModal) openModal('successModal');
     fetchGlobalBookings();
@@ -1550,9 +1553,19 @@ function resetBookingUI() {
 //  WHATSAPP
 // ══════════════════════════════════════════════
 function sendToWhatsapp() {
-    const b = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
+    const recent = myBookings.length ? myBookings[myBookings.length - 1] : null;
+    const b = tempBooking || recent;
     if (!b) return toast('Nenhuma reserva recente.');
-    const text = 'Olá! Sou ' + b.userName + '. Acabo de reservar a sala para o dia ' + formatDateBR(b.date) + ', nos horários: ' + b.slots.join(', ') + '. Seguem os dados para confirmação.';
+    let text;
+    // Agrupar reservas do mesmo pacote (multi-data ou semanal)
+    if (b.weeklyGroupId) {
+        const group = myBookings.filter(x => x.weeklyGroupId === b.weeklyGroupId);
+        const datas = group.map(x => formatDateBR(x.date)).join(', ');
+        text = 'Olá! Sou ' + b.userName + '. Acabei de reservar ' + group.length + ' datas: ' + datas
+             + ' · ' + b.sala + ' · Horários: ' + b.slots.join(', ') + '. Seguem os dados para confirmação.';
+    } else {
+        text = 'Olá! Sou ' + b.userName + '. Acabo de reservar a sala para o dia ' + formatDateBR(b.date) + ', nos horários: ' + b.slots.join(', ') + '. Seguem os dados para confirmação.';
+    }
     window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(text), '_blank');
 }
 
@@ -2144,24 +2157,26 @@ async function removeBlockedHour(idx) {
 //  ADMIN — AÇÕES RÁPIDAS
 // ══════════════════════════════════════════════
 async function adminConfirmBooking(id) {
+    if (!adminUnlocked) return;
+    const { error } = await sb.from('bookings').update({ status: 'PAGO — Confirmado' }).eq('id', id);
+    if (error) { toast('Erro ao confirmar.'); return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
-    if (!item) return;
-    item.status = 'PAGO — Confirmado';
+    if (item) item.status = 'PAGO — Confirmado';
     const gb = globalBusy.find(b => String(b.id) === String(id));
     if (gb) gb.status = 'PAGO — Confirmado';
-    const { error } = await sb.from('bookings').update({ status: 'PAGO — Confirmado' }).eq('id', id);
-    if (error) toast('Erro ao confirmar.'); else toast('Reserva confirmada!');
+    toast('Reserva confirmada!');
     filterAdminTable();
 }
 
 async function adminRejectBooking(id) {
+    if (!adminUnlocked) return;
+    const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', id);
+    if (error) { toast('Erro ao cancelar.'); return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
-    if (!item) return;
-    item.status = 'Cancelado';
+    if (item) item.status = 'Cancelado';
     const gb = globalBusy.find(b => String(b.id) === String(id));
     if (gb) gb.status = 'Cancelado';
-    const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', id);
-    if (error) toast('Erro ao cancelar.'); else toast('Reserva cancelada — horário liberado.');
+    toast('Reserva cancelada — horário liberado.');
     filterAdminTable();
 }
 
@@ -2573,7 +2588,9 @@ async function saveWeeklyAndWebhook(bookings, showModal) {
         if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
     });
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    for (const b of bookings) await insertBooking(b);
+    let allOk = true;
+    for (const b of bookings) { const ok = await insertBooking(b); if (!ok) allOk = false; }
+    if (!allOk) { toast('⚠️ Erro ao salvar reserva. Tente novamente.'); return; }
     resetBookingUI();
     if (showModal) openModal('successModal');
     fetchGlobalBookings();
@@ -2585,7 +2602,9 @@ async function saveMultiAndWebhook(bookings, showModal) {
         if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
     });
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
-    for (const b of bookings) await insertBooking(b);
+    let allOk = true;
+    for (const b of bookings) { const ok = await insertBooking(b); if (!ok) allOk = false; }
+    if (!allOk) { toast('⚠️ Erro ao salvar reserva. Tente novamente.'); return; }
     resetBookingUI();
     if (showModal) openModal('successModal');
     fetchGlobalBookings();
