@@ -398,6 +398,25 @@
         letter-spacing: .04em; text-transform: uppercase;
     }
 
+    /* ── CUSTOM CALENDAR ── */
+    .cal-wrap { background: var(--surface2); border: 1px solid var(--border-gold); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .cal-nav { background: none; border: 1px solid var(--border); color: var(--text2); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: .15s; }
+    .cal-nav:hover { border-color: var(--gold); color: var(--gold); }
+    .cal-title { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600; color: var(--gold); text-transform: capitalize; letter-spacing: .04em; }
+    .cal-dow-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+    .cal-dow-header span { text-align: center; font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .06em; padding: 4px 0; text-transform: uppercase; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-day { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid transparent; background: none; font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all .15s; color: var(--text); display: flex; align-items: center; justify-content: center; padding: 0; width: 100%; }
+    .cal-day:hover:not(:disabled):not(.cal-selected) { border-color: var(--border-gold); background: var(--gold-dim); color: var(--gold); }
+    .cal-day.cal-today { border-color: rgba(212,175,55,0.4); }
+    .cal-day.cal-selected { background: var(--gold); border-color: var(--gold); color: #080810; font-weight: 700; }
+    .cal-day.cal-weekend { color: var(--muted); opacity: .35; cursor: not-allowed; }
+    .cal-day.cal-past { opacity: .2; cursor: not-allowed; }
+    .cal-day.cal-blocked { opacity: .18; cursor: not-allowed; text-decoration: line-through; }
+    .cal-day.cal-empty { cursor: default; }
+    .cal-day:disabled { cursor: not-allowed; }
+
     /* Booking footer sticky */
     .booking-footer {
         position: sticky; bottom: calc(var(--nav-h) + 8px);
@@ -859,22 +878,32 @@
                 <div id="salaGrid" style="margin-top:8px"></div>
             </div>
 
-            <!-- AVULSO: seleção de data -->
+            <!-- AVULSO: calendário customizado -->
             <div id="avulsoSection">
-                <div class="field"><label class="field-label" for="datePicker">Adicionar data</label><input type="date" id="datePicker" class="input"></div>
+                <div class="cal-wrap">
+                    <div class="cal-header">
+                        <button class="cal-nav" onclick="calNav(-1)">◀</button>
+                        <span class="cal-title" id="calTitle">—</span>
+                        <button class="cal-nav" onclick="calNav(1)">▶</button>
+                    </div>
+                    <div class="cal-dow-header">
+                        <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                    </div>
+                    <div class="cal-grid" id="calGrid"></div>
+                </div>
                 <div id="dateChips" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
-                <div id="noDateMsg" style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">Adicione uma ou mais datas para ver os horários.</div>
+                <div id="noDateMsg" style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px">Toque nas datas do calendário para adicionar.</div>
             </div>
 
-            <!-- SEMANAL: dia da semana + duração -->
+            <!-- SEMANAL: dias da semana (múltiplos) + duração -->
             <div id="semanalSection" style="display:none">
-                <label class="field-label" style="margin-bottom:10px;display:block">Dia da semana</label>
+                <label class="field-label" style="margin-bottom:10px;display:block">Dias da semana <span style="color:var(--muted);font-size:11px">(pode selecionar vários)</span></label>
                 <div style="display:flex;gap:6px;margin-bottom:20px" id="dowButtons">
-                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(1)">Seg</button>
-                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(2)">Ter</button>
-                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(3)">Qua</button>
-                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(4)">Qui</button>
-                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(5)">Sex</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(1)">Seg</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(2)">Ter</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(3)">Qua</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(4)">Qui</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(5)">Sex</button>
                 </div>
                 <label class="field-label" style="margin-bottom:10px;display:block">Duração</label>
                 <div class="radio-group" style="margin-bottom:20px">
@@ -1026,9 +1055,8 @@ let selectedDates = []; // múltiplas datas em modo avulso
 //  INIT
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('datePicker').min = today;
     document.getElementById('pixDisplay').value = CFG.pixKey;
+    renderCalendar();
     document.getElementById('infoAddress').textContent = CFG.address;
     setupMasks();
     fetchGlobalBookings();
@@ -1188,7 +1216,8 @@ async function fetchGlobalBookings() {
     } catch(e) { console.warn('Supabase fetch:', e); }
     finally {
         document.getElementById('syncBadge').classList.remove('loading');
-        if (selection.date) renderSlots();
+        renderCalendar();
+        if (selection.date || selectedDates.length) renderSlots();
     }
 }
 
@@ -1224,21 +1253,69 @@ async function insertBooking(data) {
 // ══════════════════════════════════════════════
 //  DATA / SLOTS
 // ══════════════════════════════════════════════
-document.getElementById('datePicker').addEventListener('change', function() {
-    const date = this.value; if (!date) return;
-    const day = new Date(date).getUTCDay();
-    if (day === 0 || day === 6) { toast('Atendemos apenas de segunda a sexta.'); this.value = ''; return; }
-    if (blockedDates.includes(date)) { toast('Esta data está bloqueada. Escolha outra.'); this.value = ''; return; }
-    if (selectedDates.includes(date)) { toast('Esta data já foi adicionada.'); this.value = ''; return; }
-    selectedDates.push(date); selectedDates.sort();
+// ── Calendário customizado ──
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+const CAL_MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function renderCalendar() {
+    const titleEl = document.getElementById('calTitle');
+    const gridEl  = document.getElementById('calGrid');
+    if (!titleEl || !gridEl) return;
+    titleEl.textContent = CAL_MONTH_NAMES[calMonth] + ' ' + calYear;
+    const todayStr  = new Date().toISOString().split('T')[0];
+    const today     = new Date(); today.setHours(0,0,0,0);
+    const firstDow  = new Date(calYear, calMonth, 1).getDay();
+    const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
+    gridEl.innerHTML = '';
+    for (let i = 0; i < firstDow; i++) {
+        const blank = document.createElement('div'); blank.className = 'cal-day cal-empty'; gridEl.appendChild(blank);
+    }
+    for (let d = 1; d <= daysInMon; d++) {
+        const dt   = new Date(calYear, calMonth, d);
+        const iso  = dt.toISOString().split('T')[0];
+        const dow  = dt.getDay();
+        const isWeekend  = dow === 0 || dow === 6;
+        const isPast     = dt < today;
+        const isBlocked  = blockedDates.includes(iso);
+        const isSelected = selectedDates.includes(iso);
+        const btn = document.createElement('button');
+        btn.className = 'cal-day';
+        btn.textContent = d;
+        if (iso === todayStr) btn.classList.add('cal-today');
+        if (isSelected) {
+            btn.classList.add('cal-selected');
+            btn.onclick = () => { removeSelectedDate(iso); };
+        } else if (isPast || isWeekend) {
+            btn.classList.add(isWeekend ? 'cal-weekend' : 'cal-past');
+            btn.disabled = true;
+        } else if (isBlocked) {
+            btn.classList.add('cal-blocked'); btn.disabled = true; btn.title = 'Data bloqueada';
+        } else {
+            btn.onclick = () => calClickDay(iso);
+        }
+        gridEl.appendChild(btn);
+    }
+}
+
+function calNav(dir) {
+    calMonth += dir;
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    renderCalendar();
+}
+
+function calClickDay(iso) {
+    if (selectedDates.includes(iso)) { removeSelectedDate(iso); return; }
+    selectedDates.push(iso); selectedDates.sort();
     selection.date = selectedDates[0];
     selection.slots = [];
-    this.value = '';
     renderDateChips();
+    renderCalendar();
     document.getElementById('slotsSection').style.display = 'block';
     document.getElementById('noDateMsg').style.display = 'none';
     renderSlots();
-});
+}
 
 function renderDateChips() {
     const container = document.getElementById('dateChips');
@@ -1268,6 +1345,7 @@ function removeSelectedDate(date) {
         renderSlots();
     }
     renderDateChips();
+    renderCalendar();
     updateTotal();
 }
 
@@ -1456,7 +1534,7 @@ function finalizeBooking(method) {
             await saveWeeklyAndWebhook(bookings, true);
             const b0 = bookings[0];
             const msg = '🔔 *Nova reserva SEMANAL com comprovante PIX*\n\nCliente: ' + b0.userName
-                + '\nDia: ' + DOW_NAMES[selectedDow] + 'feiras · ' + bookings.length + ' semanas'
+                + '\nDias: ' + selectedDows.map(d => DOW_NAMES[d]).join(', ') + ' · ' + bookings.length + ' ocorrências'
                 + '\nHorários: ' + b0.slots.join(', ')
                 + '\nSala: ' + b0.sala
                 + '\nTotal do pacote: ' + formatBRL(b0.weeklyTotal)
@@ -1534,12 +1612,11 @@ async function saveAndWebhook(data, showModal = true) {
 function resetBookingUI() {
     selection = { date: null, slots: [] };
     bookingMode = 'avulso';
-    selectedDow = null;
+    selectedDows = [];
     weeklyDates = [];
     weeklyGroupId = null;
     selectedDates = [];
     localStorage.removeItem('wb_temp_multi');
-    document.getElementById('datePicker').value = '';
     document.getElementById('slotsSection').style.display = 'none';
     document.getElementById('noDateMsg').style.display = 'block';
     const chipsEl = document.getElementById('dateChips');
@@ -2359,7 +2436,6 @@ function renderSalaGrid() {
     grid.innerHTML = '';
     // Reset date/slots when sala changes
     selection = { date: null, slots: [] };
-    document.getElementById('datePicker').value = '';
     document.getElementById('slotsSection').style.display = 'none';
     document.getElementById('noDateMsg').style.display = 'block';
 
@@ -2409,9 +2485,9 @@ function openSupport(e) { if(e) e.preventDefault(); window.open('https://wa.me/'
 // ══════════════════════════════════════════════
 //  MODO AVULSO / SEMANAL
 // ══════════════════════════════════════════════
-let bookingMode  = 'avulso';
-let selectedDow  = null;   // 1=Seg .. 5=Sex
-let numWeeks     = 4;
+let bookingMode   = 'avulso';
+let selectedDows  = [];    // ex: [1,2,5] = Seg, Ter, Sex
+let numWeeks      = 4;
 let weeklyDates  = [];     // ISO strings geradas
 let weeklyGroupId = null;
 
@@ -2420,7 +2496,7 @@ const DOW_NAMES = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 function setBookingMode(mode) {
     bookingMode = mode;
     selection = { date: null, slots: [] };
-    selectedDow = null; weeklyDates = [];
+    selectedDows = []; weeklyDates = [];
     selectedDates = [];
     localStorage.removeItem('wb_temp_multi');
     activeCoupon = null;
@@ -2432,21 +2508,31 @@ function setBookingMode(mode) {
     document.getElementById('semanalPreview').style.display = 'none';
     if (mode === 'avulso') {
         document.getElementById('noDateMsg').style.display = 'block';
-        document.getElementById('datePicker').value = '';
+        renderCalendar();
     }
     document.querySelectorAll('.dow-btn').forEach(b => b.classList.remove('selected'));
     updateTotal();
 }
 
-function setDayOfWeek(dow) {
-    selectedDow = dow;
-    document.querySelectorAll('.dow-btn').forEach((b, i) => b.classList.toggle('selected', i + 1 === dow));
+function toggleDayOfWeek(dow) {
+    const idx = selectedDows.indexOf(dow);
+    if (idx >= 0) selectedDows.splice(idx, 1); else selectedDows.push(dow);
+    selectedDows.sort();
+    document.querySelectorAll('.dow-btn').forEach((b, i) => b.classList.toggle('selected', selectedDows.includes(i + 1)));
+    if (!selectedDows.length) {
+        weeklyDates = []; selection.slots = [];
+        document.getElementById('slotsSection').style.display = 'none';
+        document.getElementById('semanalNoDay').style.display = 'block';
+        document.getElementById('semanalPreview').style.display = 'none';
+        updateTotal(); return;
+    }
     generateWeeklyDates();
-    if (weeklyDates.length === 0) { toast('Nenhuma data disponível para este dia nas próximas ' + numWeeks + ' semanas.'); return; }
+    if (weeklyDates.length === 0) { toast('Nenhuma data disponível para os dias selecionados.'); return; }
     selection.date = weeklyDates[0];
     selection.slots = [];
+    const dowLabel = selectedDows.map(d => DOW_NAMES[d]).join(' · ');
     const lbl = document.getElementById('slotsLabel');
-    if (lbl) lbl.textContent = 'Horários — todos os ' + DOW_NAMES[dow] + 's';
+    if (lbl) lbl.textContent = 'Horários — ' + dowLabel;
     document.getElementById('slotsSection').style.display = 'block';
     document.getElementById('semanalNoDay').style.display = 'none';
     document.getElementById('semanalPreview').style.display = 'none';
@@ -2455,21 +2541,24 @@ function setDayOfWeek(dow) {
 
 function setNumWeeks(n) {
     numWeeks = n;
-    if (selectedDow) { generateWeeklyDates(); if (selection.slots.length) updateWeeklyPreview(); }
+    if (selectedDows.length) { generateWeeklyDates(); if (selection.slots.length) updateWeeklyPreview(); }
 }
 
 function generateWeeklyDates() {
     weeklyDates = [];
-    if (!selectedDow) return;
-    const d = new Date(); d.setHours(12, 0, 0, 0);
-    // Avança até o próximo dia da semana selecionado
-    const diff = (selectedDow - d.getDay() + 7) % 7 || 7;
-    d.setDate(d.getDate() + diff);
-    for (let i = 0; i < numWeeks; i++) {
-        const iso = d.toISOString().split('T')[0];
-        if (!blockedDates.includes(iso)) weeklyDates.push(iso);
-        d.setDate(d.getDate() + 7);
-    }
+    if (!selectedDows.length) return;
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    selectedDows.forEach(dow => {
+        const d = new Date(today);
+        const diff = (dow - d.getDay() + 7) % 7 || 7;
+        d.setDate(d.getDate() + diff);
+        for (let i = 0; i < numWeeks; i++) {
+            const iso = d.toISOString().split('T')[0];
+            if (!blockedDates.includes(iso) && !weeklyDates.includes(iso)) weeklyDates.push(iso);
+            d.setDate(d.getDate() + 7);
+        }
+    });
+    weeklyDates.sort();
 }
 
 function renderSlotsWeekly() {
@@ -2531,7 +2620,7 @@ function handleContinuar() {
 
 function goToWeeklyCheckout() {
     if (!selectedSala) return toast('Selecione uma sala primeiro.');
-    if (!selectedDow)  return toast('Selecione o dia da semana.');
+    if (!selectedDows.length) return toast('Selecione ao menos um dia da semana.');
     if (!selection.slots.length) return toast('Selecione ao menos um horário.');
     const conflictDates = weeklyDates.filter(date =>
         selection.slots.some(h =>
@@ -2548,7 +2637,7 @@ function goToWeeklyCheckout() {
     document.getElementById('co-sala').textContent     = selectedSala.emoji + ' ' + selectedSala.nome;
     document.getElementById('co-date-row').style.display   = 'none';
     document.getElementById('co-weekly-row').style.display = 'flex';
-    document.getElementById('co-weekly-info').textContent  = DOW_NAMES[selectedDow] + 's · ' + validDates.length + ' semanas';
+    document.getElementById('co-weekly-info').textContent  = selectedDows.map(d => DOW_NAMES[d]).join(' · ') + ' · ' + validDates.length + ' ocorrências';
     document.getElementById('co-slots').textContent    = selection.slots.join(' · ');
     document.getElementById('co-total').textContent    = formatBRL(total);
     document.getElementById('termsCheckbox').checked   = false;
@@ -2578,7 +2667,7 @@ function buildWeeklyBookings(method, status) {
         date, slots: [...selection.slots].sort(), total: basePerSession - discount,
         sala: sala.nome, salaId: sala.id, method, status,
         coupon: activeCoupon ? activeCoupon.code : null, discount,
-        weeklyGroupId, weeklyDow: selectedDow, weeklyTotal: validDates.length * (basePerSession - discount),
+        weeklyGroupId, weeklyDow: new Date(date + 'T12:00:00').getDay(), weeklyTotal: validDates.length * (basePerSession - discount),
         createdAt: new Date().toISOString()
     }));
 }
@@ -2650,15 +2739,12 @@ function checkNextAvailable() {
 
 function goToNextAvailable() {
     if (!_nextAvailableIso) return;
-    const picker = document.getElementById('datePicker');
-    picker.value = _nextAvailableIso;
-    selection.date = _nextAvailableIso;
-    selection.slots = [];
-    document.getElementById('slotsSection').style.display = 'block';
-    document.getElementById('noDateMsg').style.display = 'none';
+    const dt = new Date(_nextAvailableIso + 'T12:00:00');
+    calYear  = dt.getFullYear();
+    calMonth = dt.getMonth();
+    calClickDay(_nextAvailableIso);
     document.getElementById('nextAvailableHint').style.display = 'none';
-    renderSlots();
-    picker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('customCal')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ══════════════════════════════════════════════
