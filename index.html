@@ -821,6 +821,11 @@
                 <h4>Suporte</h4>
                 <p>WhatsApp</p>
             </div>
+            <div class="quick-card highlight" onclick="shareReferral()">
+                <div class="q-icon">🎁</div>
+                <h4>Indicar Amigo</h4>
+                <p>Cupom 15% off</p>
+            </div>
             <div class="quick-card" onclick="navTo('admin')">
                 <div class="q-icon">⚙️</div>
                 <h4>Admin</h4>
@@ -955,10 +960,16 @@
             <div id="couponRow" class="order-row" style="display:none"><span style="color:var(--success);font-size:13px">🏷️ Desconto</span><span id="co-discount" style="color:var(--success)">—</span></div>
             <div class="order-row total"><span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Total</span><span id="co-total" class="val">R$ 0,00</span></div>
         </div>
+        <!-- Cupons disponíveis para o usuário -->
+        <div id="availableCouponsSection" style="display:none;margin-bottom:16px">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:8px;font-weight:600">🎟️ Seus cupons disponíveis</p>
+            <div id="availableCouponsList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
         <!-- Cupom de desconto -->
         <div style="margin-bottom:16px">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Tem um cupom?</p>
             <div style="display:flex;gap:8px">
-                <input id="couponInput" class="input" type="text" placeholder="Cupom de desconto (opcional)" style="text-transform:uppercase;font-size:14px" oninput="this.value=this.value.toUpperCase()">
+                <input id="couponInput" class="input" type="text" placeholder="Código do cupom (ex: PRIMERAVEZ)" style="text-transform:uppercase;font-size:14px" oninput="this.value=this.value.toUpperCase()">
                 <button class="btn-copy" onclick="applyCoupon()" style="min-width:80px">Aplicar</button>
             </div>
             <p id="couponMsg" style="font-size:12px;margin-top:6px;min-height:16px;padding-left:2px"></p>
@@ -1038,7 +1049,13 @@ const CFG = {
         { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '❄️ AC · 📷 Câmera · Uso compartilhado',       price: 40 },
         { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · Espera de clientes',       price: 30 }
     ],
-    coupons: { 'PRIMERAVEZ': 15, 'WB10': 10, 'DESCONTO20': 20 }
+    coupons: {
+        'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
+        'INDICA15':   { pct: 15, label: 'Indicação',        type: 'referral',   desc: '15% off · para clientes indicados' },
+        'PREMIUM20':  { pct: 20, label: 'Cliente Premium',  type: 'premium5',   desc: '20% off · exclusivo 5+ reservas' },
+        'VIP30':      { pct: 30, label: 'VIP',              type: 'premium10',  desc: '30% off · exclusivo 10+ reservas' },
+        'WB10':       { pct: 10, label: 'Promoção WB',      type: 'promo',      desc: '10% off · promoção especial' },
+    }
 };
 
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
@@ -1471,7 +1488,7 @@ function goToCheckout() {
     document.getElementById('couponMsg').textContent = '';
     document.getElementById('couponRow').style.display = 'none';
     navTo('checkout');
-    setTimeout(() => renderPixQr(total), 100);
+    setTimeout(() => { renderPixQr(total); renderAvailableCoupons(); }, 100);
 }
 
 function checkTerms() {
@@ -1928,6 +1945,9 @@ async function renderAdminPanel() {
             <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#fbbf24">${formatBRL(revPend)}</div><div class="stat-lbl">Pendente</div></div>
         </div>
 
+        <!-- Clientes Premium/VIP -->
+        <div id="premiumClientsSection" style="margin-bottom:20px"></div>
+
         <!-- Hoje -->
         ${todayBookings.length > 0 ? `
         <div style="background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.2);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">
@@ -2070,6 +2090,7 @@ async function renderAdminPanel() {
                 id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: ''
             }));
             filterAdminTable();
+            renderPremiumClients();
             const today2 = new Date().toISOString().split('T')[0];
             renderWeekGrid(adminAllData, today2);
             const pendCount = adminAllData.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
@@ -2127,6 +2148,50 @@ function renderWeekGrid(all, today) {
         <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(251,191,36,0.15);border-radius:2px;display:inline-block"></span>Pendente</span>
         <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(239,68,68,0.1);border-radius:2px;display:inline-block"></span>Bloqueado</span>
     </div>`;
+}
+
+// ── Clientes Premium / VIP ──────────────────────
+function renderPremiumClients() {
+    const section = document.getElementById('premiumClientsSection'); if (!section) return;
+    // Agrupa reservas confirmadas por cliente (chave = doc ou telefone)
+    const map = {};
+    adminAllData
+        .filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'))
+        .forEach(b => {
+            const key = b.userDoc || b.userPhone || b.userName || b.name || b.id;
+            if (!map[key]) map[key] = { name: b.userName || b.name || '—', phone: b.userPhone || b.phone || '', doc: b.userDoc || '', count: 0, total: 0 };
+            map[key].count++;
+            map[key].total += Number(b.total) || 0;
+        });
+    const clients = Object.values(map).filter(c => c.count >= 5).sort((a, b) => b.count - a.count);
+    if (!clients.length) { section.innerHTML = ''; return; }
+    const vip = clients.filter(c => c.count >= 10);
+    const premium = clients.filter(c => c.count >= 5 && c.count < 10);
+    const renderCards = (list, tier) => list.map(c => {
+        const isVip = tier === 'vip';
+        const col  = isVip ? '#f0d060' : '#d4af37';
+        const code = isVip ? 'VIP30' : 'PREMIUM20';
+        const pct  = isVip ? '30%' : '20%';
+        const icon = isVip ? '👑' : '⭐';
+        const waMsg = encodeURIComponent('Olá, ' + c.name + '! Parabéns pela sua fidelidade ao WB Coworking! 🎉 Como cliente ' + (isVip ? 'VIP' : 'Premium') + ', você ganhou ' + pct + ' de desconto na próxima reserva. Use o cupom *' + code + '* no nosso sistema. Obrigado!');
+        const waLink = c.phone ? 'https://wa.me/55' + c.phone.replace(/\D/g,'') + '?text=' + waMsg : '';
+        return `<div style="background:${col}0d;border:1px solid ${col}33;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:22px">${icon}</span>
+                <div>
+                    <div style="font-weight:600;font-size:13px">${c.name}</div>
+                    <div style="font-size:11px;color:var(--muted)">${c.count} reservas · ${formatBRL(c.total)} investido</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:11px;font-weight:700;color:${col};background:${col}22;padding:4px 10px;border-radius:8px">Cupom: ${code} (${pct})</span>
+                ${waLink ? `<a href="${waLink}" target="_blank" style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);color:#25d366;padding:5px 10px;border-radius:8px;font-size:11px;text-decoration:none;white-space:nowrap">📱 Enviar cupom</a>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+    section.innerHTML =
+        (vip.length ? `<div style="margin-bottom:16px"><p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#f0d060;margin-bottom:10px">👑 Clientes VIP (10+ reservas) — Cupom VIP30</p><div style="display:flex;flex-direction:column;gap:8px">${renderCards(vip,'vip')}</div></div>` : '') +
+        (premium.length ? `<div style="margin-bottom:16px"><p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:10px">⭐ Clientes Premium (5–9 reservas) — Cupom PREMIUM20</p><div style="display:flex;flex-direction:column;gap:8px">${renderCards(premium,'premium')}</div></div>` : '');
 }
 
 // ── Filtro + Busca na tabela ────────────────────
@@ -2788,7 +2853,7 @@ function goToWeeklyCheckout() {
     // Guarda datas válidas para buildWeeklyBookings
     weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
     navTo('checkout');
-    setTimeout(() => renderPixQr(total), 100);
+    setTimeout(() => { renderPixQr(total); renderAvailableCoupons(); }, 100);
 }
 
 function buildWeeklyBookings(method, status) {
@@ -2955,27 +3020,78 @@ function applyCoupon() {
     const discEl  = document.getElementById('co-discount');
     const totalEl = document.getElementById('co-total');
     if (!code) { msgEl.textContent = ''; return; }
-    const pct = CFG.coupons && CFG.coupons[code];
-    if (!pct) {
-        activeCoupon = null;
-        msgEl.style.color = '#ef4444';
-        msgEl.textContent = 'Cupom inválido ou expirado.';
-        rowEl.style.display = 'none';
-        const baseNoDisc = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
-        totalEl.textContent = formatBRL(baseNoDisc);
-        renderPixQr(baseNoDisc);
-        return;
+
+    const coupon = CFG.coupons && CFG.coupons[code];
+    const baseNoDisc = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+    const resetInvalid = msg => {
+        activeCoupon = null; rowEl.style.display = 'none';
+        msgEl.style.color = '#ef4444'; msgEl.textContent = msg;
+        totalEl.textContent = formatBRL(baseNoDisc); renderPixQr(baseNoDisc);
+    };
+
+    if (!coupon) { resetInvalid('Cupom inválido ou expirado.'); return; }
+
+    // Valida restrições por tipo
+    const confirmed = myBookings.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
+    const cnt = confirmed.length;
+    if (coupon.type === 'firstTime' && cnt > 0) {
+        resetInvalid('Este cupom é válido apenas na 1ª reserva. Você já tem ' + cnt + ' reserva(s) confirmada(s).'); return;
     }
+    if (coupon.type === 'premium5' && cnt < 5) {
+        resetInvalid('Cupom Premium exige 5+ reservas confirmadas. Você tem ' + cnt + '. Faltam ' + (5 - cnt) + '!'); return;
+    }
+    if (coupon.type === 'premium10' && cnt < 10) {
+        resetInvalid('Cupom VIP exige 10+ reservas confirmadas. Você tem ' + cnt + '. Faltam ' + (10 - cnt) + '!'); return;
+    }
+
+    const pct = coupon.pct;
     activeCoupon = { code, pct };
-    const baseTotal  = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
-    const discount   = Math.round(baseTotal * pct / 100);
-    const finalTotal = baseTotal - discount;
+    const discount   = Math.round(baseNoDisc * pct / 100);
+    const finalTotal = baseNoDisc - discount;
     discEl.textContent = '- ' + formatBRL(discount) + ' (' + pct + '%)';
     totalEl.textContent = formatBRL(finalTotal);
     rowEl.style.display = 'flex';
     msgEl.style.color = '#22c55e';
     msgEl.textContent = '✅ Cupom "' + code + '" aplicado — ' + pct + '% de desconto!';
     renderPixQr(finalTotal);
+}
+
+function useCoupon(code) {
+    document.getElementById('couponInput').value = code;
+    applyCoupon();
+}
+
+function renderAvailableCoupons() {
+    const section = document.getElementById('availableCouponsSection');
+    const list    = document.getElementById('availableCouponsList');
+    if (!section || !list || !user) { if (section) section.style.display = 'none'; return; }
+    const confirmed = myBookings.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
+    const cnt = confirmed.length;
+    const eligible = Object.entries(CFG.coupons).filter(([, c]) => {
+        if (c.type === 'firstTime')  return cnt === 0;
+        if (c.type === 'premium5')   return cnt >= 5;
+        if (c.type === 'premium10')  return cnt >= 10;
+        return true; // referral, promo
+    }).map(([code, c]) => ({ code, ...c }));
+    if (!eligible.length) { section.style.display = 'none'; return; }
+    const colors = { firstTime:'#22c55e', referral:'#3b82f6', premium5:'#d4af37', premium10:'#f0d060', promo:'#a78bfa' };
+    list.innerHTML = eligible.map(c => {
+        const col = colors[c.type] || 'var(--gold)';
+        return `<button onclick="useCoupon('${c.code}')" style="display:flex;align-items:center;gap:10px;background:${col}0f;border:1px solid ${col}33;border-radius:12px;padding:10px 14px;cursor:pointer;text-align:left;transition:.15s;width:100%" onmouseover="this.style.background='${col}1a'" onmouseout="this.style.background='${col}0f'">
+            <span style="font-size:20px">🏷️</span>
+            <div style="flex:1">
+                <div style="font-size:13px;font-weight:700;color:${col}">${c.pct}% · ${c.label}</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:1px">${c.desc} — clique para aplicar</div>
+            </div>
+            <span style="font-size:10px;font-weight:700;color:${col};background:${col}22;padding:3px 8px;border-radius:8px;white-space:nowrap">${c.code}</span>
+        </button>`;
+    }).join('');
+    section.style.display = 'block';
+}
+
+function shareReferral() {
+    const msg = '🌟 Olá! Te indico o *WB Coworking* em Penha/SP — espaço profissional com salas privativas, AC e Wi-Fi!\n\n📍 ' + CFG.address + '\n\n🎁 Use o cupom *INDICA15* e ganhe *15% de desconto* na sua reserva!\n\n🔗 Reserve agora: https://wbcoworkingaagenda.vercel.app/';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ══════════════════════════════════════════════
