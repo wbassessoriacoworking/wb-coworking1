@@ -1208,7 +1208,7 @@ function renderSlots() {
     const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
     CFG.hours.forEach(h => {
         const btn = document.createElement('button'); btn.className = 'slot-btn';
-        const busyG  = globalBusy.some(b => b.date === selection.date && b.slots.includes(h));
+        const busyG  = globalBusy.some(b => b.date === selection.date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado'));
         const busyL  = myBookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
         const blockedH = blockedHours.some(x => x.date === selection.date && x.hour === h);
         if (busyG || busyL || blockedH) { btn.disabled = true; btn.textContent = blockedH ? 'Bloqueado' : 'Ocupado'; }
@@ -1860,10 +1860,11 @@ function filterAdminTable() {
 // ── Alterar status via planilha ─────────────────
 async function updateStatus(id, newStatus, selectEl) {
     selectEl.disabled = true;
-    // Atualiza no array local
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = newStatus;
-    // Atualiza na planilha
+    // Libera ou bloqueia o horário no cache em memória
+    const gb = globalBusy.find(b => String(b.id) === String(id));
+    if (gb) gb.status = newStatus;
     try {
         await fetch(CFG.appsScriptUrl, {
             method: 'POST', redirect: 'follow',
@@ -1873,6 +1874,7 @@ async function updateStatus(id, newStatus, selectEl) {
         toast('Status atualizado!');
     } catch(e) { toast('Erro ao atualizar.'); }
     selectEl.disabled = false;
+    filterAdminTable();
 }
 
 // ── Exportar CSV ────────────────────────────────
@@ -1954,8 +1956,10 @@ async function adminConfirmBooking(id) {
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (!item) return;
     item.status = 'PAGO — Confirmado';
+    const gb = globalBusy.find(b => String(b.id) === String(id));
+    if (gb) gb.status = 'PAGO — Confirmado';
     try {
-        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item, status: 'PAGO — Confirmado' }) });
+        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item }) });
         toast('Reserva confirmada!');
     } catch(e) { toast('Erro ao confirmar.'); }
     filterAdminTable();
@@ -1965,9 +1969,12 @@ async function adminRejectBooking(id) {
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (!item) return;
     item.status = 'Cancelado';
+    // Libera o horário no cache em memória imediatamente
+    const gb = globalBusy.find(b => String(b.id) === String(id));
+    if (gb) gb.status = 'Cancelado';
     try {
-        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item, status: 'Cancelado' }) });
-        toast('Reserva cancelada.');
+        await fetch(CFG.appsScriptUrl, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ ...item }) });
+        toast('Reserva cancelada — horário liberado.');
     } catch(e) { toast('Erro ao cancelar.'); }
     filterAdminTable();
 }
