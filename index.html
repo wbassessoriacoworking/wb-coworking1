@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
     /* ── MOBILE FIRST — WB Coworking ── */
     :root {
@@ -978,7 +978,7 @@
             </div>
             <!-- QR Code -->
             <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;gap:8px">
-                <canvas id="pixQrCanvas" style="border-radius:12px;background:#fff;padding:8px"></canvas>
+                <div id="pixQrContainer" style="background:#fff;padding:10px;border-radius:12px;display:inline-block"></div>
                 <p style="font-size:11px;color:var(--muted)">Escaneie com o app do seu banco</p>
             </div>
             <!-- Chave PIX -->
@@ -1499,7 +1499,7 @@ function crc16(str) {
 
 function buildPixPayload(key, name, city, amount) {
     const f = (id, v) => id + String(v.length).padStart(2, '0') + v;
-    const merchant = f('00', '14br.gov.bcb.pix') + f('01', key);
+    const merchant = f('00', 'br.gov.bcb.pix') + f('01', key);
     let p = f('00', '01') + f('26', merchant) + f('52', '0000') + f('53', '986')
         + (amount > 0 ? f('54', amount.toFixed(2)) : '')
         + f('58', 'BR') + f('59', name.substring(0, 25)) + f('60', city.substring(0, 15))
@@ -1513,10 +1513,15 @@ function renderPixQr(total) {
     _checkoutTotal = total;
     const amountEl = document.getElementById('pixAmount');
     if (amountEl) amountEl.textContent = formatBRL(total);
-    const canvas = document.getElementById('pixQrCanvas');
-    if (!canvas || typeof QRCode === 'undefined') return;
+    const container = document.getElementById('pixQrContainer');
+    if (!container || typeof QRCode === 'undefined') return;
+    container.innerHTML = '';
     const payload = buildPixPayload(CFG.pixKey, 'WB Coworking', 'Sao Paulo', total);
-    QRCode.toCanvas(canvas, payload, { width: 200, margin: 1, color: { dark: '#111118', light: '#ffffff' } });
+    new QRCode(container, {
+        text: payload, width: 200, height: 200,
+        colorDark: '#1a1a2e', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+    });
 }
 
 function copyPixAmount() {
