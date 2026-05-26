@@ -2252,6 +2252,7 @@ function filterAdminTable() {
                     ` : ''}
                     ${waLink ? `<a href="${waLink}" target="_blank" title="WhatsApp do cliente" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;padding:4px 8px;border-radius:6px;font-size:11px;text-decoration:none">📱</a>` : ''}
                     ${b.fileData ? `<button onclick="viewProof('${b.id}')" title="Ver comprovante" style="background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">🖼</button>` : ''}
+                    <button onclick="adminDeleteBooking('${b.id}')" title="Excluir reserva permanentemente" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);color:#ef4444;padding:4px 8px;border-radius:6px;font-size:13px;cursor:pointer;line-height:1">🗑️</button>
                 </div>
             </td>`;
         tbody.appendChild(tr);
@@ -2372,6 +2373,17 @@ async function adminRejectBooking(id) {
     if (item) item.status = 'Cancelado';
     globalBusy = globalBusy.filter(b => String(b.id) !== String(id));
     toast('Reserva cancelada — horário liberado.');
+    filterAdminTable();
+}
+
+async function adminDeleteBooking(id) {
+    if (!adminUnlocked) return;
+    if (!confirm('Excluir este agendamento permanentemente? Esta ação não pode ser desfeita.')) return;
+    const { error } = await sb.from('bookings').delete().eq('id', id);
+    if (error) { toast('Erro ao excluir. Tente novamente.'); return; }
+    adminAllData = adminAllData.filter(b => String(b.id) !== String(id));
+    globalBusy   = globalBusy.filter(b => String(b.id) !== String(id));
+    toast('Agendamento excluído.');
     filterAdminTable();
 }
 
