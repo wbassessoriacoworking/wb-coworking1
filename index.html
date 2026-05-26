@@ -1740,10 +1740,12 @@ async function confirmCancel() {
     if (error) { closeModal('cancelModal'); return toast('Erro ao cancelar. Tente novamente.'); }
     myBookings[idx].status = 'Cancelado';
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    globalBusy = globalBusy.filter(b => String(b.id) !== String(bk.id));
     closeModal('cancelModal');
     cancelTarget = null;
     toast('Reserva cancelada.');
     renderHistory();
+    updateMenuSummary();
     fetchGlobalBookings();
 }
 
