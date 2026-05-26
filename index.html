@@ -821,11 +821,6 @@
                 <h4>Suporte</h4>
                 <p>WhatsApp</p>
             </div>
-            <div class="quick-card highlight" onclick="shareReferral()">
-                <div class="q-icon">🎁</div>
-                <h4>Indicar Amigo</h4>
-                <p>Cupom 15% off</p>
-            </div>
             <div class="quick-card" onclick="navTo('admin')">
                 <div class="q-icon">⚙️</div>
                 <h4>Admin</h4>
@@ -960,11 +955,6 @@
             <div id="couponRow" class="order-row" style="display:none"><span style="color:var(--success);font-size:13px">🏷️ Desconto</span><span id="co-discount" style="color:var(--success)">—</span></div>
             <div class="order-row total"><span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Total</span><span id="co-total" class="val">R$ 0,00</span></div>
         </div>
-        <!-- Cupons disponíveis para o usuário -->
-        <div id="availableCouponsSection" style="display:none;margin-bottom:16px">
-            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-bottom:8px;font-weight:600">🎟️ Seus cupons disponíveis</p>
-            <div id="availableCouponsList" style="display:flex;flex-direction:column;gap:8px"></div>
-        </div>
         <!-- Cupom de desconto -->
         <div style="margin-bottom:16px">
             <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">Tem um cupom?</p>
@@ -1072,8 +1062,9 @@ let globalBusy    = [];
 let docMode      = 'cpf';
 let selection    = { date: null, slots: [] };
 let cancelTarget = null;
-let activeCoupon  = null;
-let adminUnlocked = false;
+let activeCoupon    = null;
+let disabledCoupons = new Set();
+let adminUnlocked   = false;
 let adminFilter  = 'todos';
 let weekOffset   = 0;
 let adminSearch  = '';
@@ -1246,8 +1237,10 @@ async function fetchGlobalBookings() {
         }));
         // Bloqueios
         const { data: blocked } = await sb.from('blocked_dates').select('*');
-        blockedDates = (blocked || []).filter(x => !x.hour).map(x => x.date);
-        blockedHours = (blocked || []).filter(x => x.hour).map(x => ({ date: x.date, hour: x.hour }));
+        const allBlocked = blocked || [];
+        blockedDates = allBlocked.filter(x => !x.hour && !x.date.startsWith('__coupon:')).map(x => x.date);
+        blockedHours = allBlocked.filter(x => x.hour).map(x => ({ date: x.date, hour: x.hour }));
+        disabledCoupons = new Set(allBlocked.filter(x => !x.hour && x.date.startsWith('__coupon:')).map(x => x.date.slice(9)));
         localStorage.setItem('wb_blocked', JSON.stringify(blockedDates));
         localStorage.setItem('wb_blocked_hours', JSON.stringify(blockedHours));
         // Badge de pendentes
@@ -1488,7 +1481,7 @@ function goToCheckout() {
     document.getElementById('couponMsg').textContent = '';
     document.getElementById('couponRow').style.display = 'none';
     navTo('checkout');
-    setTimeout(() => { renderPixQr(total); renderAvailableCoupons(); }, 100);
+    setTimeout(() => renderPixQr(total), 100);
 }
 
 function checkTerms() {
@@ -2045,6 +2038,9 @@ async function renderAdminPanel() {
             </table>
         </div>
 
+        <!-- Gestão de Cupons -->
+        <div id="couponAdminSection" style="margin-bottom:20px"></div>
+
         <!-- Datas Bloqueadas -->
         <div class="block-section">
             <h4>🚫 Bloqueios de Agenda</h4>
@@ -2069,6 +2065,7 @@ async function renderAdminPanel() {
     // Tabela
     adminAllData = all;
     filterAdminTable();
+    renderCouponAdmin();
     renderBlockedDates();
 
     // Atualiza em segundo plano — admin autenticado lê dados completos
@@ -2090,6 +2087,7 @@ async function renderAdminPanel() {
                 id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: ''
             }));
             filterAdminTable();
+            renderCouponAdmin();
             renderPremiumClients();
             const today2 = new Date().toISOString().split('T')[0];
             renderWeekGrid(adminAllData, today2);
@@ -2148,6 +2146,69 @@ function renderWeekGrid(all, today) {
         <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(251,191,36,0.15);border-radius:2px;display:inline-block"></span>Pendente</span>
         <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:rgba(239,68,68,0.1);border-radius:2px;display:inline-block"></span>Bloqueado</span>
     </div>`;
+}
+
+// ── Gestão de Cupons ────────────────────────────
+function renderCouponAdmin() {
+    const section = document.getElementById('couponAdminSection'); if (!section) return;
+    const rows = Object.entries(CFG.coupons).map(([code, c]) => {
+        const active = !disabledCoupons.has(code);
+        const col    = active ? '#22c55e' : '#5a5560';
+        const badge  = active
+            ? `<span style="font-size:10px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);padding:2px 8px;border-radius:8px">● Ativo</span>`
+            : `<span style="font-size:10px;font-weight:700;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:8px">○ Inativo</span>`;
+        const toggleBtn = active
+            ? `<button onclick="adminToggleCoupon('${code}',true)" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.22);color:#ef4444;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer">Desativar</button>`
+            : `<button onclick="adminToggleCoupon('${code}',false)" style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.22);color:#22c55e;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer">Ativar</button>`;
+        const sendMsg  = encodeURIComponent('Olá! Você ganhou um cupom exclusivo no WB Coworking 🎉\n\nCódigo: *' + code + '*\nDesconto: *' + c.pct + '% off*\n\n' + c.desc + '\n\nUse ao reservar: https://wbcoworkingaagenda.vercel.app/');
+        const sendBtn  = `<button onclick="adminSendCoupon('${code}')" style="background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.25);color:#25d366;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer">📱 Enviar</button>`;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:160px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:700;color:var(--gold);font-family:'Courier New',monospace">${code}</span>
+                    ${badge}
+                </div>
+                <div style="font-size:12px;color:var(--text)">${c.label} — <strong style="color:${col}">${c.pct}%</strong></div>
+                <div style="font-size:11px;color:var(--muted);margin-top:1px">${c.desc}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${toggleBtn}
+                ${sendBtn}
+            </div>
+        </div>`;
+    }).join('');
+    section.innerHTML = `<div class="block-section">
+        <h4>🏷️ Gestão de Cupons</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Ative, desative ou envie cupons para clientes via WhatsApp.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">${rows}</div>
+    </div>`;
+}
+
+async function adminToggleCoupon(code, currentlyActive) {
+    const key = '__coupon:' + code + '__';
+    if (currentlyActive) {
+        // Desativar: inserir registro especial
+        const { error } = await sb.from('blocked_dates').insert({ date: key, hour: null });
+        if (error && !error.message.includes('duplicate')) { toast('Erro ao desativar cupom.'); return; }
+        disabledCoupons.add(code);
+    } else {
+        // Ativar: remover registro especial
+        const { error } = await sb.from('blocked_dates').delete().eq('date', key).is('hour', null);
+        if (error) { toast('Erro ao ativar cupom.'); return; }
+        disabledCoupons.delete(code);
+    }
+    toast(currentlyActive ? 'Cupom ' + code + ' desativado.' : 'Cupom ' + code + ' ativado!');
+    renderCouponAdmin();
+}
+
+function adminSendCoupon(code) {
+    const c = CFG.coupons[code]; if (!c) return;
+    const phone = prompt('Telefone do cliente (com DDD, só números):');
+    if (!phone) return;
+    const num = phone.replace(/\D/g,'');
+    if (!num) return;
+    const msg = 'Olá! Você ganhou um cupom exclusivo no WB Coworking 🎉\n\nCódigo: *' + code + '*\nDesconto: *' + c.pct + '% off*\n\n' + c.desc + '\n\nUse ao fazer sua reserva:\nhttps://wbcoworkingaagenda.vercel.app/';
+    window.open('https://wa.me/55' + num + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ── Clientes Premium / VIP ──────────────────────
@@ -2865,7 +2926,7 @@ function goToWeeklyCheckout() {
     // Guarda datas válidas para buildWeeklyBookings
     weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
     navTo('checkout');
-    setTimeout(() => { renderPixQr(total); renderAvailableCoupons(); }, 100);
+    setTimeout(() => renderPixQr(total), 100);
 }
 
 function buildWeeklyBookings(method, status) {
@@ -3042,6 +3103,7 @@ function applyCoupon() {
     };
 
     if (!coupon) { resetInvalid('Cupom inválido ou expirado.'); return; }
+    if (disabledCoupons.has(code)) { resetInvalid('Este cupom está desativado no momento.'); return; }
 
     // Valida restrições por tipo
     const confirmed = myBookings.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
@@ -3068,43 +3130,6 @@ function applyCoupon() {
     renderPixQr(finalTotal);
 }
 
-function useCoupon(code) {
-    document.getElementById('couponInput').value = code;
-    applyCoupon();
-}
-
-function renderAvailableCoupons() {
-    const section = document.getElementById('availableCouponsSection');
-    const list    = document.getElementById('availableCouponsList');
-    if (!section || !list || !user) { if (section) section.style.display = 'none'; return; }
-    const confirmed = myBookings.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
-    const cnt = confirmed.length;
-    const eligible = Object.entries(CFG.coupons).filter(([, c]) => {
-        if (c.type === 'firstTime')  return cnt === 0;
-        if (c.type === 'premium5')   return cnt >= 5;
-        if (c.type === 'premium10')  return cnt >= 10;
-        return true; // referral, promo
-    }).map(([code, c]) => ({ code, ...c }));
-    if (!eligible.length) { section.style.display = 'none'; return; }
-    const colors = { firstTime:'#22c55e', referral:'#3b82f6', premium5:'#d4af37', premium10:'#f0d060', promo:'#a78bfa' };
-    list.innerHTML = eligible.map(c => {
-        const col = colors[c.type] || 'var(--gold)';
-        return `<button onclick="useCoupon('${c.code}')" style="display:flex;align-items:center;gap:10px;background:${col}0f;border:1px solid ${col}33;border-radius:12px;padding:10px 14px;cursor:pointer;text-align:left;transition:.15s;width:100%" onmouseover="this.style.background='${col}1a'" onmouseout="this.style.background='${col}0f'">
-            <span style="font-size:20px">🏷️</span>
-            <div style="flex:1">
-                <div style="font-size:13px;font-weight:700;color:${col}">${c.pct}% · ${c.label}</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:1px">${c.desc} — clique para aplicar</div>
-            </div>
-            <span style="font-size:10px;font-weight:700;color:${col};background:${col}22;padding:3px 8px;border-radius:8px;white-space:nowrap">${c.code}</span>
-        </button>`;
-    }).join('');
-    section.style.display = 'block';
-}
-
-function shareReferral() {
-    const msg = '🌟 Olá! Te indico o *WB Coworking* em Penha/SP — espaço profissional com salas privativas, AC e Wi-Fi!\n\n📍 ' + CFG.address + '\n\n🎁 Use o cupom *INDICA15* e ganhe *15% de desconto* na sua reserva!\n\n🔗 Reserve agora: https://wbcoworkingaagenda.vercel.app/';
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-}
 
 // ══════════════════════════════════════════════
 //  F9 — AVALIAÇÃO PÓS-USO
