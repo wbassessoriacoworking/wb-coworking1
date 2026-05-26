@@ -1694,18 +1694,24 @@ function renderHistory() {
         const isPast = b.date < today2;
         const bc     = canc ? 'badge-cancelled' : paid ? 'badge-paid' : 'badge-pending';
         const bt     = canc ? 'Cancelado' : paid ? 'Confirmado' : 'Pendente';
+        const isPkg  = !!b.weeklyGroupId;
+        const pkgGroup = isPkg ? myBookings.filter(x => x.weeklyGroupId === b.weeklyGroupId) : null;
+        const displayTotal = b.weeklyTotal || b.total;
+        const totalLabel = isPkg
+            ? formatBRL(displayTotal) + ' <span style="font-size:10px;color:var(--muted);font-weight:400">pacote</span>'
+            : formatBRL(b.total);
         const el = document.createElement('div');
         el.className = 'booking-card' + (canc ? ' cancelled' : '');
         el.innerHTML =
             '<div>' +
                 '<div class="booking-date">' + formatDateBR(b.date) + '</div>' +
-                '<div class="booking-sala">' + (b.sala||'') + '</div>' +
+                '<div class="booking-sala">' + (b.sala||'') + (isPkg ? ' <span style="font-size:10px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:1px 6px;border-radius:10px">📦 ' + (pkgGroup ? pkgGroup.length : '') + ' sessões</span>' : '') + '</div>' +
                 '<div class="booking-slots">' + b.slots.join(' · ') + '</div>' +
                 '<div class="booking-ref">Ref. #' + b.id + '</div>' +
             '</div>' +
             '<div class="booking-right">' +
                 '<span class="badge ' + bc + '">' + bt + '</span>' +
-                '<div class="booking-total">' + formatBRL(b.total) + '</div>' +
+                '<div class="booking-total">' + totalLabel + '</div>' +
                 '<div class="booking-actions">' +
                     '<button class="btn-pdf" onclick="downloadReceiptById(' + b.id + ')">📄 PDF</button>' +
                     '<button class="btn-pdf" onclick="shareBookingImage(' + b.id + ')" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.2);color:#22c55e">📲</button>' +
@@ -2098,7 +2104,7 @@ function renderWeekGrid(all, today) {
     hours.forEach(h => {
         bodyHtml += `<div style="font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:6px">${h}</div>`;
         days.forEach(d => {
-            const booking = all.find(b => b.date === d && b.slots && b.slots.includes(h));
+            const booking = all.find(b => b.date === d && b.slots && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado'));
             const isBlocked = blockedDates.includes(d);
             let bg = 'rgba(255,255,255,0.02)'; let txt = ''; let color = 'var(--muted)';
             if (isBlocked) { bg = 'rgba(239,68,68,0.08)'; txt = '✕'; color = 'rgba(239,68,68,0.4)'; }
@@ -2701,7 +2707,7 @@ function renderSlotsWeekly() {
         const btn = document.createElement('button'); btn.className = 'slot-btn';
         // Verifica conflito em TODAS as datas da série
         const conflictCount = weeklyDates.filter(date =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
+            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
             myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
         ).length;
         if (conflictCount === weeklyDates.length) {
@@ -2886,11 +2892,12 @@ function goToNextAvailable() {
 //  F6 — GOOGLE CALENDAR
 // ══════════════════════════════════════════════
 function addToGoogleCalendar() {
-    // Para semanal, usa o grupo de bookings; para avulso, usa o último booking
-    const weeklyRaw = localStorage.getItem('wb_temp_weekly');
-    const weeklyGroup = weeklyRaw ? JSON.parse(weeklyRaw) : null;
-    const bookingsToAdd = (weeklyGroup && weeklyGroup.length) ? weeklyGroup
-        : [tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null)];
+    const last = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
+    if (!last) return toast('Nenhuma reserva para adicionar.');
+    // Para pacotes (semanal/multi-data), abre um evento para cada sessão
+    const bookingsToAdd = last.weeklyGroupId
+        ? myBookings.filter(b => b.weeklyGroupId === last.weeklyGroupId)
+        : [last];
     const first = bookingsToAdd[0];
     if (!first) return toast('Nenhuma reserva para adicionar.');
     bookingsToAdd.forEach(b => {
@@ -3032,7 +3039,7 @@ function shareBookingImage(id) {
     ctx.strokeStyle = 'rgba(212,175,55,0.4)'; ctx.lineWidth = 1;
     ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(40, y, 560, 46, 10); else ctx.rect(40, y, 560, 46); ctx.stroke();
     ctx.fillStyle = '#d4af37'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('TOTAL: ' + formatBRL(b.total), 320, y + 29);
+    ctx.fillText('TOTAL: ' + formatBRL(b.weeklyTotal || b.total), 320, y + 29);
     // Rodapé
     ctx.fillStyle = '#5a5560'; ctx.font = '9px sans-serif';
     ctx.fillText(CFG.address, 320, 365);
