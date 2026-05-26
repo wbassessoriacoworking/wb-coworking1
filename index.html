@@ -861,8 +861,9 @@
 
             <!-- AVULSO: seleção de data -->
             <div id="avulsoSection">
-                <div class="field"><label class="field-label" for="datePicker">Selecione a data</label><input type="date" id="datePicker" class="input"></div>
-                <div id="noDateMsg" style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">Escolha uma data para ver os horários disponíveis.</div>
+                <div class="field"><label class="field-label" for="datePicker">Adicionar data</label><input type="date" id="datePicker" class="input"></div>
+                <div id="dateChips" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+                <div id="noDateMsg" style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">Adicione uma ou mais datas para ver os horários.</div>
             </div>
 
             <!-- SEMANAL: dia da semana + duração -->
@@ -1018,7 +1019,8 @@ let adminUnlocked = false;
 let adminFilter  = 'todos';
 let weekOffset   = 0;
 let adminSearch  = '';
-let selectedSala = null; // { id, nome, price, emoji }
+let selectedSala  = null;
+let selectedDates = []; // múltiplas datas em modo avulso
 
 // ══════════════════════════════════════════════
 //  INIT
@@ -1225,25 +1227,75 @@ document.getElementById('datePicker').addEventListener('change', function() {
     const day = new Date(date).getUTCDay();
     if (day === 0 || day === 6) { toast('Atendemos apenas de segunda a sexta.'); this.value = ''; return; }
     if (blockedDates.includes(date)) { toast('Esta data está bloqueada. Escolha outra.'); this.value = ''; return; }
-    selection.date = date; selection.slots = [];
+    if (selectedDates.includes(date)) { toast('Esta data já foi adicionada.'); this.value = ''; return; }
+    selectedDates.push(date); selectedDates.sort();
+    selection.date = selectedDates[0];
+    selection.slots = [];
+    this.value = '';
+    renderDateChips();
     document.getElementById('slotsSection').style.display = 'block';
     document.getElementById('noDateMsg').style.display = 'none';
     renderSlots();
 });
 
+function renderDateChips() {
+    const container = document.getElementById('dateChips');
+    if (!container) return;
+    if (!selectedDates.length) { container.style.display = 'none'; return; }
+    container.style.display = 'flex';
+    container.innerHTML = selectedDates.map(d =>
+        `<span style="background:var(--surface2);border:1px solid var(--border-gold);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text);display:inline-flex;align-items:center;gap:8px">
+            📅 ${formatDateBR(d)}
+            <button onclick="removeSelectedDate('${d}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0">×</button>
+        </span>`
+    ).join('');
+    if (selectedDates.length > 1) {
+        container.innerHTML += `<span style="font-size:12px;color:var(--gold);padding:5px 4px;align-self:center">${selectedDates.length} datas</span>`;
+    }
+}
+
+function removeSelectedDate(date) {
+    selectedDates = selectedDates.filter(d => d !== date);
+    selection.slots = [];
+    if (!selectedDates.length) {
+        selection.date = null;
+        document.getElementById('slotsSection').style.display = 'none';
+        document.getElementById('noDateMsg').style.display = 'block';
+    } else {
+        selection.date = selectedDates[0];
+        renderSlots();
+    }
+    renderDateChips();
+    updateTotal();
+}
+
 function renderSlots() {
     const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
+    const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
+    if (!dates.length) return;
     CFG.hours.forEach(h => {
         const btn = document.createElement('button'); btn.className = 'slot-btn';
-        const busyG  = globalBusy.some(b => b.date === selection.date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado'));
-        const busyL  = myBookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado');
-        const blockedH = blockedHours.some(x => x.date === selection.date && x.hour === h);
-        if (busyG || busyL || blockedH) { btn.disabled = true; btn.textContent = blockedH ? 'Bloqueado' : 'Ocupado'; }
-        else { btn.textContent = h; btn.onclick = () => toggleSlot(h, btn); }
+        const busyOnDates = dates.filter(date =>
+            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
+            blockedHours.some(x => x.date === date && x.hour === h)
+        ).length;
+        const allBusy = busyOnDates === dates.length;
+        const partialBusy = busyOnDates > 0 && dates.length > 1;
+        if (allBusy) {
+            btn.disabled = true; btn.textContent = 'Ocupado';
+        } else {
+            btn.textContent = h;
+            if (partialBusy) {
+                btn.style.borderColor = 'rgba(251,191,36,0.5)';
+                btn.title = `Ocupado em ${busyOnDates} de ${dates.length} datas`;
+            }
+            btn.onclick = () => toggleSlot(h, btn);
+        }
         grid.appendChild(btn);
     });
     updateTotal();
-    checkNextAvailable();
+    if (dates.length === 1) checkNextAvailable();
 }
 
 function toggleSlot(h, btn) {
@@ -1253,7 +1305,21 @@ function toggleSlot(h, btn) {
 }
 function updateTotal() {
     const price = selectedSala ? selectedSala.price : CFG.salas[0].price;
-    document.getElementById('totalPrice').textContent = formatBRL(selection.slots.length * price);
+    const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
+    if (!dates.length || !selection.slots.length) {
+        document.getElementById('totalPrice').textContent = formatBRL(0); return;
+    }
+    // Conta combinações (data × horário) que estão disponíveis
+    let valid = 0;
+    dates.forEach(date => {
+        selection.slots.forEach(h => {
+            const busy = globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
+                myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
+                blockedHours.some(x => x.date === date && x.hour === h);
+            if (!busy) valid++;
+        });
+    });
+    document.getElementById('totalPrice').textContent = formatBRL(valid * price);
 }
 
 // ══════════════════════════════════════════════
@@ -1262,20 +1328,39 @@ function updateTotal() {
 function goToCheckout() {
     if (!selectedSala) return toast('Selecione uma sala primeiro.');
     if (!selection.slots.length) return toast('Selecione ao menos um horário.');
-    // Verifica conflito de última hora antes de ir ao checkout
-    const hasConflict = selection.slots.some(h =>
-        globalBusy.some(b => b.date === selection.date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
-        myBookings.some(b => b.date === selection.date && b.slots.includes(h) && b.status !== 'Cancelado')
-    );
-    if (hasConflict) return toast('Um dos horários foi ocupado agora. Por favor, escolha outro.');
+    const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
+    if (!dates.length) return toast('Adicione ao menos uma data.');
     selection.slots.sort();
     const price = selectedSala.price;
-    document.getElementById('co-date').textContent  = formatDateBR(selection.date);
+    // Monta reservas válidas por data
+    const validBookings = [];
+    dates.forEach(date => {
+        const slots = selection.slots.filter(h =>
+            !globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) &&
+            !myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') &&
+            !blockedHours.some(x => x.date === date && x.hour === h)
+        );
+        if (slots.length) validBookings.push({ date, slots });
+    });
+    if (!validBookings.length) return toast('Nenhum horário disponível nas datas selecionadas.');
+    const totalSlots = validBookings.reduce((s, b) => s + b.slots.length, 0);
+    const total = totalSlots * price;
+    // Salva para uso no pagamento
+    const multiGroupId = Date.now() + Math.floor(Math.random() * 10000);
+    localStorage.setItem('wb_temp_multi', JSON.stringify({ validBookings, multiGroupId, price }));
+    // Preenche checkout
+    document.getElementById('co-sala').textContent = selectedSala.emoji + ' ' + selectedSala.nome;
+    if (dates.length > 1) {
+        document.getElementById('co-date-row').style.display = 'none';
+        document.getElementById('co-weekly-row').style.display = 'flex';
+        document.getElementById('co-weekly-info').textContent = dates.length + ' datas · ' + totalSlots + ' hora(s)';
+    } else {
+        document.getElementById('co-date-row').style.display = 'flex';
+        document.getElementById('co-weekly-row').style.display = 'none';
+        document.getElementById('co-date').textContent = formatDateBR(dates[0]);
+    }
     document.getElementById('co-slots').textContent = selection.slots.join(' · ');
-    document.getElementById('co-total').textContent = formatBRL(selection.slots.length * price);
-    // Show sala in summary
-    const salaRow = document.getElementById('co-sala');
-    if (salaRow) salaRow.textContent = selectedSala.emoji + ' ' + selectedSala.nome;
+    document.getElementById('co-total').textContent = formatBRL(total);
     document.getElementById('termsCheckbox').checked = false;
     activeCoupon = null;
     document.getElementById('couponInput').value = '';
@@ -1299,6 +1384,25 @@ function goToMp(method) {
         if (!bookings.length) return toast('Nenhuma data disponível.');
         localStorage.setItem('wb_temp_weekly', JSON.stringify(bookings));
         tempBooking = bookings[0];
+    } else if (selectedDates.length > 1) {
+        const multiData = JSON.parse(localStorage.getItem('wb_temp_multi'));
+        if (!multiData || !multiData.validBookings.length) return toast('Nenhuma data disponível.');
+        const sala = selectedSala || CFG.salas[0];
+        const baseTotal = multiData.validBookings.reduce((s, vb) => s + vb.slots.length, 0) * sala.price;
+        const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
+        const total     = baseTotal - discount;
+        const groupId   = multiData.multiGroupId;
+        const bookings  = multiData.validBookings.map((vb, i) => ({
+            id: groupId + i, userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+            date: vb.date, slots: vb.slots.sort(), total: vb.slots.length * sala.price,
+            sala: sala.nome, salaId: sala.id, method, status: 'Aguardando Pagamento',
+            coupon: i === 0 && activeCoupon ? activeCoupon.code : null,
+            discount: i === 0 ? discount : 0,
+            weeklyGroupId: groupId, weeklyTotal: total,
+            createdAt: new Date().toISOString()
+        }));
+        localStorage.setItem('wb_temp_multi', JSON.stringify({ ...multiData, bookings, method }));
+        tempBooking = bookings[0];
     } else {
         const b = buildBooking(method, 'Aguardando Pagamento');
         localStorage.setItem('wb_temp_booking', JSON.stringify(b));
@@ -1310,10 +1414,15 @@ function goToMp(method) {
 
 function showSuccessManual() {
     const tempWeekly = JSON.parse(localStorage.getItem('wb_temp_weekly'));
+    const tempMulti  = JSON.parse(localStorage.getItem('wb_temp_multi'));
     if (tempWeekly && tempWeekly.length) {
         tempWeekly.forEach(b => { b.status = 'PAGO — Confirmado'; });
         saveWeeklyAndWebhook(tempWeekly, false);
         localStorage.removeItem('wb_temp_weekly');
+    } else if (tempMulti && tempMulti.bookings && tempMulti.bookings.length) {
+        tempMulti.bookings.forEach(b => { b.status = 'PAGO — Confirmado'; });
+        saveMultiAndWebhook(tempMulti.bookings, false);
+        localStorage.removeItem('wb_temp_multi');
     } else if (tempBooking) {
         tempBooking.status = 'PAGO — Confirmado';
         saveAndWebhook(tempBooking, false);
@@ -1351,6 +1460,32 @@ function finalizeBooking(method) {
                 + '\nTotal do pacote: ' + formatBRL(b0.weeklyTotal)
                 + '\n\n_Verifique o comprovante e confirme no painel admin._';
             window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+        } else if (selectedDates.length > 1) {
+            const sala = selectedSala || CFG.salas[0];
+            const multiData = JSON.parse(localStorage.getItem('wb_temp_multi'));
+            if (!multiData || !multiData.validBookings.length) { btn.disabled = false; btn.textContent = 'Enviar Comprovante'; return toast('Nenhuma data disponível.'); }
+            const baseTotal = multiData.validBookings.reduce((s, vb) => s + vb.slots.length, 0) * sala.price;
+            const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
+            const total     = baseTotal - discount;
+            const groupId   = multiData.multiGroupId;
+            const bookings  = multiData.validBookings.map((vb, i) => ({
+                id: groupId + i, userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+                date: vb.date, slots: vb.slots.sort(), total: vb.slots.length * sala.price,
+                sala: sala.nome, salaId: sala.id, method, status: 'PAGO — Aguardando Verificação',
+                coupon: i === 0 && activeCoupon ? activeCoupon.code : null,
+                discount: i === 0 ? discount : 0,
+                weeklyGroupId: groupId, weeklyTotal: total,
+                fileName: i === 0 ? file.name : null, fileData: i === 0 ? e.target.result : null,
+                createdAt: new Date().toISOString()
+            }));
+            await saveMultiAndWebhook(bookings, true);
+            const msg = '🔔 *Nova reserva MÚLTIPLA com comprovante PIX*\n\nCliente: ' + bookings[0].userName
+                + '\n' + bookings.length + ' datas · ' + bookings.reduce((s, b) => s + b.slots.length, 0) + ' hora(s)'
+                + '\nSala: ' + sala.nome
+                + '\nTotal: ' + formatBRL(total)
+                + '\n\n_Verifique o comprovante e confirme no painel admin._';
+            window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+            localStorage.removeItem('wb_temp_multi');
         } else {
             const b = buildBooking(method, 'PAGO — Aguardando Verificação');
             tempBooking = b;
@@ -1399,9 +1534,13 @@ function resetBookingUI() {
     selectedDow = null;
     weeklyDates = [];
     weeklyGroupId = null;
+    selectedDates = [];
+    localStorage.removeItem('wb_temp_multi');
     document.getElementById('datePicker').value = '';
     document.getElementById('slotsSection').style.display = 'none';
     document.getElementById('noDateMsg').style.display = 'block';
+    const chipsEl = document.getElementById('dateChips');
+    if (chipsEl) { chipsEl.innerHTML = ''; chipsEl.style.display = 'none'; }
     document.getElementById('proofFile').value = '';
     document.getElementById('proofFileName').textContent = '';
     document.getElementById('uploadLabel').textContent = '📎 Clique para anexar comprovante (PDF, JPG, PNG)';
@@ -2266,6 +2405,8 @@ function setBookingMode(mode) {
     bookingMode = mode;
     selection = { date: null, slots: [] };
     selectedDow = null; weeklyDates = [];
+    selectedDates = [];
+    localStorage.removeItem('wb_temp_multi');
     activeCoupon = null;
     document.getElementById('typeAvulso').className  = mode === 'avulso' ? 'btn-gold' : 'btn-ghost';
     document.getElementById('typeSemanal').className = mode === 'semanal' ? 'btn-gold' : 'btn-ghost';
@@ -2427,6 +2568,18 @@ function buildWeeklyBookings(method, status) {
 }
 
 async function saveWeeklyAndWebhook(bookings, showModal) {
+    bookings.forEach(b => {
+        const idx = myBookings.findIndex(x => x.id === b.id);
+        if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
+    });
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    for (const b of bookings) await insertBooking(b);
+    resetBookingUI();
+    if (showModal) openModal('successModal');
+    fetchGlobalBookings();
+}
+
+async function saveMultiAndWebhook(bookings, showModal) {
     bookings.forEach(b => {
         const idx = myBookings.findIndex(x => x.id === b.id);
         if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
