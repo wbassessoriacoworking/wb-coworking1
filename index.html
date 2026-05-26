@@ -1556,16 +1556,8 @@ async function adminLogin() {
 }
 
 async function renderAdminPanel() {
-    document.getElementById('adminContent').innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)"><div class="spinner"></div> Carregando dados...</div>';
-
-    let sheetData = [];
-    try {
-        const res  = await fetch(CFG.appsScriptUrl + '?_t=' + Date.now(), { redirect: 'follow' });
-        const json = await res.json();
-        if (json.ok) sheetData = json.data;
-    } catch(e) { sheetData = globalBusy; }
-
-    const all  = sheetData;
+    // Renderiza imediatamente com dados em cache; atualiza em segundo plano
+    const all  = globalBusy.length ? globalBusy : [];
     const paid = all.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
     const pend = all.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); });
     const rev  = paid.reduce((s,b) => s + (Number(b.total)||0), 0);
@@ -1730,6 +1722,25 @@ async function renderAdminPanel() {
     adminAllData = all;
     filterAdminTable();
     renderBlockedDates();
+
+    // Atualiza em segundo plano sem bloquear a tela
+    if (CFG.appsScriptUrl) {
+        fetch(CFG.appsScriptUrl + '?_t=' + Date.now(), { redirect: 'follow' })
+            .then(r => r.json())
+            .then(json => {
+                if (!json.ok) return;
+                globalBusy = json.data.filter(b => b.slots && b.date);
+                adminAllData = json.data;
+                filterAdminTable();
+                const today2 = new Date().toISOString().split('T')[0];
+                renderWeekGrid(json.data, today2);
+                // Atualiza badge
+                const pendCount = json.data.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
+                const badge = document.getElementById('adminBadge');
+                if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
+            })
+            .catch(() => {});
+    }
 }
 
 // ── Agenda Semanal ──────────────────────────────
