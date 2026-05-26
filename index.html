@@ -895,25 +895,33 @@
 
             <!-- SEMANAL: dias da semana (múltiplos) + duração -->
             <div id="semanalSection" style="display:none">
-                <label class="field-label" style="margin-bottom:10px;display:block">Dias da semana <span style="color:var(--muted);font-size:11px">(pode selecionar vários)</span></label>
-                <div style="display:flex;gap:6px;margin-bottom:20px" id="dowButtons">
+                <label class="field-label" style="margin-bottom:8px;display:block">Filtrar por dia <span style="color:var(--muted);font-size:11px">(pode selecionar vários)</span></label>
+                <div style="display:flex;gap:6px;margin-bottom:16px" id="dowButtons">
                     <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(1)">Seg</button>
                     <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(2)">Ter</button>
                     <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(3)">Qua</button>
                     <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(4)">Qui</button>
                     <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="toggleDayOfWeek(5)">Sex</button>
                 </div>
-                <label class="field-label" style="margin-bottom:10px;display:block">Duração</label>
-                <div class="radio-group" style="margin-bottom:20px">
-                    <label class="radio-label"><input type="radio" name="numWeeks" value="4"  onchange="setNumWeeks(4)"  checked> 4 sem.</label>
-                    <label class="radio-label"><input type="radio" name="numWeeks" value="8"  onchange="setNumWeeks(8)"> 8 sem.</label>
-                    <label class="radio-label"><input type="radio" name="numWeeks" value="12" onchange="setNumWeeks(12)"> 12 sem.</label>
-                </div>
-                <div id="semanalNoDay" style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px">Selecione os dias da semana acima.</div>
-                <!-- Lista de datas exatas (aparece imediatamente ao selecionar dia) -->
-                <div id="semanalDatePreview" style="display:none;margin-bottom:16px">
-                    <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">📆 Datas que serão agendadas</p>
-                    <div id="semanalDatePreviewList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                <div id="semanalNoDay" style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px">Selecione os dias acima para filtrar o calendário.</div>
+                <!-- Calendário semanal — só exibe dias do filtro clicáveis -->
+                <div id="semCalWrap" style="display:none">
+                    <div class="cal-wrap">
+                        <div class="cal-header">
+                            <button class="cal-nav" onclick="semCalNav(-1)">◀</button>
+                            <span class="cal-title" id="semCalTitle">—</span>
+                            <button class="cal-nav" onclick="semCalNav(1)">▶</button>
+                        </div>
+                        <div class="cal-dow-header">
+                            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="cal-grid" id="semCalGrid"></div>
+                    </div>
+                    <!-- Chips das datas selecionadas -->
+                    <div id="semanalDatePreview" style="display:none;margin-bottom:16px">
+                        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">📆 Datas selecionadas</p>
+                        <div id="semanalDatePreviewList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1624,6 +1632,13 @@ function resetBookingUI() {
     document.getElementById('noDateMsg').style.display = 'block';
     const chipsEl = document.getElementById('dateChips');
     if (chipsEl) { chipsEl.innerHTML = ''; chipsEl.style.display = 'none'; }
+    const semCalWrapEl = document.getElementById('semCalWrap');
+    if (semCalWrapEl) semCalWrapEl.style.display = 'none';
+    const semPrevEl = document.getElementById('semanalDatePreview');
+    if (semPrevEl) semPrevEl.style.display = 'none';
+    const semNoDayEl = document.getElementById('semanalNoDay');
+    if (semNoDayEl) semNoDayEl.style.display = 'block';
+    document.querySelectorAll('.dow-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('proofFile').value = '';
     document.getElementById('proofFileName').textContent = '';
     document.getElementById('uploadLabel').textContent = '📎 Clique para anexar comprovante (PDF, JPG, PNG)';
@@ -2510,48 +2525,127 @@ function setBookingMode(mode) {
     document.getElementById('slotsSection').style.display        = 'none';
     document.getElementById('semanalPreview').style.display      = 'none';
     document.getElementById('semanalDatePreview').style.display  = 'none';
+    document.getElementById('semCalWrap').style.display          = 'none';
     if (mode === 'avulso') {
         document.getElementById('noDateMsg').style.display = 'block';
         renderCalendar();
+    } else {
+        document.getElementById('semanalNoDay').style.display = 'block';
     }
     document.querySelectorAll('.dow-btn').forEach(b => b.classList.remove('selected'));
     updateTotal();
 }
 
+let semCalYear  = new Date().getFullYear();
+let semCalMonth = new Date().getMonth();
+
 function toggleDayOfWeek(dow) {
     const idx = selectedDows.indexOf(dow);
-    if (idx >= 0) selectedDows.splice(idx, 1); else selectedDows.push(dow);
+    if (idx >= 0) {
+        selectedDows.splice(idx, 1);
+        // Remove datas já selecionadas que eram deste DOW
+        weeklyDates = weeklyDates.filter(d => new Date(d + 'T12:00:00').getDay() !== dow);
+    } else {
+        selectedDows.push(dow);
+    }
     selectedDows.sort();
     document.querySelectorAll('.dow-btn').forEach((b, i) => b.classList.toggle('selected', selectedDows.includes(i + 1)));
     if (!selectedDows.length) {
         weeklyDates = []; selection.slots = [];
+        document.getElementById('semCalWrap').style.display = 'none';
         document.getElementById('slotsSection').style.display = 'none';
         document.getElementById('semanalNoDay').style.display = 'block';
-        document.getElementById('semanalDatePreview').style.display = 'none';
         document.getElementById('semanalPreview').style.display = 'none';
         updateTotal(); return;
     }
-    generateWeeklyDates();
-    if (weeklyDates.length === 0) { toast('Nenhuma data disponível para os dias selecionados.'); return; }
+    document.getElementById('semanalNoDay').style.display = 'none';
+    document.getElementById('semCalWrap').style.display = 'block';
+    renderSemanalCalendar();
+    renderWeeklyDatePreview();
+    // Atualiza slots se já há datas
+    if (weeklyDates.length) {
+        selection.date = weeklyDates[0];
+        const dowLabel = selectedDows.map(d => DOW_NAMES[d]).join(' · ');
+        const lbl = document.getElementById('slotsLabel');
+        if (lbl) lbl.textContent = 'Horários — ' + dowLabel;
+        document.getElementById('slotsSection').style.display = 'block';
+        document.getElementById('semanalPreview').style.display = 'none';
+        if (selection.slots.length) renderSlotsWeekly(); else renderSlotsWeekly();
+    } else {
+        selection.slots = [];
+        document.getElementById('slotsSection').style.display = 'none';
+    }
+    updateTotal();
+}
+
+function semCalNav(dir) {
+    semCalMonth += dir;
+    if (semCalMonth < 0)  { semCalMonth = 11; semCalYear--; }
+    if (semCalMonth > 11) { semCalMonth = 0;  semCalYear++; }
+    renderSemanalCalendar();
+}
+
+function renderSemanalCalendar() {
+    const titleEl = document.getElementById('semCalTitle');
+    const gridEl  = document.getElementById('semCalGrid');
+    if (!titleEl || !gridEl) return;
+    titleEl.textContent = CAL_MONTH_NAMES[semCalMonth] + ' ' + semCalYear;
+    const todayStr  = new Date().toISOString().split('T')[0];
+    const today     = new Date(); today.setHours(0,0,0,0);
+    const firstDow  = new Date(semCalYear, semCalMonth, 1).getDay();
+    const daysInMon = new Date(semCalYear, semCalMonth + 1, 0).getDate();
+    const DOW_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    gridEl.innerHTML = '';
+    for (let i = 0; i < firstDow; i++) {
+        const blank = document.createElement('div'); blank.className = 'cal-day cal-empty'; gridEl.appendChild(blank);
+    }
+    for (let d = 1; d <= daysInMon; d++) {
+        const dt  = new Date(semCalYear, semCalMonth, d);
+        const iso = dt.toISOString().split('T')[0];
+        const dow = dt.getDay();
+        const isAllowed  = selectedDows.includes(dow);
+        const isPast     = dt < today;
+        const isBlocked  = blockedDates.includes(iso);
+        const isSelected = weeklyDates.includes(iso);
+        const btn = document.createElement('button');
+        btn.className = 'cal-day';
+        btn.textContent = d;
+        if (iso === todayStr) btn.classList.add('cal-today');
+        if (isSelected) {
+            btn.classList.add('cal-selected');
+            btn.title = DOW_SHORT[dow] + ' — toque para remover';
+            btn.onclick = () => semCalToggleDate(iso);
+        } else if (!isAllowed || isPast || isBlocked) {
+            btn.disabled = true;
+            btn.classList.add(!isAllowed ? 'cal-weekend' : isPast ? 'cal-past' : 'cal-blocked');
+        } else {
+            btn.style.borderColor = 'rgba(212,175,55,0.25)';
+            btn.title = DOW_SHORT[dow];
+            btn.onclick = () => semCalToggleDate(iso);
+        }
+        gridEl.appendChild(btn);
+    }
+}
+
+function semCalToggleDate(iso) {
+    const idx = weeklyDates.indexOf(iso);
+    if (idx >= 0) weeklyDates.splice(idx, 1);
+    else weeklyDates.push(iso);
+    weeklyDates.sort();
+    renderSemanalCalendar();
+    renderWeeklyDatePreview();
+    if (!weeklyDates.length) {
+        selection.slots = [];
+        document.getElementById('slotsSection').style.display = 'none';
+        updateTotal(); return;
+    }
     selection.date = weeklyDates[0];
-    selection.slots = [];
     const dowLabel = selectedDows.map(d => DOW_NAMES[d]).join(' · ');
     const lbl = document.getElementById('slotsLabel');
     if (lbl) lbl.textContent = 'Horários — ' + dowLabel;
     document.getElementById('slotsSection').style.display = 'block';
-    document.getElementById('semanalNoDay').style.display = 'none';
     document.getElementById('semanalPreview').style.display = 'none';
-    renderWeeklyDatePreview();
     renderSlotsWeekly();
-}
-
-function setNumWeeks(n) {
-    numWeeks = n;
-    if (selectedDows.length) {
-        generateWeeklyDates();
-        renderWeeklyDatePreview();
-        if (selection.slots.length) updateWeeklyPreview();
-    }
 }
 
 function renderWeeklyDatePreview() {
@@ -2562,28 +2656,15 @@ function renderWeeklyDatePreview() {
     const DOW_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
     list.innerHTML = weeklyDates.map(date => {
         const dow = new Date(date + 'T12:00:00').getDay();
-        return `<span style="background:var(--surface2);border:1px solid var(--border-gold);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text);display:inline-flex;align-items:center;gap:6px">
-            <span style="color:var(--gold);font-weight:600;font-size:10px">${DOW_SHORT[dow]}</span>${formatDateBR(date)}
+        return `<span style="background:var(--surface2);border:1px solid var(--border-gold);border-radius:20px;padding:5px 10px;font-size:12px;color:var(--text);display:inline-flex;align-items:center;gap:6px">
+            <span style="color:var(--gold);font-weight:700;font-size:10px">${DOW_SHORT[dow]}</span>${formatDateBR(date)}
+            <button onclick="semCalToggleDate('${date}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0">×</button>
         </span>`;
     }).join('');
+    if (weeklyDates.length > 1) {
+        list.innerHTML += `<span style="font-size:12px;color:var(--gold);padding:5px 4px;align-self:center">${weeklyDates.length} datas</span>`;
+    }
     container.style.display = 'block';
-}
-
-function generateWeeklyDates() {
-    weeklyDates = [];
-    if (!selectedDows.length) return;
-    const today = new Date(); today.setHours(12, 0, 0, 0);
-    selectedDows.forEach(dow => {
-        const d = new Date(today);
-        const diff = (dow - d.getDay() + 7) % 7 || 7;
-        d.setDate(d.getDate() + diff);
-        for (let i = 0; i < numWeeks; i++) {
-            const iso = d.toISOString().split('T')[0];
-            if (!blockedDates.includes(iso) && !weeklyDates.includes(iso)) weeklyDates.push(iso);
-            d.setDate(d.getDate() + 7);
-        }
-    });
-    weeklyDates.sort();
 }
 
 function renderSlotsWeekly() {
