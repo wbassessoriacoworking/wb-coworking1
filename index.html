@@ -609,6 +609,8 @@
         </div>
         <button onclick="sendToWhatsapp()" class="btn-gold" style="margin-bottom:10px">💬 &nbsp;Confirmar pelo WhatsApp</button>
         <button onclick="downloadReceipt()" style="width:100%;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📄 &nbsp;Baixar Recibo em PDF</button>
+        <button onclick="addToGoogleCalendar()" style="width:100%;background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25);color:#4285f4;padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📅 &nbsp;Adicionar ao Google Calendar</button>
+        <button onclick="shareBookingImage()" style="width:100%;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:#22c55e;padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📲 &nbsp;Compartilhar Comprovante</button>
         <button onclick="finishSuccess()" class="modal-cancel">Fechar e ver minhas reservas</button>
     </div>
 </div>
@@ -665,7 +667,8 @@
     <div class="modal-box" style="text-align:center">
         <div style="font-size:44px;margin-bottom:16px">⚠️</div>
         <div class="modal-title">Cancelar Reserva?</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6" id="cancelModalDesc">Esta ação não pode ser desfeita.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6" id="cancelModalDesc">Esta ação não pode ser desfeita.</p>
+        <div id="cancelModalPolicy" style="margin-bottom:20px;padding:10px 14px;border-radius:var(--radius);font-size:12px;text-align:center;line-height:1.5"></div>
         <button onclick="confirmCancel()" class="btn-danger" style="width:100%;padding:13px;font-size:13px;border-radius:var(--radius);margin-bottom:10px">Sim, cancelar reserva</button>
         <button onclick="closeModal('cancelModal')" class="modal-cancel">Voltar</button>
     </div>
@@ -844,6 +847,14 @@
             <div id="slotsSection" class="slots-section" style="display:none">
                 <p class="slots-label">Horários disponíveis</p>
                 <div id="slotsGrid" class="slots-grid"></div>
+                <!-- Hint próxima data disponível -->
+                <div id="nextAvailableHint" style="display:none;align-items:center;gap:12px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.2);border-radius:var(--radius);padding:12px 16px;margin-top:12px">
+                    <span style="font-size:22px">📅</span>
+                    <div>
+                        <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Data lotada</p>
+                        <p style="font-size:13px;color:var(--text)">Próxima disponível: <strong id="nextAvailableDate" style="color:var(--gold);cursor:pointer;text-decoration:underline" onclick="goToNextAvailable()">—</strong></p>
+                    </div>
+                </div>
                 <div class="booking-footer">
                     <div><p class="total-label">Total selecionado</p><p id="totalPrice" class="total-value">R$ 0,00</p></div>
                     <button class="btn-gold" style="width:auto;padding:12px 28px" onclick="goToCheckout()">Continuar →</button>
@@ -863,7 +874,16 @@
             <div class="order-row"><span style="color:var(--muted)">Sala</span><span id="co-sala" style="color:var(--gold)">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Data</span><span id="co-date">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Horários</span><span id="co-slots" style="font-size:12px;text-align:right;max-width:200px">—</span></div>
+            <div id="couponRow" class="order-row" style="display:none"><span style="color:var(--success);font-size:13px">🏷️ Desconto</span><span id="co-discount" style="color:var(--success)">—</span></div>
             <div class="order-row total"><span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Total</span><span id="co-total" class="val">R$ 0,00</span></div>
+        </div>
+        <!-- Cupom de desconto -->
+        <div style="margin-bottom:16px">
+            <div style="display:flex;gap:8px">
+                <input id="couponInput" class="input" type="text" placeholder="Cupom de desconto (opcional)" style="text-transform:uppercase;font-size:14px" oninput="this.value=this.value.toUpperCase()">
+                <button class="btn-copy" onclick="applyCoupon()" style="min-width:80px">Aplicar</button>
+            </div>
+            <p id="couponMsg" style="font-size:12px;margin-top:6px;min-height:16px;padding-left:2px"></p>
         </div>
         <label class="terms-check" for="termsCheckbox">
             <input type="checkbox" id="termsCheckbox">
@@ -928,7 +948,8 @@ const CFG = {
         { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '❄️ AC · 📷 Câmera · Atendimento privativo', price: 60 },
         { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '❄️ AC · 📷 Câmera · Uso compartilhado',       price: 40 },
         { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · Espera de clientes',       price: 30 }
-    ]
+    ],
+    coupons: { 'PRIMERAVEZ': 15, 'WB10': 10, 'DESCONTO20': 20 }
 };
 
 // ══════════════════════════════════════════════
@@ -942,6 +963,7 @@ let globalBusy   = [];
 let docMode      = 'cpf';
 let selection    = { date: null, slots: [] };
 let cancelTarget = null;
+let activeCoupon  = null;
 let adminUnlocked = false;
 let adminFilter  = 'todos';
 let weekOffset   = 0;
@@ -1142,6 +1164,7 @@ function renderSlots() {
         grid.appendChild(btn);
     });
     updateTotal();
+    checkNextAvailable();
 }
 
 function toggleSlot(h, btn) {
@@ -1169,6 +1192,10 @@ function goToCheckout() {
     const salaRow = document.getElementById('co-sala');
     if (salaRow) salaRow.textContent = selectedSala.emoji + ' ' + selectedSala.nome;
     document.getElementById('termsCheckbox').checked = false;
+    activeCoupon = null;
+    document.getElementById('couponInput').value = '';
+    document.getElementById('couponMsg').textContent = '';
+    document.getElementById('couponRow').style.display = 'none';
     navTo('checkout');
 }
 
@@ -1212,22 +1239,33 @@ function finalizeBooking(method) {
     if (!file) return toast('Anexe o comprovante de pagamento.');
     const btn = document.getElementById('btnEnviarPix');
     btn.disabled = true; btn.textContent = 'Enviando...';
-    const b = buildBooking(method, 'EM ANÁLISE');
+    const b = buildBooking(method, 'PAGO — Aguardando Verificação');
     tempBooking = b;
     const reader = new FileReader();
     reader.onload = async e => {
         b.fileName = file.name; b.fileData = e.target.result;
         await saveAndWebhook(b, true);
+        // Notifica admin automaticamente via WhatsApp (sem precisar que o cliente envie)
+        const msg = '🔔 *Nova reserva com comprovante PIX* \n\nCliente: ' + b.userName
+            + '\nData: ' + formatDateBR(b.date) + '\nSala: ' + b.sala
+            + '\nHorários: ' + b.slots.join(', ')
+            + '\nTotal: ' + formatBRL(b.total)
+            + '\nRef: #' + b.id
+            + '\n\n_Verifique o comprovante e confirme no painel admin._';
+        window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
         btn.disabled = false; btn.textContent = 'Enviar Comprovante';
     };
     reader.readAsDataURL(file);
 }
 
 function buildBooking(method, status) {
-    const sala  = selectedSala || CFG.salas[0];
-    const price = sala.price;
+    const sala      = selectedSala || CFG.salas[0];
+    const baseTotal = selection.slots.length * sala.price;
+    const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
+    const total     = baseTotal - discount;
     return { id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
-        date: selection.date, slots: [...selection.slots].sort(), total: selection.slots.length * price,
+        date: selection.date, slots: [...selection.slots].sort(), total,
+        coupon: activeCoupon ? activeCoupon.code : null, discount,
         sala: sala.nome, salaId: sala.id, method, status, createdAt: new Date().toISOString() };
 }
 
@@ -1275,10 +1313,12 @@ function renderHistory() {
     const sorted = [...myBookings].sort((a,b) => b.id - a.id);
     if (!sorted.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><p>Nenhuma reserva ainda.</p></div>'; return; }
     sorted.forEach(b => {
-        const canc = b.status === 'Cancelado';
-        const paid = b.status.includes('Confirmado') || b.status.includes('PAGO');
-        const bc   = canc ? 'badge-cancelled' : paid ? 'badge-paid' : 'badge-pending';
-        const bt   = canc ? 'Cancelado' : paid ? 'Confirmado' : 'Pendente';
+        const today2 = new Date().toISOString().split('T')[0];
+        const canc   = b.status === 'Cancelado';
+        const paid   = b.status.includes('Confirmado') || b.status.includes('PAGO');
+        const isPast = b.date < today2;
+        const bc     = canc ? 'badge-cancelled' : paid ? 'badge-paid' : 'badge-pending';
+        const bt     = canc ? 'Cancelado' : paid ? 'Confirmado' : 'Pendente';
         const el = document.createElement('div');
         el.className = 'booking-card' + (canc ? ' cancelled' : '');
         el.innerHTML =
@@ -1293,7 +1333,9 @@ function renderHistory() {
                 '<div class="booking-total">' + formatBRL(b.total) + '</div>' +
                 '<div class="booking-actions">' +
                     '<button class="btn-pdf" onclick="downloadReceiptById(' + b.id + ')">📄 PDF</button>' +
-                    (!canc ? '<button class="btn-danger" onclick="askCancel(' + b.id + ')">✕ Cancelar</button>' : '') +
+                    '<button class="btn-pdf" onclick="shareBookingImage(' + b.id + ')" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.2);color:#22c55e">📲</button>' +
+                    (isPast && paid ? '<button class="btn-pdf" onclick="rateBooking(' + b.id + ')" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.2);color:#fbbf24">⭐ Avaliar</button>' : '') +
+                    (!canc && !isPast ? '<button class="btn-danger" onclick="askCancel(' + b.id + ')">✕ Cancelar</button>' : '') +
                 '</div>' +
             '</div>';
         list.appendChild(el);
@@ -1312,13 +1354,6 @@ function updateMenuSummary() {
 // ══════════════════════════════════════════════
 //  CANCELAMENTO
 // ══════════════════════════════════════════════
-function askCancel(id) {
-    const b = myBookings.find(x => x.id === id); if (!b) return;
-    cancelTarget = id;
-    document.getElementById('cancelModalDesc').textContent = 'Reserva de ' + formatDateBR(b.date) + ' — ' + b.slots.join(', ');
-    openModal('cancelModal');
-}
-
 async function confirmCancel() {
     if (!cancelTarget) return;
     const idx = myBookings.findIndex(b => b.id === cancelTarget); if (idx < 0) return;
@@ -1849,6 +1884,215 @@ function formatBRL(v) { return Number(v).toLocaleString('pt-BR', { style: 'curre
 function formatDateBR(iso) { return iso ? iso.split('-').reverse().join('/') : '—'; }
 function copyPix() { const el = document.getElementById('pixDisplay'); el.select(); try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(el.value); } toast('Chave Pix copiada!'); }
 function openSupport(e) { if(e) e.preventDefault(); window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent('Olá! Preciso de ajuda com o sistema WB Coworking.'), '_blank'); }
+
+// ══════════════════════════════════════════════
+//  F5 — PRÓXIMA DATA DISPONÍVEL
+// ══════════════════════════════════════════════
+function suggestNextAvailable(fromDate) {
+    const d = new Date(fromDate + 'T12:00:00');
+    for (let i = 1; i <= 45; i++) {
+        d.setDate(d.getDate() + 1);
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        const iso = d.toISOString().split('T')[0];
+        if (blockedDates.includes(iso)) continue;
+        const busy = globalBusy.filter(b => b.date === iso).flatMap(b => b.slots || []);
+        const mine = myBookings.filter(b => b.date === iso && b.status !== 'Cancelado').flatMap(b => b.slots || []);
+        const allBusy = new Set([...busy, ...mine]);
+        if (allBusy.size < CFG.hours.length) return iso;
+    }
+    return null;
+}
+
+let _nextAvailableIso = null;
+function checkNextAvailable() {
+    if (!selection.date) return;
+    const grid = document.getElementById('slotsGrid');
+    const freeCount = grid ? grid.querySelectorAll('.slot-btn:not(:disabled)').length : 1;
+    const hint = document.getElementById('nextAvailableHint');
+    if (!hint) return;
+    if (freeCount === 0) {
+        _nextAvailableIso = suggestNextAvailable(selection.date);
+        if (_nextAvailableIso) {
+            document.getElementById('nextAvailableDate').textContent = formatDateBR(_nextAvailableIso);
+            hint.style.display = 'flex';
+        }
+    } else {
+        hint.style.display = 'none';
+        _nextAvailableIso = null;
+    }
+}
+
+function goToNextAvailable() {
+    if (!_nextAvailableIso) return;
+    const picker = document.getElementById('datePicker');
+    picker.value = _nextAvailableIso;
+    selection.date = _nextAvailableIso;
+    selection.slots = [];
+    document.getElementById('slotsSection').style.display = 'block';
+    document.getElementById('noDateMsg').style.display = 'none';
+    document.getElementById('nextAvailableHint').style.display = 'none';
+    renderSlots();
+    picker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ══════════════════════════════════════════════
+//  F6 — GOOGLE CALENDAR
+// ══════════════════════════════════════════════
+function addToGoogleCalendar() {
+    const b = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
+    if (!b) return toast('Nenhuma reserva para adicionar.');
+    const date  = b.date.replace(/-/g, '');
+    const sh    = (b.slots[0] || '09:00').replace(':', '');
+    const lastH = parseInt((b.slots[b.slots.length - 1] || '09:00').split(':')[0]) + 1;
+    const eh    = String(lastH).padStart(2, '0') + '00';
+    const title = encodeURIComponent('WB Coworking — ' + (b.sala || 'Sala'));
+    const det   = encodeURIComponent('Reserva #' + b.id + '\nSala: ' + (b.sala || '—') + '\nHorários: ' + (b.slots || []).join(', ') + '\nTotal: ' + formatBRL(b.total));
+    const loc   = encodeURIComponent(CFG.address);
+    const url   = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title
+        + '&dates=' + date + 'T' + sh + '00/' + date + 'T' + eh + '00'
+        + '&details=' + det + '&location=' + loc;
+    window.open(url, '_blank');
+}
+
+// ══════════════════════════════════════════════
+//  F7 — POLÍTICA DE REEMBOLSO NO CANCELAMENTO
+// ══════════════════════════════════════════════
+function askCancel(id) {
+    const b = myBookings.find(x => x.id === id); if (!b) return;
+    cancelTarget = id;
+    const firstSlot = (b.slots && b.slots[0]) ? b.slots[0] : '09:00';
+    const bookingAt = new Date(b.date + 'T' + firstSlot + ':00');
+    const hoursLeft = (bookingAt - new Date()) / 3600000;
+    let policyHtml = '';
+    if (hoursLeft >= 24) {
+        policyHtml = '<span style="color:#22c55e">✅ Reembolso total garantido<br><span style="opacity:.7">Mais de 24h de antecedência</span></span>';
+    } else if (hoursLeft >= 12) {
+        policyHtml = '<span style="color:#fbbf24">🟡 Crédito para nova reserva<br><span style="opacity:.7">Entre 12h e 24h de antecedência</span></span>';
+    } else if (hoursLeft > 0) {
+        policyHtml = '<span style="color:#ef4444">❌ Sem reembolso<br><span style="opacity:.7">Menos de 12h de antecedência</span></span>';
+    } else {
+        policyHtml = '<span style="color:#ef4444">⏰ Reserva já realizada — sem reembolso</span>';
+    }
+    const bg = hoursLeft >= 24 ? 'rgba(34,197,94,0.07)' : hoursLeft >= 12 ? 'rgba(251,191,36,0.07)' : 'rgba(239,68,68,0.07)';
+    const border = hoursLeft >= 24 ? 'rgba(34,197,94,0.2)' : hoursLeft >= 12 ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)';
+    document.getElementById('cancelModalDesc').textContent = 'Reserva de ' + formatDateBR(b.date) + ' — ' + (b.slots || []).join(', ');
+    const pol = document.getElementById('cancelModalPolicy');
+    pol.style.background = bg;
+    pol.style.border = '1px solid ' + border;
+    pol.innerHTML = policyHtml;
+    openModal('cancelModal');
+}
+
+// ══════════════════════════════════════════════
+//  F8 — CUPOM DE DESCONTO
+// ══════════════════════════════════════════════
+function applyCoupon() {
+    const code    = (document.getElementById('couponInput').value || '').trim().toUpperCase();
+    const msgEl   = document.getElementById('couponMsg');
+    const rowEl   = document.getElementById('couponRow');
+    const discEl  = document.getElementById('co-discount');
+    const totalEl = document.getElementById('co-total');
+    if (!code) { msgEl.textContent = ''; return; }
+    const pct = CFG.coupons && CFG.coupons[code];
+    if (!pct) {
+        activeCoupon = null;
+        msgEl.style.color = '#ef4444';
+        msgEl.textContent = 'Cupom inválido ou expirado.';
+        rowEl.style.display = 'none';
+        totalEl.textContent = formatBRL(selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+        return;
+    }
+    activeCoupon = { code, pct };
+    const baseTotal  = selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price);
+    const discount   = baseTotal * pct / 100;
+    const finalTotal = baseTotal - discount;
+    discEl.textContent = '- ' + formatBRL(discount) + ' (' + pct + '%)';
+    totalEl.textContent = formatBRL(finalTotal);
+    rowEl.style.display = 'flex';
+    msgEl.style.color = '#22c55e';
+    msgEl.textContent = '✅ Cupom "' + code + '" aplicado — ' + pct + '% de desconto!';
+}
+
+// ══════════════════════════════════════════════
+//  F9 — AVALIAÇÃO PÓS-USO
+// ══════════════════════════════════════════════
+function rateBooking(id) {
+    const b = myBookings.find(x => x.id === id); if (!b) return;
+    const stars = ['⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐'];
+    const chosen = prompt('Como foi sua experiência no WB Coworking?\n\n1 = Ruim  2 = Regular  3 = Bom  4 = Ótimo  5 = Excelente\n\nDigite de 1 a 5:');
+    const n = parseInt(chosen);
+    if (!n || n < 1 || n > 5) return;
+    const msg = 'Olá! Avalio minha reserva #' + b.id + ' do dia ' + formatDateBR(b.date) + ' com ' + stars[n - 1]
+        + (n <= 3 ? '\n\nPontos a melhorar: ' : '\n\nFoi ótimo! ');
+    window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ══════════════════════════════════════════════
+//  F10 — COMPARTILHAR COMPROVANTE COMO IMAGEM
+// ══════════════════════════════════════════════
+function shareBookingImage(id) {
+    const b = id ? myBookings.find(x => x.id === id) : (tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null));
+    if (!b) return toast('Reserva não encontrada.');
+    const canvas = document.createElement('canvas');
+    canvas.width  = 640; canvas.height = 380;
+    const ctx = canvas.getContext('2d');
+    // Fundo escuro
+    ctx.fillStyle = '#080810'; ctx.fillRect(0, 0, 640, 380);
+    // Faixa dourada topo/baixo
+    ctx.fillStyle = '#d4af37'; ctx.fillRect(0, 0, 640, 5); ctx.fillRect(0, 375, 640, 5);
+    // Glow
+    const grd = ctx.createRadialGradient(320, 0, 10, 320, 0, 260);
+    grd.addColorStop(0, 'rgba(212,175,55,0.08)'); grd.addColorStop(1, 'transparent');
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, 640, 380);
+    // Logo/título
+    ctx.fillStyle = '#d4af37'; ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('WB COWORKING', 320, 52);
+    ctx.fillStyle = '#5a5560'; ctx.font = '11px sans-serif';
+    ctx.fillText('COMPROVANTE DE RESERVA', 320, 70);
+    // Linha
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(48, 84); ctx.lineTo(592, 84); ctx.stroke();
+    // Dados
+    const rows = [
+        ['Cliente', b.userName], ['Data', formatDateBR(b.date)],
+        ['Sala', b.sala || '—'], ['Horários', (b.slots || []).join('  ·  ')],
+        ['Status', b.status]
+    ];
+    ctx.textAlign = 'left'; let y = 112;
+    rows.forEach(([lbl, val], i) => {
+        if (i % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fillRect(40, y - 16, 560, 30); }
+        ctx.fillStyle = '#5a5560'; ctx.font = '10px sans-serif'; ctx.fillText(lbl.toUpperCase(), 52, y);
+        ctx.fillStyle = '#ede8df'; ctx.font = '13px sans-serif'; ctx.fillText(String(val || '—'), 200, y);
+        y += 34;
+    });
+    // Total
+    ctx.fillStyle = 'rgba(212,175,55,0.1)'; ctx.roundRect ? ctx.roundRect(40, y, 560, 46, 10) : ctx.fillRect(40, y, 560, 46);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(212,175,55,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(40, y, 560, 46, 10); else ctx.rect(40, y, 560, 46); ctx.stroke();
+    ctx.fillStyle = '#d4af37'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('TOTAL: ' + formatBRL(b.total), 320, y + 29);
+    // Rodapé
+    ctx.fillStyle = '#5a5560'; ctx.font = '9px sans-serif';
+    ctx.fillText(CFG.address, 320, 365);
+
+    canvas.toBlob(blob => {
+        const file = new File([blob], 'reserva-wb-' + b.id + '.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: 'Reserva WB Coworking #' + b.id }).catch(() => downloadCanvas(canvas, b.id));
+        } else {
+            downloadCanvas(canvas, b.id);
+        }
+    }, 'image/png');
+}
+
+function downloadCanvas(canvas, id) {
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'reserva-wb-' + id + '.png';
+    a.click();
+    toast('Imagem salva!');
+}
 </script>
 </body>
 </html>
