@@ -838,16 +838,48 @@
         <h2 class="section-title">Agendar <span>Sala</span></h2>
         <div id="syncBadge"><div class="spinner"></div>Sincronizando agenda...</div>
         <div class="card card-sm">
-            <!-- Seleção de sala -->
+            <!-- Toggle Avulso / Semanal -->
+            <div style="display:flex;gap:8px;margin-bottom:20px">
+                <button id="typeAvulso" class="btn-gold" style="flex:1;min-height:44px;font-size:13px" onclick="setBookingMode('avulso')">📅 Avulso</button>
+                <button id="typeSemanal" class="btn-ghost" style="flex:1;min-height:44px;font-size:13px" onclick="setBookingMode('semanal')">🔄 Semanal</button>
+            </div>
+
+            <!-- Seleção de sala (compartilhada) -->
             <div class="field" style="margin-bottom:20px">
                 <label class="field-label">Escolha a sala</label>
                 <div id="salaGrid" style="margin-top:8px"></div>
             </div>
-            <div class="field"><label class="field-label" for="datePicker">Selecione a data</label><input type="date" id="datePicker" class="input"></div>
+
+            <!-- AVULSO: seleção de data -->
+            <div id="avulsoSection">
+                <div class="field"><label class="field-label" for="datePicker">Selecione a data</label><input type="date" id="datePicker" class="input"></div>
+                <div id="noDateMsg" style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">Escolha uma data para ver os horários disponíveis.</div>
+            </div>
+
+            <!-- SEMANAL: dia da semana + duração -->
+            <div id="semanalSection" style="display:none">
+                <label class="field-label" style="margin-bottom:10px;display:block">Dia da semana</label>
+                <div style="display:flex;gap:6px;margin-bottom:20px" id="dowButtons">
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(1)">Seg</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(2)">Ter</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(3)">Qua</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(4)">Qui</button>
+                    <button class="dow-btn slot-btn" style="flex:1;font-size:12px;padding:10px 4px" onclick="setDayOfWeek(5)">Sex</button>
+                </div>
+                <label class="field-label" style="margin-bottom:10px;display:block">Duração</label>
+                <div class="radio-group" style="margin-bottom:20px">
+                    <label class="radio-label"><input type="radio" name="numWeeks" value="4"  onchange="setNumWeeks(4)"  checked> 4 sem.</label>
+                    <label class="radio-label"><input type="radio" name="numWeeks" value="8"  onchange="setNumWeeks(8)"> 8 sem.</label>
+                    <label class="radio-label"><input type="radio" name="numWeeks" value="12" onchange="setNumWeeks(12)"> 12 sem.</label>
+                </div>
+                <div id="semanalNoDay" style="text-align:center;padding:20px 0;color:var(--muted);font-size:13px">Selecione o dia da semana para ver os horários.</div>
+            </div>
+
+            <!-- Slots (compartilhado entre Avulso e Semanal) -->
             <div id="slotsSection" class="slots-section" style="display:none">
-                <p class="slots-label">Horários disponíveis</p>
+                <p class="slots-label" id="slotsLabel">Horários disponíveis</p>
                 <div id="slotsGrid" class="slots-grid"></div>
-                <!-- Hint próxima data disponível -->
+                <!-- Hint próxima data (avulso only) -->
                 <div id="nextAvailableHint" style="display:none;align-items:center;gap:12px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.2);border-radius:var(--radius);padding:12px 16px;margin-top:12px">
                     <span style="font-size:22px">📅</span>
                     <div>
@@ -855,12 +887,19 @@
                         <p style="font-size:13px;color:var(--text)">Próxima disponível: <strong id="nextAvailableDate" style="color:var(--gold);cursor:pointer;text-decoration:underline" onclick="goToNextAvailable()">—</strong></p>
                     </div>
                 </div>
+                <!-- Preview semanal -->
+                <div id="semanalPreview" style="display:none;margin-top:16px">
+                    <p style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">📆 Datas que serão agendadas</p>
+                    <div id="semanalDateList" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin-bottom:10px;font-size:13px"></div>
+                    <div id="semanalConflictWarn" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#fbbf24;margin-bottom:10px">
+                        ⚠️ <span id="semanalConflictCount">0</span> data(s) com conflito serão <strong>puladas</strong> automaticamente.
+                    </div>
+                </div>
                 <div class="booking-footer">
                     <div><p class="total-label">Total selecionado</p><p id="totalPrice" class="total-value">R$ 0,00</p></div>
-                    <button class="btn-gold" style="width:auto;padding:12px 28px" onclick="goToCheckout()">Continuar →</button>
+                    <button id="btnContinuar" class="btn-gold" style="width:auto;padding:12px 28px" onclick="handleContinuar()">Continuar →</button>
                 </div>
             </div>
-            <div id="noDateMsg" style="text-align:center;padding:28px 0;color:var(--muted);font-size:13px">Escolha uma data para ver os horários disponíveis.</div>
         </div>
     </div>
 </section>
@@ -872,7 +911,8 @@
         <h2 class="section-title">Finalizar <span>Reserva</span></h2>
         <div class="order-summary">
             <div class="order-row"><span style="color:var(--muted)">Sala</span><span id="co-sala" style="color:var(--gold)">—</span></div>
-            <div class="order-row"><span style="color:var(--muted)">Data</span><span id="co-date">—</span></div>
+            <div class="order-row" id="co-date-row"><span style="color:var(--muted)">Data</span><span id="co-date">—</span></div>
+            <div class="order-row" id="co-weekly-row" style="display:none"><span style="color:var(--muted)">Plano</span><span id="co-weekly-info" style="color:var(--gold);font-size:12px;text-align:right;max-width:200px">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Horários</span><span id="co-slots" style="font-size:12px;text-align:right;max-width:200px">—</span></div>
             <div id="couponRow" class="order-row" style="display:none"><span style="color:var(--success);font-size:13px">🏷️ Desconto</span><span id="co-discount" style="color:var(--success)">—</span></div>
             <div class="order-row total"><span style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Total</span><span id="co-total" class="val">R$ 0,00</span></div>
@@ -892,8 +932,6 @@
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">Forma de pagamento</p>
         <div class="pay-options">
             <button class="pay-btn" onclick="goToMp('Pix')"><div class="pay-icon" style="background:rgba(50,188,173,0.1)">💠</div><div><p class="pay-name">Pix / QR Code</p><p class="pay-sub">Aprovação imediata</p></div><svg style="margin-left:auto;color:var(--muted)" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg></button>
-            <button class="pay-btn" onclick="goToMp('Cartão de Crédito')"><div class="pay-icon" style="background:rgba(99,102,241,0.1)">💳</div><div><p class="pay-name">Cartão de Crédito</p><p class="pay-sub">Parcele em até 12×</p></div><svg style="margin-left:auto;color:var(--muted)" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg></button>
-            <button class="pay-btn" onclick="goToMp('Boleto')"><div class="pay-icon" style="background:rgba(251,191,36,0.08)">📄</div><div><p class="pay-name">Boleto Bancário</p><p class="pay-sub">Aprovado em 1–2 dias úteis</p></div><svg style="margin-left:auto;color:var(--muted)" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg></button>
         </div>
         <button id="btnConfirmManual" onclick="showSuccessManual()" style="display:none;width:100%;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:12px;border-radius:var(--radius);font-size:12px;cursor:pointer;font-family:inherit;transition:.2s">✓ &nbsp;Já paguei — confirmar manualmente</button>
         <div class="divider">ou pague via pix manual</div>
@@ -1209,15 +1247,27 @@ function checkTerms() {
 // ══════════════════════════════════════════════
 function goToMp(method) {
     if (!checkTerms()) return;
-    const b = buildBooking(method, 'Aguardando Pagamento');
-    localStorage.setItem('wb_temp_booking', JSON.stringify(b));
-    tempBooking = b;
+    if (bookingMode === 'semanal') {
+        const bookings = buildWeeklyBookings(method, 'Aguardando Pagamento');
+        if (!bookings.length) return toast('Nenhuma data disponível.');
+        localStorage.setItem('wb_temp_weekly', JSON.stringify(bookings));
+        tempBooking = bookings[0];
+    } else {
+        const b = buildBooking(method, 'Aguardando Pagamento');
+        localStorage.setItem('wb_temp_booking', JSON.stringify(b));
+        tempBooking = b;
+    }
     window.open(CFG.mpLink, '_blank');
     document.getElementById('btnConfirmManual').style.display = 'block';
 }
 
 function showSuccessManual() {
-    if (tempBooking) {
+    const tempWeekly = JSON.parse(localStorage.getItem('wb_temp_weekly'));
+    if (tempWeekly && tempWeekly.length) {
+        tempWeekly.forEach(b => { b.status = 'PAGO — Confirmado'; });
+        saveWeeklyAndWebhook(tempWeekly, false);
+        localStorage.removeItem('wb_temp_weekly');
+    } else if (tempBooking) {
         tempBooking.status = 'PAGO — Confirmado';
         saveAndWebhook(tempBooking, false);
         localStorage.removeItem('wb_temp_booking');
@@ -1239,20 +1289,34 @@ function finalizeBooking(method) {
     if (!file) return toast('Anexe o comprovante de pagamento.');
     const btn = document.getElementById('btnEnviarPix');
     btn.disabled = true; btn.textContent = 'Enviando...';
-    const b = buildBooking(method, 'PAGO — Aguardando Verificação');
-    tempBooking = b;
     const reader = new FileReader();
     reader.onload = async e => {
-        b.fileName = file.name; b.fileData = e.target.result;
-        await saveAndWebhook(b, true);
-        // Notifica admin automaticamente via WhatsApp (sem precisar que o cliente envie)
-        const msg = '🔔 *Nova reserva com comprovante PIX* \n\nCliente: ' + b.userName
-            + '\nData: ' + formatDateBR(b.date) + '\nSala: ' + b.sala
-            + '\nHorários: ' + b.slots.join(', ')
-            + '\nTotal: ' + formatBRL(b.total)
-            + '\nRef: #' + b.id
-            + '\n\n_Verifique o comprovante e confirme no painel admin._';
-        window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+        if (bookingMode === 'semanal') {
+            const bookings = buildWeeklyBookings(method, 'PAGO — Aguardando Verificação');
+            if (!bookings.length) { btn.disabled = false; btn.textContent = 'Enviar Comprovante'; return toast('Nenhuma data disponível.'); }
+            bookings[0].fileName = file.name; bookings[0].fileData = e.target.result;
+            await saveWeeklyAndWebhook(bookings, true);
+            const b0 = bookings[0];
+            const msg = '🔔 *Nova reserva SEMANAL com comprovante PIX*\n\nCliente: ' + b0.userName
+                + '\nDia: ' + DOW_NAMES[selectedDow] + 'feiras · ' + bookings.length + ' semanas'
+                + '\nHorários: ' + b0.slots.join(', ')
+                + '\nSala: ' + b0.sala
+                + '\nTotal do pacote: ' + formatBRL(b0.weeklyTotal)
+                + '\n\n_Verifique o comprovante e confirme no painel admin._';
+            window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+        } else {
+            const b = buildBooking(method, 'PAGO — Aguardando Verificação');
+            tempBooking = b;
+            b.fileName = file.name; b.fileData = e.target.result;
+            await saveAndWebhook(b, true);
+            const msg = '🔔 *Nova reserva com comprovante PIX*\n\nCliente: ' + b.userName
+                + '\nData: ' + formatDateBR(b.date) + '\nSala: ' + b.sala
+                + '\nHorários: ' + b.slots.join(', ')
+                + '\nTotal: ' + formatBRL(b.total)
+                + '\nRef: #' + b.id
+                + '\n\n_Verifique o comprovante e confirme no painel admin._';
+            window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+        }
         btn.disabled = false; btn.textContent = 'Enviar Comprovante';
     };
     reader.readAsDataURL(file);
@@ -1285,6 +1349,10 @@ async function saveAndWebhook(data, showModal = true) {
 
 function resetBookingUI() {
     selection = { date: null, slots: [] };
+    bookingMode = 'avulso';
+    selectedDow = null;
+    weeklyDates = [];
+    weeklyGroupId = null;
     document.getElementById('datePicker').value = '';
     document.getElementById('slotsSection').style.display = 'none';
     document.getElementById('noDateMsg').style.display = 'block';
@@ -1884,6 +1952,195 @@ function formatBRL(v) { return Number(v).toLocaleString('pt-BR', { style: 'curre
 function formatDateBR(iso) { return iso ? iso.split('-').reverse().join('/') : '—'; }
 function copyPix() { const el = document.getElementById('pixDisplay'); el.select(); try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(el.value); } toast('Chave Pix copiada!'); }
 function openSupport(e) { if(e) e.preventDefault(); window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent('Olá! Preciso de ajuda com o sistema WB Coworking.'), '_blank'); }
+
+// ══════════════════════════════════════════════
+//  MODO AVULSO / SEMANAL
+// ══════════════════════════════════════════════
+let bookingMode  = 'avulso';
+let selectedDow  = null;   // 1=Seg .. 5=Sex
+let numWeeks     = 4;
+let weeklyDates  = [];     // ISO strings geradas
+let weeklyGroupId = null;
+
+const DOW_NAMES = ['', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+
+function setBookingMode(mode) {
+    bookingMode = mode;
+    selection = { date: null, slots: [] };
+    selectedDow = null; weeklyDates = [];
+    document.getElementById('typeAvulso').className  = mode === 'avulso' ? 'btn-gold' : 'btn-ghost';
+    document.getElementById('typeSemanal').className = mode === 'semanal' ? 'btn-gold' : 'btn-ghost';
+    document.getElementById('avulsoSection').style.display  = mode === 'avulso' ? 'block' : 'none';
+    document.getElementById('semanalSection').style.display = mode === 'semanal' ? 'block' : 'none';
+    document.getElementById('slotsSection').style.display   = 'none';
+    document.getElementById('semanalPreview').style.display = 'none';
+    if (mode === 'avulso') {
+        document.getElementById('noDateMsg').style.display = 'block';
+        document.getElementById('datePicker').value = '';
+    }
+    document.querySelectorAll('.dow-btn').forEach(b => b.classList.remove('selected'));
+    updateTotal();
+}
+
+function setDayOfWeek(dow) {
+    selectedDow = dow;
+    document.querySelectorAll('.dow-btn').forEach((b, i) => b.classList.toggle('selected', i + 1 === dow));
+    generateWeeklyDates();
+    if (weeklyDates.length === 0) { toast('Nenhuma data disponível para este dia nas próximas ' + numWeeks + ' semanas.'); return; }
+    selection.date = weeklyDates[0];
+    selection.slots = [];
+    const lbl = document.getElementById('slotsLabel');
+    if (lbl) lbl.textContent = 'Horários — todos os ' + DOW_NAMES[dow] + 's';
+    document.getElementById('slotsSection').style.display = 'block';
+    document.getElementById('semanalNoDay').style.display = 'none';
+    document.getElementById('semanalPreview').style.display = 'none';
+    renderSlotsWeekly();
+}
+
+function setNumWeeks(n) {
+    numWeeks = n;
+    if (selectedDow) { generateWeeklyDates(); if (selection.slots.length) updateWeeklyPreview(); }
+}
+
+function generateWeeklyDates() {
+    weeklyDates = [];
+    if (!selectedDow) return;
+    const d = new Date(); d.setHours(12, 0, 0, 0);
+    // Avança até o próximo dia da semana selecionado
+    const diff = (selectedDow - d.getDay() + 7) % 7 || 7;
+    d.setDate(d.getDate() + diff);
+    for (let i = 0; i < numWeeks; i++) {
+        const iso = d.toISOString().split('T')[0];
+        if (!blockedDates.includes(iso)) weeklyDates.push(iso);
+        d.setDate(d.getDate() + 7);
+    }
+}
+
+function renderSlotsWeekly() {
+    const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
+    CFG.hours.forEach(h => {
+        const btn = document.createElement('button'); btn.className = 'slot-btn';
+        // Verifica conflito em TODAS as datas da série
+        const conflictCount = weeklyDates.filter(date =>
+            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+        ).length;
+        if (conflictCount === weeklyDates.length) {
+            btn.disabled = true; btn.textContent = 'Lotado';
+        } else if (conflictCount > 0) {
+            btn.textContent = h + ' (' + conflictCount + '⚠)';
+            btn.style.borderColor = 'rgba(251,191,36,0.5)'; btn.style.color = '#fbbf24';
+            btn.onclick = () => toggleSlot(h, btn);
+        } else {
+            btn.textContent = h; btn.onclick = () => toggleSlot(h, btn);
+        }
+        grid.appendChild(btn);
+    });
+    updateTotal();
+}
+
+function updateWeeklyPreview() {
+    if (!weeklyDates.length || !selection.slots.length) {
+        document.getElementById('semanalPreview').style.display = 'none'; return;
+    }
+    const conflictDates = weeklyDates.filter(date =>
+        selection.slots.some(h =>
+            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+        )
+    );
+    const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
+    document.getElementById('semanalDateList').innerHTML = weeklyDates.map(date => {
+        const conflict = conflictDates.includes(date);
+        return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">'
+            + '<span style="color:' + (conflict ? '#ef4444' : 'var(--text)') + '">'
+            + (conflict ? '⚠️' : '✅') + ' ' + formatDateBR(date) + '</span>'
+            + '<span style="color:var(--muted)">' + selection.slots.join(' · ') + '</span>'
+            + '</div>';
+    }).join('');
+    const cntEl = document.getElementById('semanalConflictCount');
+    const warnEl = document.getElementById('semanalConflictWarn');
+    if (cntEl) cntEl.textContent = conflictDates.length;
+    if (warnEl) warnEl.style.display = conflictDates.length ? 'block' : 'none';
+    document.getElementById('semanalPreview').style.display = 'block';
+    // Atualiza total com apenas datas válidas
+    const price = selectedSala ? selectedSala.price : CFG.salas[0].price;
+    document.getElementById('totalPrice').textContent = formatBRL(validDates.length * selection.slots.length * price);
+}
+
+function handleContinuar() {
+    if (bookingMode === 'semanal') goToWeeklyCheckout();
+    else goToCheckout();
+}
+
+function goToWeeklyCheckout() {
+    if (!selectedSala) return toast('Selecione uma sala primeiro.');
+    if (!selectedDow)  return toast('Selecione o dia da semana.');
+    if (!selection.slots.length) return toast('Selecione ao menos um horário.');
+    const conflictDates = weeklyDates.filter(date =>
+        selection.slots.some(h =>
+            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+        )
+    );
+    const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
+    if (!validDates.length) return toast('Todas as datas têm conflito. Escolha outro horário.');
+    selection.slots.sort();
+    const price = selectedSala.price;
+    const total = validDates.length * selection.slots.length * price;
+    // Preenche checkout
+    document.getElementById('co-sala').textContent     = selectedSala.emoji + ' ' + selectedSala.nome;
+    document.getElementById('co-date-row').style.display   = 'none';
+    document.getElementById('co-weekly-row').style.display = 'flex';
+    document.getElementById('co-weekly-info').textContent  = DOW_NAMES[selectedDow] + 's · ' + validDates.length + ' semanas';
+    document.getElementById('co-slots').textContent    = selection.slots.join(' · ');
+    document.getElementById('co-total').textContent    = formatBRL(total);
+    document.getElementById('termsCheckbox').checked   = false;
+    activeCoupon = null;
+    document.getElementById('couponInput').value       = '';
+    document.getElementById('couponMsg').textContent   = '';
+    document.getElementById('couponRow').style.display = 'none';
+    // Guarda datas válidas para buildWeeklyBookings
+    weeklyGroupId = Date.now();
+    navTo('checkout');
+}
+
+function buildWeeklyBookings(method, status) {
+    const sala = selectedSala || CFG.salas[0];
+    const conflictDates = weeklyDates.filter(date =>
+        selection.slots.some(h =>
+            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+        )
+    );
+    const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
+    const basePerSession = selection.slots.length * sala.price;
+    const discount = activeCoupon ? Math.round(basePerSession * activeCoupon.pct / 100) : 0;
+    return validDates.map((date, i) => ({
+        id: weeklyGroupId + i,
+        userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+        date, slots: [...selection.slots].sort(), total: basePerSession - discount,
+        sala: sala.nome, salaId: sala.id, method, status,
+        coupon: activeCoupon ? activeCoupon.code : null, discount,
+        weeklyGroupId, weeklyDow: selectedDow, weeklyTotal: validDates.length * (basePerSession - discount),
+        createdAt: new Date().toISOString()
+    }));
+}
+
+async function saveWeeklyAndWebhook(bookings, showModal) {
+    bookings.forEach(b => {
+        const idx = myBookings.findIndex(x => x.id === b.id);
+        if (idx >= 0) myBookings[idx] = b; else myBookings.push(b);
+    });
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    // Envia cada uma para a planilha
+    for (const b of bookings) await postToSheet(b);
+    // Um único webhook com resumo
+    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ weekly: true, bookings }) }); } catch(e) {}
+    resetBookingUI();
+    if (showModal) openModal('successModal');
+    fetchGlobalBookings();
+}
 
 // ══════════════════════════════════════════════
 //  F5 — PRÓXIMA DATA DISPONÍVEL
