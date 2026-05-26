@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
     /* ── MOBILE FIRST — WB Coworking ── */
     :root {
@@ -968,12 +969,30 @@
         </label>
         <!-- PIX — único método de pagamento -->
         <div class="pix-box" style="margin-top:8px">
-            <p class="pix-box-title" style="margin-bottom:4px">💠 Pagamento via Pix</p>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Transfira o valor exato do total acima, anexe o comprovante e clique em Enviar.</p>
+            <p class="pix-box-title" style="margin-bottom:16px">💠 Pagamento via Pix</p>
+            <!-- Valor em destaque -->
+            <div style="text-align:center;background:var(--surface2);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+                <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Valor a transferir</p>
+                <p id="pixAmount" style="font-size:30px;font-weight:700;color:var(--gold);font-family:'Cormorant Garamond',serif;margin-bottom:8px">R$ 0,00</p>
+                <button onclick="copyPixAmount()" style="background:var(--gold-dim);border:1px solid var(--border-gold);color:var(--gold);font-size:11px;font-weight:600;padding:5px 14px;border-radius:var(--radius-pill);cursor:pointer;font-family:inherit">Copiar valor</button>
+            </div>
+            <!-- QR Code -->
+            <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;gap:8px">
+                <canvas id="pixQrCanvas" style="border-radius:12px;background:#fff;padding:8px"></canvas>
+                <p style="font-size:11px;color:var(--muted)">Escaneie com o app do seu banco</p>
+            </div>
+            <!-- Chave PIX -->
+            <p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Ou copie a chave Pix</p>
             <div class="pix-row"><input id="pixDisplay" class="input" type="text" readonly><button class="btn-copy" onclick="copyPix()">Copiar</button></div>
+            <!-- Comprovante -->
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Após pagar, anexe o comprovante:</p>
             <label class="file-upload-label" for="proofFile" id="uploadLabel">📎 &nbsp;Clique para anexar comprovante (PDF, JPG, PNG)</label>
             <input type="file" id="proofFile" accept=".pdf,.jpg,.jpeg,.png" onchange="onFileChange(this)">
             <div id="proofFileName"></div>
+            <!-- Preview imagem -->
+            <div id="proofPreview" style="display:none;margin:10px 0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-gold)">
+                <img id="proofPreviewImg" style="width:100%;max-height:180px;object-fit:cover;display:block">
+            </div>
             <button class="btn-gold" id="btnEnviarPix" onclick="finalizeBooking('PIX')">Enviar Comprovante</button>
         </div>
     </div>
@@ -1440,6 +1459,7 @@ function goToCheckout() {
     document.getElementById('couponMsg').textContent = '';
     document.getElementById('couponRow').style.display = 'none';
     navTo('checkout');
+    setTimeout(() => renderPixQr(total), 100);
 }
 
 function checkTerms() {
@@ -1452,9 +1472,56 @@ function checkTerms() {
 // ══════════════════════════════════════════════
 
 function onFileChange(input) {
-    const name = input.files[0] ? input.files[0].name : '';
-    document.getElementById('proofFileName').textContent = name;
+    const file = input.files[0];
+    const name = file ? file.name : '';
+    document.getElementById('proofFileName').textContent = '';
     document.getElementById('uploadLabel').textContent = name ? '✓  ' + name : '📎 Clique para anexar comprovante (PDF, JPG, PNG)';
+    const preview = document.getElementById('proofPreview');
+    const previewImg = document.getElementById('proofPreviewImg');
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => { previewImg.src = e.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// ── PIX QR Code ──
+function crc16(str) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+        crc ^= str.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+    }
+    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
+function buildPixPayload(key, name, city, amount) {
+    const f = (id, v) => id + String(v.length).padStart(2, '0') + v;
+    const merchant = f('00', '14br.gov.bcb.pix') + f('01', key);
+    let p = f('00', '01') + f('26', merchant) + f('52', '0000') + f('53', '986')
+        + (amount > 0 ? f('54', amount.toFixed(2)) : '')
+        + f('58', 'BR') + f('59', name.substring(0, 25)) + f('60', city.substring(0, 15))
+        + f('62', f('05', '***'));
+    return p + f('63', crc16(p + '6304'));
+}
+
+let _checkoutTotal = 0;
+
+function renderPixQr(total) {
+    _checkoutTotal = total;
+    const amountEl = document.getElementById('pixAmount');
+    if (amountEl) amountEl.textContent = formatBRL(total);
+    const canvas = document.getElementById('pixQrCanvas');
+    if (!canvas || typeof QRCode === 'undefined') return;
+    const payload = buildPixPayload(CFG.pixKey, 'WB Coworking', 'Sao Paulo', total);
+    QRCode.toCanvas(canvas, payload, { width: 200, margin: 1, color: { dark: '#111118', light: '#ffffff' } });
+}
+
+function copyPixAmount() {
+    const val = _checkoutTotal.toFixed(2).replace('.', ',');
+    navigator.clipboard?.writeText(val).then(() => toast('Valor copiado: R$ ' + val));
 }
 
 function finalizeBooking(method) {
@@ -1569,6 +1636,9 @@ function resetBookingUI() {
     document.getElementById('proofFile').value = '';
     document.getElementById('proofFileName').textContent = '';
     document.getElementById('uploadLabel').textContent = '📎 Clique para anexar comprovante (PDF, JPG, PNG)';
+    const pp = document.getElementById('proofPreview');
+    if (pp) pp.style.display = 'none';
+    _checkoutTotal = 0;
 }
 
 // ══════════════════════════════════════════════
@@ -2681,6 +2751,7 @@ function goToWeeklyCheckout() {
     // Guarda datas válidas para buildWeeklyBookings
     weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
     navTo('checkout');
+    setTimeout(() => renderPixQr(total), 100);
 }
 
 function buildWeeklyBookings(method, status) {
@@ -2852,18 +2923,21 @@ function applyCoupon() {
         msgEl.style.color = '#ef4444';
         msgEl.textContent = 'Cupom inválido ou expirado.';
         rowEl.style.display = 'none';
-        totalEl.textContent = formatBRL(selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+        const baseNoDisc = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+        totalEl.textContent = formatBRL(baseNoDisc);
+        renderPixQr(baseNoDisc);
         return;
     }
     activeCoupon = { code, pct };
-    const baseTotal  = selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price);
-    const discount   = baseTotal * pct / 100;
+    const baseTotal  = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+    const discount   = Math.round(baseTotal * pct / 100);
     const finalTotal = baseTotal - discount;
     discEl.textContent = '- ' + formatBRL(discount) + ' (' + pct + '%)';
     totalEl.textContent = formatBRL(finalTotal);
     rowEl.style.display = 'flex';
     msgEl.style.color = '#22c55e';
     msgEl.textContent = '✅ Cupom "' + code + '" aplicado — ' + pct + '% de desconto!';
+    renderPixQr(finalTotal);
 }
 
 // ══════════════════════════════════════════════
