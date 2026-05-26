@@ -1166,7 +1166,17 @@ async function fetchGlobalBookings() {
         const res  = await fetch(CFG.appsScriptUrl + '?_t=' + Date.now(), { redirect: 'follow', cache: 'no-store' });
         const json = await res.json();
         if (json.ok) {
-            globalBusy = json.data.filter(b => b.slots && b.date);
+            // Guarda apenas os campos necessários para verificar disponibilidade
+            // Dados pessoais (CPF, OAB, e-mail, telefone) NÃO ficam em globalBusy
+            globalBusy = json.data.filter(b => b.slots && b.date).map(b => ({
+                id:     b.id,
+                date:   b.date,
+                slots:  b.slots,
+                status: b.status,
+                sala:   b.sala,
+                salaId: b.salaId,
+                name:   (b.name || b.userName || '').split(' ')[0] // só primeiro nome, para a agenda semanal
+            }));
             // Sincroniza datas bloqueadas da planilha
             if (Array.isArray(json.bloqueadas)) {
                 blockedDates = json.bloqueadas.map(b => b.date).filter(Boolean);
@@ -1739,8 +1749,14 @@ async function renderAdminPanel() {
             .then(r => r.json())
             .then(json => {
                 if (!json.ok) return;
-                globalBusy = json.data.filter(b => b.slots && b.date);
+                // Admin recebe dados completos em adminAllData
                 adminAllData = json.data;
+                // globalBusy só retém campos não-pessoais
+                globalBusy = json.data.filter(b => b.slots && b.date).map(b => ({
+                    id: b.id, date: b.date, slots: b.slots, status: b.status,
+                    sala: b.sala, salaId: b.salaId,
+                    name: (b.name || b.userName || '').split(' ')[0]
+                }));
                 filterAdminTable();
                 const today2 = new Date().toISOString().split('T')[0];
                 renderWeekGrid(json.data, today2);
