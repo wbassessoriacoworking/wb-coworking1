@@ -2188,12 +2188,15 @@ function filterAdminTable() {
 // ── Alterar status ──────────────────────────────
 async function updateStatus(id, newStatus, selectEl) {
     selectEl.disabled = true;
+    const { error } = await sb.from('bookings').update({ status: newStatus }).eq('id', id);
+    if (error) { toast('Erro ao atualizar.'); selectEl.disabled = false; return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = newStatus;
-    const gb = globalBusy.find(b => String(b.id) === String(id));
-    if (gb) gb.status = newStatus;
-    const { error } = await sb.from('bookings').update({ status: newStatus }).eq('id', id);
-    if (error) toast('Erro ao atualizar.'); else toast('Status atualizado!');
+    // Recalcula globalBusy excluindo cancelados → libera horário imediatamente
+    globalBusy = adminAllData
+        .filter(b => b.slots && b.date && !(b.status || '').toLowerCase().includes('cancelado'))
+        .map(b => ({ id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: '' }));
+    toast('Status atualizado!');
     selectEl.disabled = false;
     filterAdminTable();
 }
@@ -2294,8 +2297,7 @@ async function adminRejectBooking(id) {
     if (error) { toast('Erro ao cancelar.'); return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = 'Cancelado';
-    const gb = globalBusy.find(b => String(b.id) === String(id));
-    if (gb) gb.status = 'Cancelado';
+    globalBusy = globalBusy.filter(b => String(b.id) !== String(id));
     toast('Reserva cancelada — horário liberado.');
     filterAdminTable();
 }
@@ -2841,7 +2843,7 @@ function suggestNextAvailable(fromDate) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
         const iso = d.toISOString().split('T')[0];
         if (blockedDates.includes(iso)) continue;
-        const busy = globalBusy.filter(b => b.date === iso).flatMap(b => b.slots || []);
+        const busy = globalBusy.filter(b => b.date === iso && !(b.status||'').toLowerCase().includes('cancelado')).flatMap(b => b.slots || []);
         const mine = myBookings.filter(b => b.date === iso && b.status !== 'Cancelado').flatMap(b => b.slots || []);
         const allBusy = new Set([...busy, ...mine]);
         if (allBusy.size < CFG.hours.length) return iso;
