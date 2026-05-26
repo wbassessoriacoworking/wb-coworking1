@@ -453,19 +453,6 @@
     .terms-check-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
     .terms-check-text a { color: var(--gold); cursor: pointer; text-decoration: underline; }
 
-    /* Pay buttons */
-    .pay-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-    .pay-btn {
-        background: var(--surface); border: 1.5px solid var(--border);
-        border-radius: var(--radius); padding: 16px;
-        display: flex; align-items: center; gap: 14px;
-        cursor: pointer; transition: .15s; width: 100%; text-align: left;
-        font-family: 'DM Sans', sans-serif; min-height: 72px;
-    }
-    .pay-btn:active { background: var(--surface2); border-color: var(--border-gold); transform: scale(0.99); }
-    .pay-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .pay-name { font-size: 15px; font-weight: 600; color: var(--text); }
-    .pay-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     /* Pix box */
     .pix-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-top: 20px; }
@@ -979,19 +966,15 @@
             <input type="checkbox" id="termsCheckbox">
             <span class="terms-check-text">Li e aceito as <a onclick="openModal('termsModal');return false;">regras e termos de uso</a> do WB Coworking.</span>
         </label>
-        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">Forma de pagamento</p>
-        <div class="pay-options">
-            <button class="pay-btn" onclick="goToMp('Pix')"><div class="pay-icon" style="background:rgba(50,188,173,0.1)">💠</div><div><p class="pay-name">Pix / QR Code</p><p class="pay-sub">Aprovação imediata</p></div><svg style="margin-left:auto;color:var(--muted)" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg></button>
-        </div>
-        <button id="btnConfirmManual" onclick="showSuccessManual()" style="display:none;width:100%;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:12px;border-radius:var(--radius);font-size:12px;cursor:pointer;font-family:inherit;transition:.2s">✓ &nbsp;Já paguei — confirmar manualmente</button>
-        <div class="divider">ou pague via pix manual</div>
-        <div class="pix-box">
-            <p class="pix-box-title">Chave Pix</p>
+        <!-- PIX — único método de pagamento -->
+        <div class="pix-box" style="margin-top:8px">
+            <p class="pix-box-title" style="margin-bottom:4px">💠 Pagamento via Pix</p>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Transfira o valor exato do total acima, anexe o comprovante e clique em Enviar.</p>
             <div class="pix-row"><input id="pixDisplay" class="input" type="text" readonly><button class="btn-copy" onclick="copyPix()">Copiar</button></div>
             <label class="file-upload-label" for="proofFile" id="uploadLabel">📎 &nbsp;Clique para anexar comprovante (PDF, JPG, PNG)</label>
             <input type="file" id="proofFile" accept=".pdf,.jpg,.jpeg,.png" onchange="onFileChange(this)">
             <div id="proofFileName"></div>
-            <button class="btn-gold" id="btnEnviarPix" onclick="finalizeBooking('PIX Manual')">Enviar Comprovante</button>
+            <button class="btn-gold" id="btnEnviarPix" onclick="finalizeBooking('PIX')">Enviar Comprovante</button>
         </div>
     </div>
 </section>
@@ -1025,7 +1008,6 @@ const CFG = {
     supabaseKey:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhbXBneGhycWxlYWV0cWdvZXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3Njk0NDMsImV4cCI6MjA5NTM0NTQ0M30.khTXI_in95tvOtGwY-Qu5gRD3bQRAEr81VBzaNDOt9M",
     adminEmail:    "imigrac.contato@gmail.com",
     webhookUrl:    "https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g",
-    mpLink:        "https://mpago.la/1fQzmFN",
     pixKey:        "chriskaires@gmail.com",
     whatsappAdmin: "5511962826658",
     wifiPassword:  "caires151826",
@@ -1468,61 +1450,6 @@ function checkTerms() {
 // ══════════════════════════════════════════════
 //  PAGAMENTO
 // ══════════════════════════════════════════════
-function goToMp(method) {
-    if (!checkTerms()) return;
-    if (bookingMode === 'semanal') {
-        const bookings = buildWeeklyBookings(method, 'Aguardando Pagamento');
-        if (!bookings.length) return toast('Nenhuma data disponível.');
-        localStorage.setItem('wb_temp_weekly', JSON.stringify(bookings));
-        tempBooking = bookings[0];
-    } else if (selectedDates.length > 1) {
-        const multiData = JSON.parse(localStorage.getItem('wb_temp_multi'));
-        if (!multiData || !multiData.validBookings.length) return toast('Nenhuma data disponível.');
-        const sala = selectedSala || CFG.salas[0];
-        const baseTotal = multiData.validBookings.reduce((s, vb) => s + vb.slots.length, 0) * sala.price;
-        const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
-        const total     = baseTotal - discount;
-        const groupId   = multiData.multiGroupId;
-        const bookings  = multiData.validBookings.map((vb, i) => ({
-            id: groupId + i, userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
-            date: vb.date, slots: vb.slots.sort(), total: vb.slots.length * sala.price,
-            sala: sala.nome, salaId: sala.id, method, status: 'Aguardando Pagamento',
-            coupon: i === 0 && activeCoupon ? activeCoupon.code : null,
-            discount: i === 0 ? discount : 0,
-            weeklyGroupId: groupId, weeklyTotal: total,
-            createdAt: new Date().toISOString()
-        }));
-        localStorage.setItem('wb_temp_multi', JSON.stringify({ ...multiData, bookings, method }));
-        tempBooking = bookings[0];
-    } else {
-        const b = buildBooking(method, 'Aguardando Pagamento');
-        localStorage.setItem('wb_temp_booking', JSON.stringify(b));
-        tempBooking = b;
-    }
-    window.open(CFG.mpLink, '_blank');
-    document.getElementById('btnConfirmManual').style.display = 'block';
-}
-
-function showSuccessManual() {
-    const tempWeekly = JSON.parse(localStorage.getItem('wb_temp_weekly'));
-    const tempMulti  = JSON.parse(localStorage.getItem('wb_temp_multi'));
-    if (tempWeekly && tempWeekly.length) {
-        tempWeekly.forEach(b => { b.status = 'PAGO — Confirmado'; });
-        saveWeeklyAndWebhook(tempWeekly, false);
-        localStorage.removeItem('wb_temp_weekly');
-    } else if (tempMulti && tempMulti.bookings && tempMulti.bookings.length) {
-        tempMulti.bookings.forEach(b => { b.status = 'PAGO — Confirmado'; });
-        saveMultiAndWebhook(tempMulti.bookings, false);
-        localStorage.removeItem('wb_temp_multi');
-    } else if (tempBooking) {
-        tempBooking.status = 'PAGO — Confirmado';
-        saveAndWebhook(tempBooking, false);
-        localStorage.removeItem('wb_temp_booking');
-        tempBooking = null;
-    }
-    document.getElementById('btnConfirmManual').style.display = 'none';
-    openModal('successModal');
-}
 
 function onFileChange(input) {
     const name = input.files[0] ? input.files[0].name : '';
