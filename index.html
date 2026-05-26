@@ -1119,16 +1119,28 @@ function openModal(id) {
         if (b && summaryEl && contentEl) {
             summaryEl.style.display = 'block';
             const row = (lbl, val, highlight) =>
-                '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">' +
-                '<span style="color:var(--muted);font-size:12px">' + lbl + '</span>' +
-                '<span style="color:' + (highlight ? 'var(--gold)' : 'var(--text)') + ';font-size:' + (highlight ? '16px' : '13px') + ';font-weight:' + (highlight ? '700' : '600') + '">' + val + '</span>' +
+                '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;gap:8px">' +
+                '<span style="color:var(--muted);font-size:12px;white-space:nowrap">' + lbl + '</span>' +
+                '<span style="color:' + (highlight ? 'var(--gold)' : 'var(--text)') + ';font-size:' + (highlight ? '17px' : '13px') + ';font-weight:' + (highlight ? '700' : '600') + ';text-align:right">' + val + '</span>' +
                 '</div>';
-            contentEl.innerHTML =
-                row('Data', formatDateBR(b.date)) +
-                row('Sala', (b.sala || '—')) +
-                row('Horários', (b.slots || []).join(' · ')) +
-                '<div style="border-top:1px solid var(--border);margin:8px 0 7px"></div>' +
-                row('Total', formatBRL(b.total), true);
+            // Detecta pacote (semanal ou multi-data)
+            const grupo = b.weeklyGroupId
+                ? myBookings.filter(x => x.weeklyGroupId === b.weeklyGroupId)
+                : null;
+            const totalPago = b.weeklyTotal || (grupo ? grupo.reduce((s, x) => s + (x.total || 0), 0) : b.total);
+            let html = '';
+            if (grupo && grupo.length > 1) {
+                const datas = grupo.map(x => formatDateBR(x.date)).join(', ');
+                html += row('Datas', grupo.length + ' sessões');
+                html += row('Período', formatDateBR(grupo[0].date) + ' → ' + formatDateBR(grupo[grupo.length - 1].date));
+            } else {
+                html += row('Data', formatDateBR(b.date));
+            }
+            html += row('Sala', b.sala || '—');
+            html += row('Horários', (b.slots || []).join(' · '));
+            html += '<div style="border-top:1px solid var(--border);margin:8px 0 7px"></div>';
+            html += row('Total pago', formatBRL(totalPago), true);
+            contentEl.innerHTML = html;
         }
     }
 }
@@ -1749,6 +1761,16 @@ function generatePDF(b) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const W = 210, pad = 22;
 
+    // Detect package (semanal / multi-date)
+    const grupo = b.weeklyGroupId
+        ? myBookings.filter(x => x.weeklyGroupId === b.weeklyGroupId)
+        : null;
+    const isPackage = grupo && grupo.length > 1;
+    const totalPago = b.weeklyTotal || (isPackage ? grupo.reduce((s, x) => s + (x.total || 0), 0) : b.total);
+    const dateLabel = isPackage
+        ? formatDateBR(grupo[0].date) + ' → ' + formatDateBR(grupo[grupo.length - 1].date) + ' (' + grupo.length + ' sessões)'
+        : formatDateBR(b.date);
+
     // Fundo
     doc.setFillColor(6, 6, 8); doc.rect(0, 0, W, 297, 'F');
     // Faixa topo
@@ -1775,9 +1797,9 @@ function generatePDF(b) {
         ['Documento', b.userDoc],
         ['E-mail',    b.userEmail],
         ['WhatsApp',  b.userPhone],
-        ['Data',      formatDateBR(b.date)],
+        [isPackage ? 'Período' : 'Data', dateLabel],
         ['Horários',  b.slots.join(', ')],
-        ['Duração',   b.slots.length + 'h'],
+        ['Duração',   b.slots.length + 'h' + (isPackage ? ' × ' + grupo.length + ' sessões' : '')],
         ['Método',    b.method],
         ['Status',    b.status],
     ];
@@ -1788,7 +1810,7 @@ function generatePDF(b) {
         if (i % 2 === 0) { doc.setFillColor(14, 14, 20); doc.rect(pad, y - 7, W - pad * 2, 12, 'F'); }
         doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(107, 107, 117);
         doc.text(lbl.toUpperCase(), pad + 4, y);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(232, 232, 224);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(232, 232, 224);
         doc.text(String(val || '—'), pad + 52, y);
     });
 
@@ -1797,7 +1819,7 @@ function generatePDF(b) {
     doc.setFillColor(26, 24, 8); doc.rect(pad, y - 9, W - pad * 2, 20, 'F');
     doc.setDrawColor(212, 175, 55); doc.setLineWidth(0.6); doc.rect(pad, y - 9, W - pad * 2, 20, 'S');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(212, 175, 55);
-    doc.text('TOTAL: ' + formatBRL(b.total), W / 2, y + 4, { align: 'center' });
+    doc.text('TOTAL: ' + formatBRL(totalPago), W / 2, y + 4, { align: 'center' });
 
     // Rodapé
     doc.setFillColor(212, 175, 55); doc.rect(0, 293, W, 4, 'F');
