@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WB Coworking — Reservas</title>
+    <title>WB Coworking — Reservas de Sala | Penha, São Paulo</title>
+    <meta name="description" content="Reserve sua sala no WB Coworking — espaço profissional em Penha, São Paulo. Salas privativas e compartilhadas para atendimentos e reuniões.">
+    <meta property="og:title" content="WB Coworking — Reserve sua Sala">
+    <meta property="og:description" content="Reserve online sua sala em Penha, SP. Espaço profissional, Wi-Fi, salas privativas e compartilhadas.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wbcoworkingaagenda.vercel.app/">
+    <meta name="theme-color" content="#d4af37">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -591,6 +597,11 @@
         <div class="success-icon">✓</div>
         <div class="modal-title">Reserva Enviada!</div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.</p>
+        <!-- Resumo da reserva -->
+        <div id="successBookingSummary" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:left;display:none">
+            <p style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">📋 Resumo da Reserva</p>
+            <div id="successSummaryContent"></div>
+        </div>
         <div style="background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left">
             <p style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">📶 Wi-Fi do Espaço</p>
             <p style="font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.05em" id="successWifi">—</p>
@@ -621,7 +632,7 @@
                 <ul>
                     <li>O horário reservado inclui entrada e saída. Atrasos não são compensados.</li>
                     <li>Caso precise estender, verifique disponibilidade com antecedência.</li>
-                    <li>Saídas com mais de 10 min de atraso podem gerar cobrança adicional.</li>
+                    <li>Saídas com mais de 10 min de atraso geram cobrança de 1 hora adicional (R$ 30,00).</li>
                 </ul>
             </div>
             <div class="terms-section">
@@ -739,7 +750,7 @@
             </div>
             <div class="info-pill"><span class="pill-icon">🕘</span><span>Seg–Sex · 09h–18h</span></div>
             <div class="info-pill" onclick="copyWifi()">
-                <span class="pill-icon">📶</span><span id="wifiDisplay">Wi-Fi</span>
+                <span class="pill-icon">📶</span><span id="wifiDisplay">Wi-Fi</span><span id="wifiHint" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
             </div>
         </div>
 
@@ -882,7 +893,7 @@ const CFG = {
     pixKey:            "chriskaires@gmail.com",
     whatsappAdmin:     "5511962826658",
     appsScriptUrl:     "https://script.google.com/macros/s/AKfycbzHKFtOzCWASWkZ83Vzg2OMHMyajV4aLEkGoI67I40RIqoDnTXEq_cNMvItBTtTjS-7/exec",
-    adminPassword:     "wb2024admin",
+    adminPasswordHash: "d98b0b066f3f0ece5b97908c6d42d7813ad5b6e6cad437133da6fc27b09d61e0",
     wifiPassword:      "caires151826",
     mapsUrl:           "https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+São+Paulo",
     address:           "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
@@ -962,6 +973,23 @@ function openModal(id) {
     if (id === 'successModal') {
         const el = document.getElementById('successWifi');
         if (el) el.textContent = CFG.wifiPassword;
+        const b = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
+        const summaryEl = document.getElementById('successBookingSummary');
+        const contentEl = document.getElementById('successSummaryContent');
+        if (b && summaryEl && contentEl) {
+            summaryEl.style.display = 'block';
+            const row = (lbl, val, highlight) =>
+                '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">' +
+                '<span style="color:var(--muted);font-size:12px">' + lbl + '</span>' +
+                '<span style="color:' + (highlight ? 'var(--gold)' : 'var(--text)') + ';font-size:' + (highlight ? '16px' : '13px') + ';font-weight:' + (highlight ? '700' : '600') + '">' + val + '</span>' +
+                '</div>';
+            contentEl.innerHTML =
+                row('Data', formatDateBR(b.date)) +
+                row('Sala', (b.sala || '—')) +
+                row('Horários', (b.slots || []).join(' · ')) +
+                '<div style="border-top:1px solid var(--border);margin:8px 0 7px"></div>' +
+                row('Total', formatBRL(b.total), true);
+        }
     }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1236,7 +1264,7 @@ function renderHistory() {
             '</div>' +
             '<div class="booking-right">' +
                 '<span class="badge ' + bc + '">' + bt + '</span>' +
-                '<div class="booking-total">R$ ' + b.total + ',00</div>' +
+                '<div class="booking-total">' + formatBRL(b.total) + '</div>' +
                 '<div class="booking-actions">' +
                     '<button class="btn-pdf" onclick="downloadReceiptById(' + b.id + ')">📄 PDF</button>' +
                     (!canc ? '<button class="btn-danger" onclick="askCancel(' + b.id + ')">✕ Cancelar</button>' : '') +
@@ -1340,7 +1368,7 @@ function generatePDF(b) {
     doc.setFillColor(26, 24, 8); doc.rect(pad, y - 9, W - pad * 2, 20, 'F');
     doc.setDrawColor(212, 175, 55); doc.setLineWidth(0.6); doc.rect(pad, y - 9, W - pad * 2, 20, 'S');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(212, 175, 55);
-    doc.text('TOTAL: R$ ' + b.total + ',00', W / 2, y + 4, { align: 'center' });
+    doc.text('TOTAL: ' + formatBRL(b.total), W / 2, y + 4, { align: 'center' });
 
     // Rodapé
     doc.setFillColor(212, 175, 55); doc.rect(0, 293, W, 4, 'F');
@@ -1375,9 +1403,12 @@ function renderAdminLogin() {
         '</div>';
 }
 
-function adminLogin() {
+async function adminLogin() {
     const pass = document.getElementById('adminPassInput').value;
-    if (pass === CFG.adminPassword) { adminUnlocked = true; renderAdminPanel(); }
+    if (!pass) return toast('Digite a senha.');
+    const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+    const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    if (hashHex === CFG.adminPasswordHash) { adminUnlocked = true; renderAdminPanel(); }
     else { toast('Senha incorreta.'); }
 }
 
@@ -1430,8 +1461,8 @@ async function renderAdminPanel() {
             <div class="stat-box"><div class="stat-num">${all.length}</div><div class="stat-lbl">Total</div></div>
             <div class="stat-box"><div class="stat-num" style="color:#22c55e">${paid.length}</div><div class="stat-lbl">Confirmadas</div></div>
             <div class="stat-box"><div class="stat-num" style="color:#fbbf24">${pend.length}</div><div class="stat-lbl">Pendentes</div></div>
-            <div class="stat-box"><div class="stat-num" style="font-size:20px;color:#22c55e">R$${rev}</div><div class="stat-lbl">Receita Conf.</div></div>
-            <div class="stat-box"><div class="stat-num" style="font-size:20px;color:#fbbf24">R$${revPend}</div><div class="stat-lbl">Pendente</div></div>
+            <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#22c55e">${formatBRL(rev)}</div><div class="stat-lbl">Receita Conf.</div></div>
+            <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#fbbf24">${formatBRL(revPend)}</div><div class="stat-lbl">Pendente</div></div>
         </div>
 
         <!-- Hoje -->
@@ -1454,7 +1485,7 @@ async function renderAdminPanel() {
                     const confPct = Math.round((d.conf / maxRev) * 100);
                     const label = m.slice(5) + '/' + m.slice(2,4);
                     return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-                        <div style="font-size:10px;color:var(--gold)">R$${d.conf}</div>
+                        <div style="font-size:10px;color:var(--gold)">${formatBRL(d.conf)}</div>
                         <div style="width:100%;background:var(--panel2);border-radius:4px;overflow:hidden;height:${Math.max(pct,4)}px;position:relative">
                             <div style="position:absolute;bottom:0;width:100%;height:${confPct}%;background:linear-gradient(to top,#d4af37,#f0d060);border-radius:4px"></div>
                             <div style="position:absolute;bottom:${confPct}%;width:100%;height:${pct-confPct}%;background:rgba(251,191,36,0.2);border-radius:4px"></div>
@@ -1605,7 +1636,7 @@ function filterAdminTable() {
             <td>${b.name||b.userName||'—'}</td>
             <td style="color:var(--muted);font-size:12px">${b.sala||'—'}</td>
             <td style="color:var(--muted);font-size:12px">${b.slots||'—'}</td>
-            <td>R$ ${b.total||0}</td>
+            <td>${formatBRL(b.total||0)}</td>
             <td style="color:var(--muted);font-size:12px">${b.method||'—'}</td>
             <td>
                 <select class="status-select" onchange="updateStatus('${b.id}', this.value, this)">
@@ -1788,7 +1819,7 @@ function copyWifi() {
 // ══════════════════════════════════════════════
 //  UTILS
 // ══════════════════════════════════════════════
-function formatBRL(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR') + ',00'; }
+function formatBRL(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatDateBR(iso) { return iso ? iso.split('-').reverse().join('/') : '—'; }
 function copyPix() { const el = document.getElementById('pixDisplay'); el.select(); try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(el.value); } toast('Chave Pix copiada!'); }
 function openSupport(e) { if(e) e.preventDefault(); window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent('Olá! Preciso de ajuda com o sistema WB Coworking.'), '_blank'); }
