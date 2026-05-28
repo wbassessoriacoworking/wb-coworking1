@@ -748,17 +748,20 @@
         <p class="login-subtitle">WB Coworking · Penha · SP</p>
         <div class="card">
             <form id="loginForm" class="form-stack" novalidate>
-                <div class="field"><label class="field-label" for="inputName">Nome completo</label><input id="inputName" class="input" type="text" placeholder="Dr. Nome Sobrenome" required autocomplete="name"></div>
                 <div class="field">
-                    <label class="field-label">Documento</label>
+                    <label class="field-label">Documento <span style="font-size:10px;color:var(--muted)">(CPF ou OAB)</span></label>
                     <div class="radio-group" style="margin-bottom:8px">
                         <label class="radio-label"><input type="radio" name="docType" value="cpf" checked onchange="setDocMode('cpf')"> CPF</label>
                         <label class="radio-label"><input type="radio" name="docType" value="oab" onchange="setDocMode('oab')"> OAB</label>
                     </div>
                     <input id="inputDoc" class="input" type="text" placeholder="000.000.000-00" required>
                 </div>
-                <div class="field"><label class="field-label" for="inputEmail">E-mail</label><input id="inputEmail" class="input" type="email" placeholder="seu@email.com" required list="emailHints" autocomplete="email"><datalist id="emailHints"><option value="@gmail.com"><option value="@hotmail.com"><option value="@outlook.com"><option value="@adv.oabsp.org.br"></datalist></div>
-                <div class="field"><label class="field-label" for="inputPhone">WhatsApp</label><input id="inputPhone" class="input" type="tel" placeholder="(11) 9xxxx-xxxx" required autocomplete="tel"></div>
+                <div id="autoFillHint" style="display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:10px 14px;font-size:12px;color:#22c55e;text-align:center;margin-bottom:4px"></div>
+                <div id="newUserFields">
+                    <div class="field"><label class="field-label" for="inputName">Nome completo</label><input id="inputName" class="input" type="text" placeholder="Dr. Nome Sobrenome" required autocomplete="name"></div>
+                    <div class="field"><label class="field-label" for="inputEmail">E-mail</label><input id="inputEmail" class="input" type="email" placeholder="seu@email.com" required list="emailHints" autocomplete="email"><datalist id="emailHints"><option value="@gmail.com"><option value="@hotmail.com"><option value="@outlook.com"><option value="@adv.oabsp.org.br"></datalist></div>
+                    <div class="field"><label class="field-label" for="inputPhone">WhatsApp</label><input id="inputPhone" class="input" type="tel" placeholder="(11) 9xxxx-xxxx" required autocomplete="tel"></div>
+                </div>
                 <button type="submit" class="btn-gold" style="margin-top:8px">Acessar</button>
             </form>
         </div>
@@ -1191,6 +1194,11 @@ document.getElementById('loginForm').addEventListener('submit', e => {
     if (phone[2] !== '9') return toast('Número deve começar com 9 após o DDD.');
     user = { name, doc, email, phone: document.getElementById('inputPhone').value };
     localStorage.setItem('wb_user', JSON.stringify(user));
+    // Memoriza dados para login automático futuro
+    const remembered = JSON.parse(localStorage.getItem('wb_remembered_users') || '{}');
+    const cleanDoc = docMode === 'cpf' ? doc.replace(/\D/g,'') : doc.trim().toUpperCase();
+    remembered[cleanDoc] = { name, email, phone: user.phone };
+    localStorage.setItem('wb_remembered_users', JSON.stringify(remembered));
     applyUser(); navTo('menu');
 });
 
@@ -1231,10 +1239,41 @@ function setupMasks() {
             let v = e.target.value.replace(/\D/g,'').slice(0,11);
             v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
             e.target.value = v;
-        } else { e.target.value = e.target.value.toUpperCase(); }
+            tryAutoFill(v.replace(/\D/g,''));
+        } else {
+            e.target.value = e.target.value.toUpperCase();
+            if (e.target.value.length >= 4) tryAutoFill(e.target.value.trim().toUpperCase());
+        }
     });
 }
-function setDocMode(t) { docMode = t; document.getElementById('inputDoc').value = ''; document.getElementById('inputDoc').placeholder = t === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000'; }
+
+function tryAutoFill(key) {
+    if (!key || key.length < 4) return;
+    const remembered = JSON.parse(localStorage.getItem('wb_remembered_users') || '{}');
+    const found = remembered[key];
+    const hint = document.getElementById('autoFillHint');
+    const fields = document.getElementById('newUserFields');
+    if (found) {
+        document.getElementById('inputName').value  = found.name;
+        document.getElementById('inputEmail').value = found.email;
+        document.getElementById('inputPhone').value = found.phone;
+        if (hint) { hint.innerHTML = '👋 Olá de volta, <strong>' + found.name.split(' ')[0] + '</strong>! Dados preenchidos automaticamente.'; hint.style.display = 'block'; }
+        if (fields) fields.style.opacity = '0.6';
+    } else {
+        if (hint) hint.style.display = 'none';
+        if (fields) fields.style.opacity = '1';
+    }
+}
+
+function setDocMode(t) {
+    docMode = t;
+    document.getElementById('inputDoc').value = '';
+    document.getElementById('inputDoc').placeholder = t === 'cpf' ? '000.000.000-00' : 'OAB/UF 000000';
+    const hint = document.getElementById('autoFillHint');
+    if (hint) hint.style.display = 'none';
+    const fields = document.getElementById('newUserFields');
+    if (fields) fields.style.opacity = '1';
+}
 
 // ══════════════════════════════════════════════
 //  SUPABASE — DADOS
@@ -2278,6 +2317,7 @@ function filterAdminTable() {
 
     const filtered = adminAllData.filter(b => {
         const s = (b.status||'').toLowerCase();
+        if (adminFilter==='todos'      && s.includes('cancelado')) return false;
         if (adminFilter==='confirmado' && !(s.includes('pago')||s.includes('confirmado'))) return false;
         if (adminFilter==='pendente'   && !(s.includes('análise')||s.includes('aguardando'))) return false;
         if (adminFilter==='cancelado'  && !s.includes('cancelado')) return false;
@@ -2348,6 +2388,9 @@ async function updateStatus(id, newStatus, selectEl) {
     toast('Status atualizado!');
     selectEl.disabled = false;
     filterAdminTable();
+    // Atualiza calendário semanal imediatamente
+    const today2 = new Date().toISOString().split('T')[0];
+    renderWeekGrid(adminAllData, today2);
 }
 
 // ── Exportar CSV ────────────────────────────────
@@ -2449,6 +2492,8 @@ async function adminRejectBooking(id) {
     globalBusy = globalBusy.filter(b => String(b.id) !== String(id));
     toast('Reserva cancelada — horário liberado.');
     filterAdminTable();
+    const today2 = new Date().toISOString().split('T')[0];
+    renderWeekGrid(adminAllData, today2);
 }
 
 let _deleteTarget = null;
