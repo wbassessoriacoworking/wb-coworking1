@@ -511,6 +511,7 @@
     .carousel-track { display: flex; height: 100%; transition: transform .45s cubic-bezier(.4,0,.2,1); will-change: transform; }
     .carousel-slide { min-width: 100%; height: 100%; position: relative; flex-shrink: 0; }
     .carousel-slide img { width: 100%; height: 100%; object-fit: cover; opacity: 0.82; }
+    .carousel-slide video { width: 100%; height: 100%; object-fit: cover; opacity: 0.92; }
     .carousel-slide .slide-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 16px; background: linear-gradient(transparent, rgba(0,0,0,0.65)); font-size: 12px; color: rgba(255,255,255,0.75); letter-spacing: .04em; }
     .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); color: white; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: .2s; z-index: 2; }
     .carousel-btn:active { background: rgba(212,175,55,0.3); }
@@ -599,6 +600,49 @@
 <body>
 
 <div id="toast"></div>
+
+<!-- MODAL PLANOS -->
+<div id="planosModal" class="modal-overlay" onclick="if(event.target===this)closeModal('planosModal')">
+    <div class="modal-box" style="max-width:480px">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;margin-bottom:4px">Planos <em style="color:var(--gold);font-style:italic">WB Coworking</em></h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Ideal para advogados com audiências frequentes no Fórum Trabalhista · 2 min do Fórum</p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-weight:600;font-size:14px">📅 Plano Audiência</span>
+                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 179<span style="font-size:11px;font-weight:400;color:var(--muted)">/sem</span></span>
+                </div>
+                <p style="font-size:12px;color:var(--muted)">1 dia fixo por semana · até 4h · Economize 10% vs avulso</p>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-weight:600;font-size:14px">🗓️ Mensal Leve</span>
+                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 420<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
+                </div>
+                <p style="font-size:12px;color:var(--muted)">10 horas/mês · ~2 dias de audiência · Economize 16%</p>
+            </div>
+            <div style="background:var(--surface2);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:14px 16px;position:relative">
+                <span style="position:absolute;top:-8px;left:14px;background:var(--gold);color:#080810;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em">Mais popular</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-weight:600;font-size:14px">📆 Mensal Essencial</span>
+                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 750<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
+                </div>
+                <p style="font-size:12px;color:var(--muted)">20 horas/mês · 1 dia/semana fixo · Economize 25%</p>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-weight:600;font-size:14px">🏆 Mensal Ilimitado</span>
+                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 1.200<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
+                </div>
+                <p style="font-size:12px;color:var(--muted)">Uso livre · Escritório fixo sem custo de locação</p>
+            </div>
+        </div>
+
+        <a href="https://wa.me/5511962826658?text=Olá!%20Tenho%20interesse%20em%20um%20plano%20do%20WB%20Coworking.%20Pode%20me%20passar%20mais%20informações%3F" target="_blank" class="btn-gold" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">💬 Falar no WhatsApp sobre Planos</a>
+        <button onclick="closeModal('planosModal')" class="modal-cancel">Fechar</button>
+    </div>
+</div>
 
 <!-- MODAL SUCESSO -->
 <div id="successModal" class="modal-overlay">
@@ -809,26 +853,35 @@
         </div>
 
         <!-- Salas -->
-        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Salas disponíveis</p>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Salas disponíveis · R$ 50/hora</p>
         <div class="sala-row" style="margin-bottom:20px">
             <div class="sala-chip">
                 <div class="sc-icon">🔒</div>
                 <div class="sc-name">Particular</div>
-                <div class="sc-price">R$ 60/h</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:4px">❄️ · 📷 · 🪑</div>
+                <div class="sc-price">R$ 50/h</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:4px">⚖️ · ❄️ · 📷</div>
             </div>
             <div class="sala-chip">
                 <div class="sc-icon">🤝</div>
                 <div class="sc-name">Compartilhada</div>
-                <div class="sc-price">R$ 40/h</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:4px">❄️ · 📷 · 📶</div>
+                <div class="sc-price">R$ 50/h</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:4px">⚖️ · ❄️ · 📶</div>
             </div>
             <div class="sala-chip">
                 <div class="sc-icon">🛋️</div>
                 <div class="sc-name">Recepção</div>
-                <div class="sc-price">R$ 30/h</div>
+                <div class="sc-price">R$ 50/h</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:4px">📺 · ☕ · 🛋️</div>
             </div>
+        </div>
+
+        <!-- Planos -->
+        <div onclick="openModal('planosModal')" style="background:linear-gradient(135deg,rgba(212,175,55,0.12),rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.35);border-radius:16px;padding:16px 20px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+                <p style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">⚖️ Planos Semanais e Mensais</p>
+                <p style="font-size:12px;color:var(--text2);line-height:1.4">Use com frequência? Economize até 30% com um plano fixo. Ideal para audiências regulares no Fórum.</p>
+            </div>
+            <div style="font-size:20px;flex-shrink:0">›</div>
         </div>
 
         <!-- Quick actions -->
@@ -859,10 +912,13 @@
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:12px;text-align:center">Conheça o Espaço</p>
         <div class="carousel-wrap" id="carousel">
             <div class="carousel-track" id="carouselTrack">
+<div class="carousel-slide"><video src="video/video1.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · Espaço profissional para advogados</div></div>
+<div class="carousel-slide"><video src="video/video2.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · 2 minutos do Fórum Trabalhista</div></div>
+<div class="carousel-slide"><video src="video/video3.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · Wi-Fi · Café · Salas privativas</div></div>
 <div class="carousel-slide"><img src="img/sala-privativa-1.jpg" alt="Sala Particular" loading="lazy"><div class="slide-caption">🔒 Sala Particular · ❄️ Climatizada · 📷 Câmera · Atendimento privativo</div></div>
 <div class="carousel-slide"><img src="img/sala-privativa-2.jpg" alt="Sala Particular - mesa de reuniao" loading="lazy"><div class="slide-caption">🪑 Mesa de Reunião · Até 4 pessoas · Mesa de vidro</div></div>
 <div class="carousel-slide"><img src="img/recepcao-1.jpg" alt="Recepcao" loading="lazy"><div class="slide-caption">🛋️ Recepção · 📺 TV · Espaço de espera para clientes</div></div>
-<div class="carousel-slide"><img src="img/recepcao-2.jpg" alt="Area de convivencia" loading="lazy"><div class="slide-caption">☕ Máquina de Café · 🛋️ Área de Convi-vência · Wi-Fi Grátis</div></div>
+<div class="carousel-slide"><img src="img/recepcao-2.jpg" alt="Area de convivencia" loading="lazy"><div class="slide-caption">☕ Máquina de Café · 🛋️ Área de Convivência · Wi-Fi Grátis</div></div>
             </div>
             <button class="carousel-btn prev" onclick="carouselMove(-1)">&#8592;</button>
             <button class="carousel-btn next" onclick="carouselMove(1)">&#8594;</button>
@@ -882,7 +938,7 @@
             <!-- Toggle Avulso / Semanal -->
             <div style="display:flex;gap:8px;margin-bottom:20px">
                 <button id="typeAvulso" class="btn-gold" style="flex:1;min-height:44px;font-size:13px" onclick="setBookingMode('avulso')">📅 Avulso</button>
-                <button id="typeSemanal" class="btn-ghost" style="flex:1;min-height:44px;font-size:13px" onclick="setBookingMode('semanal')">🔄 Semanal</button>
+                <button id="typeSemanal" class="btn-ghost" style="flex:1;min-height:44px;font-size:13px" onclick="openModal('planosModal')">📋 Ver Planos</button>
             </div>
 
             <!-- Seleção de sala (compartilhada) -->
@@ -1067,9 +1123,9 @@ const CFG = {
     address:       "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
     hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
     salas: [
-        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '❄️ AC · 📷 Câmera · Atendimento privativo', price: 60 },
-        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '❄️ AC · 📷 Câmera · Uso compartilhado',       price: 40 },
-        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · Espera de clientes',       price: 30 }
+        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 50 },
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 50 },
+        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 50 }
     ],
     coupons: {
         'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
@@ -1968,7 +2024,14 @@ async function adminLogin() {
     if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
     const { error } = await sb.auth.signInWithPassword({ email: CFG.adminEmail, password: pass });
     if (error) {
-        toast('Senha incorreta.');
+        const msg = error.message || '';
+        if (msg.includes('Invalid login') || msg.includes('invalid') || msg.includes('credentials')) {
+            toast('Senha incorreta ou usuário não cadastrado no Supabase.');
+        } else if (msg.includes('Email not confirmed')) {
+            toast('E-mail admin não confirmado no Supabase. Verifique a caixa de entrada.');
+        } else {
+            toast('Erro de acesso: ' + msg);
+        }
         if (btn) { btn.disabled = false; btn.textContent = 'Entrar no Painel'; }
         return;
     }
@@ -2169,7 +2232,16 @@ async function renderAdminPanel() {
 
     // Atualiza em segundo plano — admin autenticado lê dados completos
     sb.from('bookings').select('*').order('date', { ascending: false })
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+            if (error) {
+                const msg = error.message || '';
+                if (msg.includes('permission') || msg.includes('policy') || msg.includes('RLS') || msg.includes('JWT')) {
+                    toast('⚠️ Sem permissão para ler os dados. Verifique as políticas RLS do Supabase na tabela "bookings".');
+                } else {
+                    toast('Erro ao carregar reservas: ' + msg);
+                }
+                return;
+            }
             if (!data) return;
             adminAllData = data.map(b => ({
                 id: b.id, date: b.date, slots: b.slots, status: b.status,
@@ -2195,7 +2267,7 @@ async function renderAdminPanel() {
             const badge = document.getElementById('adminBadge');
             if (badge) { badge.textContent = pendCount; badge.style.display = pendCount > 0 ? 'inline-block' : 'none'; }
         })
-        .catch(() => {});
+        .catch(err => { toast('Erro de conexão ao carregar dados: ' + (err.message || 'tente novamente.')); });
 }
 
 // ── Agenda Semanal ──────────────────────────────
@@ -2848,6 +2920,11 @@ function carouselGoTo(idx) {
     if (track) track.style.transform = 'translateX(-' + (_carouselIdx * 100) + '%)';
     document.querySelectorAll('.carousel-dot').forEach((d, i) => {
         d.classList.toggle('active', i === _carouselIdx);
+    });
+    // Pausa vídeos inativos, reproduz o ativo
+    document.querySelectorAll('.carousel-slide video').forEach((v, i) => {
+        if (i === _carouselIdx) { v.play().catch(() => {}); }
+        else { v.pause(); }
     });
 }
 
