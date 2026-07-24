@@ -602,40 +602,63 @@
 
 <!-- MODAL PLANOS -->
 <div id="planosModal" class="modal-overlay" onclick="if(event.target===this)closeModal('planosModal')">
-    <div class="modal-box" style="max-width:480px">
+    <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto">
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;margin-bottom:4px">Planos <em style="color:var(--gold);font-style:italic">WB Coworking</em></h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:20px">Ideal para advogados com audiências frequentes no Fórum Trabalhista · 2 min do Fórum</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">📍 2 minutos do Fórum Trabalhista · Wi-Fi · Café · ❄️ AC</p>
 
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                    <span style="font-weight:600;font-size:14px">📅 Plano Audiência</span>
-                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 179<span style="font-size:11px;font-weight:400;color:var(--muted)">/sem</span></span>
-                </div>
-                <p style="font-size:12px;color:var(--muted)">1 dia fixo por semana · até 4h · Economize 10% vs avulso</p>
+        <!-- Avulso -->
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">⏱ Uso Avulso</p>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+                <span style="font-size:13px">1 hora</span>
+                <span style="color:var(--gold);font-weight:700">R$ 35,00</span>
             </div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                    <span style="font-weight:600;font-size:14px">🗓️ Mensal Leve</span>
-                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 420<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
-                </div>
-                <p style="font-size:12px;color:var(--muted)">10 horas/mês · ~2 dias de audiência · Economize 16%</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+                <span style="font-size:13px">2 horas</span>
+                <span style="color:var(--gold);font-weight:700">R$ 65,00</span>
             </div>
-            <div style="background:var(--surface2);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:14px 16px;position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+                <span style="font-size:13px">Meio período <span style="font-size:11px;color:var(--muted)">(4h)</span></span>
+                <span style="color:var(--gold);font-weight:700">R$ 120,00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+                <span style="font-size:13px">Diária <span style="font-size:11px;color:var(--muted)">(8h)</span></span>
+                <span style="color:var(--gold);font-weight:700">R$ 180,00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+                <span style="font-size:13px">Sala de Reunião</span>
+                <span style="color:var(--gold);font-weight:700">R$ 60 – 80/h</span>
+            </div>
+        </div>
+
+        <!-- Pacotes de Horas -->
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">📦 Pacotes de Horas</p>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                    <span style="font-size:13px;font-weight:600">Pacote 10h</span>
+                    <span style="color:var(--gold);font-weight:700">R$ 300,00</span>
+                </div>
+                <p style="font-size:11px;color:var(--muted)">R$ 30/hora · Economize R$ 50</p>
+            </div>
+            <div style="background:var(--surface2);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:12px 14px;position:relative">
                 <span style="position:absolute;top:-8px;left:14px;background:var(--gold);color:#080810;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em">Mais popular</span>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                    <span style="font-weight:600;font-size:14px">📆 Mensal Essencial</span>
-                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 750<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                    <span style="font-size:13px;font-weight:600">Pacote 20h</span>
+                    <span style="color:var(--gold);font-weight:700">R$ 560,00</span>
                 </div>
-                <p style="font-size:12px;color:var(--muted)">20 horas/mês · 1 dia/semana fixo · Economize 25%</p>
+                <p style="font-size:11px;color:var(--muted)">R$ 28/hora · Economize R$ 140</p>
             </div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-                    <span style="font-weight:600;font-size:14px">🏆 Mensal Ilimitado</span>
-                    <span style="color:var(--gold);font-weight:700;font-size:15px">R$ 1.200<span style="font-size:11px;font-weight:400;color:var(--muted)">/mês</span></span>
-                </div>
-                <p style="font-size:12px;color:var(--muted)">Uso livre · Escritório fixo sem custo de locação</p>
+        </div>
+
+        <!-- Plano Mensal -->
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">🏆 Plano Mensal</p>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                <span style="font-size:13px;font-weight:600">Posto Compartilhado</span>
+                <span style="color:var(--gold);font-weight:700">R$ 650 – 900</span>
             </div>
+            <p style="font-size:11px;color:var(--muted)">Uso mensal fixo · Sujeito à disponibilidade · Consulte condições</p>
         </div>
 
         <a href="https://wa.me/5511962826658?text=Olá!%20Tenho%20interesse%20em%20um%20plano%20do%20WB%20Coworking.%20Pode%20me%20passar%20mais%20informações%3F" target="_blank" class="btn-gold" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">💬 Falar no WhatsApp sobre Planos</a>
@@ -852,24 +875,24 @@
         </div>
 
         <!-- Salas -->
-        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Salas disponíveis · R$ 50/hora</p>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Salas disponíveis · a partir de R$ 35/hora</p>
         <div class="sala-row" style="margin-bottom:20px">
             <div class="sala-chip">
                 <div class="sc-icon">🔒</div>
                 <div class="sc-name">Particular</div>
-                <div class="sc-price">R$ 50/h</div>
+                <div class="sc-price">R$ 35/h</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:4px">⚖️ · ❄️ · 📷</div>
             </div>
             <div class="sala-chip">
                 <div class="sc-icon">🤝</div>
                 <div class="sc-name">Compartilhada</div>
-                <div class="sc-price">R$ 50/h</div>
+                <div class="sc-price">R$ 35/h</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:4px">⚖️ · ❄️ · 📶</div>
             </div>
             <div class="sala-chip">
                 <div class="sc-icon">🛋️</div>
                 <div class="sc-name">Recepção</div>
-                <div class="sc-price">R$ 50/h</div>
+                <div class="sc-price">R$ 35/h</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:4px">📺 · ☕ · 🛋️</div>
             </div>
         </div>
@@ -1106,9 +1129,9 @@ const CFG = {
     address:       "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
     hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
     salas: [
-        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 50 },
-        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 50 },
-        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 50 }
+        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 35 },
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 35 },
+        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 35 }
     ],
     coupons: {
         'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
