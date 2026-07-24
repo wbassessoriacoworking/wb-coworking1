@@ -507,11 +507,10 @@
     .empty-icon { font-size: 52px; margin-bottom: 16px; opacity: .25; }
 
     /* ── CAROUSEL ── */
-    .carousel-wrap { position: relative; width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #000; margin-bottom: 24px; touch-action: pan-y; }
-    .carousel-track { display: flex; transition: transform .45s cubic-bezier(.4,0,.2,1); will-change: transform; align-items: stretch; }
-    .carousel-slide { min-width: 100%; position: relative; flex-shrink: 0; display: flex; justify-content: center; align-items: center; background: #000; }
-    .carousel-slide img { width: 100%; object-fit: contain; opacity: 0.82; display: block; }
-    .carousel-slide video { width: 100%; max-width: 100%; height: auto; max-height: 80vh; object-fit: contain; opacity: 0.95; display: block; }
+    .carousel-wrap { position: relative; width: 100%; border-radius: var(--radius-lg); overflow: hidden; background: #000; margin-bottom: 24px; aspect-ratio: 16/7; touch-action: pan-y; }
+    .carousel-track { display: flex; height: 100%; transition: transform .45s cubic-bezier(.4,0,.2,1); will-change: transform; }
+    .carousel-slide { min-width: 100%; height: 100%; position: relative; flex-shrink: 0; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; opacity: 0.82; }
     .carousel-slide .slide-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 14px 16px; background: linear-gradient(transparent, rgba(0,0,0,0.65)); font-size: 12px; color: rgba(255,255,255,0.75); letter-spacing: .04em; }
     .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); color: white; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: .2s; z-index: 2; }
     .carousel-btn:active { background: rgba(212,175,55,0.3); }
@@ -912,9 +911,10 @@
         <p style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:12px;text-align:center">Conheça o Espaço</p>
         <div class="carousel-wrap" id="carousel">
             <div class="carousel-track" id="carouselTrack">
-<div class="carousel-slide"><video src="video/video1.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · Espaço profissional para advogados</div></div>
-<div class="carousel-slide"><video src="video/video2.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · 2 minutos do Fórum Trabalhista</div></div>
-<div class="carousel-slide"><video src="video/video3.mp4" muted playsinline loop autoplay preload="none"></video><div class="slide-caption">🎥 WB Coworking · Wi-Fi · Café · Salas privativas</div></div>
+<div class="carousel-slide"><img src="img/sala-privativa-1.jpg" alt="Sala Particular" loading="lazy"><div class="slide-caption">🔒 Sala Particular · ❄️ Climatizada · 📷 Câmera · Atendimento privativo</div></div>
+<div class="carousel-slide"><img src="img/sala-privativa-2.jpg" alt="Sala Particular - mesa de reuniao" loading="lazy"><div class="slide-caption">🪑 Mesa de Reunião · Até 4 pessoas · Mesa de vidro</div></div>
+<div class="carousel-slide"><img src="img/recepcao-1.jpg" alt="Recepcao" loading="lazy"><div class="slide-caption">🛋️ Recepção · 📺 TV · Espaço de espera para clientes</div></div>
+<div class="carousel-slide"><img src="img/recepcao-2.jpg" alt="Area de convivencia" loading="lazy"><div class="slide-caption">☕ Máquina de Café · 🛋️ Área de Convivência · Wi-Fi Grátis</div></div>
             </div>
             <button class="carousel-btn prev" onclick="carouselMove(-1)">&#8592;</button>
             <button class="carousel-btn next" onclick="carouselMove(1)">&#8594;</button>
