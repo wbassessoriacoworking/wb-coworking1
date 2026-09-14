@@ -831,6 +831,14 @@
 
 <main>
 
+<!-- Banner de instalação do app (PWA) -->
+<div id="installBanner" style="display:none;align-items:center;gap:10px;background:var(--surface2);border-bottom:1px solid var(--border-gold);padding:10px 16px;position:relative;z-index:2">
+    <span style="font-size:20px">📲</span>
+    <span style="flex:1;font-size:12px;color:var(--text)">Instale o app do WB Coworking no seu celular para acessar mais rápido.</span>
+    <button onclick="installApp()" class="btn-gold" style="width:auto;padding:7px 14px;font-size:11px">Instalar</button>
+    <button onclick="dismissInstallBanner()" class="btn-text" style="padding:4px;font-size:16px;line-height:1">✕</button>
+</div>
+
 <!-- LOGIN -->
 <section id="screen-login" class="screen">
     <div class="login-wrap">
@@ -1206,6 +1214,43 @@ let selectedDates = []; // múltiplas datas em modo avulso
 // ══════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  INSTALAR APP (PWA)
+// ══════════════════════════════════════════════
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    maybeShowInstallBanner();
+});
+window.addEventListener('appinstalled', () => dismissInstallBanner());
+
+function isIosDevice() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function isStandaloneApp() { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+
+function maybeShowInstallBanner() {
+    if (isStandaloneApp() || localStorage.getItem('wb_install_dismissed')) return;
+    if (deferredInstallPrompt || isIosDevice()) {
+        document.getElementById('installBanner').style.display = 'flex';
+    }
+}
+
+async function installApp() {
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        dismissInstallBanner();
+    } else if (isIosDevice()) {
+        toast('No iPhone: toque em Compartilhar 📤 e depois em "Adicionar à Tela de Início".');
+    }
+}
+
+function dismissInstallBanner() {
+    document.getElementById('installBanner').style.display = 'none';
+    localStorage.setItem('wb_install_dismissed', '1');
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pixDisplay').value = CFG.pixKey;
     renderCalendar();
@@ -1213,6 +1258,7 @@ window.addEventListener('DOMContentLoaded', () => {
     setupMasks();
     fetchGlobalBookings();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    maybeShowInstallBanner();
     const p = new URLSearchParams(window.location.search);
     if (p.get('cupom')) localStorage.setItem('wb_ref_coupon', p.get('cupom').toUpperCase());
     if (p.get('collection_status') === 'approved' && tempBooking) {
