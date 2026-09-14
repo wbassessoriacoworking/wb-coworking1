@@ -29,6 +29,19 @@ create policy "Clientes podem atualizar sua inscrição"
   to anon, authenticated
   using (true);
 
+-- Necessária mesmo achando que só falta INSERT/UPDATE: o site usa upsert()
+-- (INSERT ... ON CONFLICT DO UPDATE), e sem política de SELECT o Postgres
+-- rejeita a operação inteira com "new row violates row-level security policy",
+-- mesmo numa linha nova sem conflito nenhum.
+drop policy if exists "Clientes podem ler inscrições" on push_subscriptions;
+create policy "Clientes podem ler inscrições"
+  on push_subscriptions for select
+  to anon, authenticated
+  using (true);
+
+grant select, insert, update on push_subscriptions to anon, authenticated;
+grant usage, select on sequence push_subscriptions_id_seq to anon, authenticated;
+
 -- 2) Flag pra evitar mandar o mesmo lembrete duas vezes
 alter table bookings add column if not exists reminder_sent boolean default false;
 
