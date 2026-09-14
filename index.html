@@ -854,6 +854,21 @@
             <strong id="greetName">—</strong>
         </div>
 
+        <!-- Galeria de fotos -->
+        <div class="carousel-wrap" id="carousel">
+            <div class="carousel-track" id="carouselTrack">
+                <div class="carousel-slide"><img src="img/recepcao-1.jpg" alt="Recepção do WB Coworking" loading="lazy"><span class="slide-caption">🛋️ Recepção &amp; Espera</span></div>
+                <div class="carousel-slide"><img src="img/recepcao-2.jpg" alt="Área de espera do WB Coworking" loading="lazy"><span class="slide-caption">🛋️ Recepção &amp; Espera</span></div>
+                <div class="carousel-slide"><img src="img/sala-compartilhada-1.jpg" alt="Sala Compartilhada do WB Coworking" loading="lazy"><span class="slide-caption">🤝 Sala Compartilhada</span></div>
+                <div class="carousel-slide"><img src="img/sala-compartilhada-2.jpg" alt="Sala Compartilhada do WB Coworking" loading="lazy"><span class="slide-caption">🤝 Sala Compartilhada</span></div>
+                <div class="carousel-slide"><img src="img/sala-particular-1.jpg" alt="Sala Particular do WB Coworking" loading="lazy"><span class="slide-caption">🔒 Sala Particular</span></div>
+                <div class="carousel-slide"><img src="img/sala-particular-2.jpg" alt="Sala Particular do WB Coworking" loading="lazy"><span class="slide-caption">🔒 Sala Particular</span></div>
+            </div>
+            <button class="carousel-btn prev" onclick="carouselMove(-1)">‹</button>
+            <button class="carousel-btn next" onclick="carouselMove(1)">›</button>
+            <div class="carousel-dots" id="carouselDots"></div>
+        </div>
+
         <!-- Hero CTA -->
         <div class="menu-hero" onclick="navTo('booking')">
             <div class="menu-hero-text">
@@ -2870,7 +2885,7 @@ function rebook(id) {
 //  CAROUSEL
 // ══════════════════════════════════════════════
 let _carouselIdx = 0;
-const _carouselTotal = 4;
+const _carouselTotal = 6;
 let _carouselTimer = null;
 
 function carouselInit() {
