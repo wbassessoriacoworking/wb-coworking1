@@ -10,6 +10,11 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://wbcoworkingaagenda.vercel.app/">
     <meta name="theme-color" content="#d4af37">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="img/icon-192.png">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -607,24 +612,9 @@
         <p style="font-size:12px;color:var(--muted);margin-bottom:16px">📍 2 minutos do Fórum Trabalhista · Wi-Fi · Café · ❄️ AC</p>
 
         <!-- Avulso -->
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">⏱ Uso Avulso</p>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">⏱ Uso Avulso <span style="text-transform:none;font-weight:400;color:var(--muted)">(valor por hora)</span></p>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-                <span style="font-size:13px">1 hora</span>
-                <span style="color:var(--gold);font-weight:700">R$ 35,00</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-                <span style="font-size:13px">2 horas</span>
-                <span style="color:var(--gold);font-weight:700">R$ 65,00</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-                <span style="font-size:13px">Meio período <span style="font-size:11px;color:var(--muted)">(4h)</span></span>
-                <span style="color:var(--gold);font-weight:700">R$ 120,00</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-                <span style="font-size:13px">Diária <span style="font-size:11px;color:var(--muted)">(8h)</span></span>
-                <span style="color:var(--gold);font-weight:700">R$ 180,00</span>
-            </div>
+            <div id="avulsoPriceList" style="display:contents"></div>
             <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
                 <span style="font-size:13px">Sala de Reunião</span>
                 <span style="color:var(--gold);font-weight:700">R$ 60 – 80/h</span>
@@ -738,6 +728,31 @@
 </div>
 
 <!-- MODAL CANCELAR -->
+<!-- MODAL: Avaliação pós-uso -->
+<div id="ratingModal" class="modal-overlay" onclick="if(event.target===this)closeModal('ratingModal')">
+    <div class="modal-box" style="text-align:center">
+        <div class="modal-title">Como foi sua experiência?</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Sua avaliação nos ajuda a melhorar o espaço.</p>
+        <div id="ratingStars" style="display:flex;justify-content:center;gap:8px;font-size:34px;margin-bottom:18px;cursor:pointer"></div>
+        <textarea id="ratingComment" class="input" rows="2" placeholder="Comentário (opcional)" style="resize:vertical;min-height:54px;margin-bottom:16px;text-align:left"></textarea>
+        <button onclick="submitRating()" class="btn-gold" style="width:100%;margin-bottom:10px" id="btnSubmitRating">Enviar Avaliação</button>
+        <button onclick="closeModal('ratingModal')" class="modal-cancel">Agora não</button>
+    </div>
+</div>
+
+<!-- MODAL: Definir nova senha do admin (fluxo de recuperação Supabase) -->
+<div id="resetPasswordModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Definir Nova Senha</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Você veio de um link de recuperação de senha do painel admin. Escolha uma nova senha abaixo.</p>
+        <div class="form-stack">
+            <div class="field"><label class="field-label">Nova senha</label><input id="newAdminPass" class="input" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+            <div class="field"><label class="field-label">Confirme a nova senha</label><input id="newAdminPass2" class="input" type="password" placeholder="Repita a senha" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitNewAdminPassword()"></div>
+        </div>
+        <button onclick="submitNewAdminPassword()" class="btn-gold" style="width:100%;margin-top:16px" id="btnSaveNewPass">Salvar nova senha</button>
+    </div>
+</div>
+
 <div id="cancelModal" class="modal-overlay">
     <div class="modal-box" style="text-align:center">
         <div style="font-size:44px;margin-bottom:16px">⚠️</div>
@@ -897,6 +912,15 @@
                 <p style="font-size:12px;color:var(--text2);line-height:1.4">Use com frequência? Economize até 30% com um plano fixo. Ideal para audiências regulares no Fórum.</p>
             </div>
             <div style="font-size:20px;flex-shrink:0">›</div>
+        </div>
+
+        <!-- Indicação -->
+        <div onclick="shareReferralLink()" style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:16px 20px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+                <p style="font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">🤝 Indique um Amigo</p>
+                <p style="font-size:12px;color:var(--text2);line-height:1.4">Compartilhe seu link — quem reservar com ele ganha 15% de desconto.</p>
+            </div>
+            <div style="font-size:20px;flex-shrink:0;color:var(--muted)">›</div>
         </div>
 
         <!-- Quick actions -->
@@ -1137,6 +1161,27 @@ const CFG = {
 
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
 
+// Fluxo de recuperação de senha do admin: o Supabase loga automaticamente
+// a sessão a partir do link do e-mail e dispara este evento.
+sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') openModal('resetPasswordModal');
+});
+
+async function submitNewAdminPassword() {
+    const pass  = document.getElementById('newAdminPass').value;
+    const pass2 = document.getElementById('newAdminPass2').value;
+    if (!pass || pass.length < 6) return toast('A senha precisa ter no mínimo 6 caracteres.');
+    if (pass !== pass2) return toast('As senhas não coincidem.');
+    const btn = document.getElementById('btnSaveNewPass');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const { error } = await sb.auth.updateUser({ password: pass });
+    btn.disabled = false; btn.textContent = 'Salvar nova senha';
+    if (error) return toast('Erro ao salvar: ' + error.message);
+    closeModal('resetPasswordModal');
+    toast('Senha atualizada! Você já pode entrar no painel admin.');
+    adminUnlocked = true;
+}
+
 // ══════════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════════
@@ -1167,7 +1212,9 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('infoAddress').textContent = CFG.address;
     setupMasks();
     fetchGlobalBookings();
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     const p = new URLSearchParams(window.location.search);
+    if (p.get('cupom')) localStorage.setItem('wb_ref_coupon', p.get('cupom').toUpperCase());
     if (p.get('collection_status') === 'approved' && tempBooking) {
         tempBooking.status = 'PAGO — Confirmado';
         saveAndWebhook(tempBooking, false);
@@ -1205,6 +1252,7 @@ function navTo(screen) {
 // ══════════════════════════════════════════════
 function openModal(id) {
     document.getElementById(id).classList.add('open');
+    if (id === 'planosModal') renderAvulsoPriceList();
     if (id === 'successModal') {
         const el = document.getElementById('successWifi');
         if (el) el.textContent = CFG.wifiPassword;
@@ -1240,6 +1288,42 @@ function openModal(id) {
     }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Aplica automaticamente o cupom de indicação (?cupom=CODIGO na URL) na
+// primeira vez que o cliente chega ao checkout, depois esquece o código.
+function shareReferralLink() {
+    const link = 'https://wbcoworkingaagenda.vercel.app/?cupom=INDICA15';
+    const msg  = 'Oi! Uso o WB Coworking pra atender clientes perto do Fórum Trabalhista da Penha e recomendo 👇\n\nReserve sua sala com 15% de desconto usando esse link:\n' + link;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function applyPendingReferralCoupon() {
+    const ref = localStorage.getItem('wb_ref_coupon');
+    if (!ref || !document.getElementById('couponInput')) return;
+    document.getElementById('couponInput').value = ref;
+    applyCoupon();
+    localStorage.removeItem('wb_ref_coupon');
+}
+
+// Monta a tabela de preços "Avulso" do modal de Planos a partir do valor-hora
+// real (CFG.salas) e da carga horária real (CFG.hours), pra nunca ficar
+// dessincronizada do que é de fato cobrado no checkout (updateTotal/goToCheckout).
+function renderAvulsoPriceList() {
+    const price = Math.min(...CFG.salas.map(s => s.price));
+    const dayHours = CFG.hours.length;
+    const rows = [
+        { label: '1 hora', hours: 1 },
+        { label: '2 horas', hours: 2 },
+        { label: 'Meio período <span style="font-size:11px;color:var(--muted)">(4h)</span>', hours: 4 },
+        { label: 'Diária <span style="font-size:11px;color:var(--muted)">(' + dayHours + 'h)</span>', hours: dayHours },
+    ];
+    document.getElementById('avulsoPriceList').innerHTML = rows.map(r =>
+        '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">' +
+        '<span style="font-size:13px">' + r.label + '</span>' +
+        '<span style="color:var(--gold);font-weight:700">' + formatBRL(r.hours * price) + '</span>' +
+        '</div>'
+    ).join('');
+}
 
 let _tt;
 function toast(msg) {
@@ -1611,7 +1695,7 @@ function goToCheckout() {
     document.getElementById('couponMsg').textContent = '';
     document.getElementById('couponRow').style.display = 'none';
     navTo('checkout');
-    setTimeout(() => renderPixQr(total), 100);
+    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); }, 100);
 }
 
 function checkTerms() {
@@ -2051,6 +2135,9 @@ async function renderAdminPanel() {
     const pend = all.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); });
     const rev  = paid.reduce((s,b) => s + (Number(b.total)||0), 0);
     const revPend = pend.reduce((s,b) => s + (Number(b.total)||0), 0);
+    const indicacoes = all.filter(b => b.coupon === 'INDICA15' && !(b.status||'').toLowerCase().includes('cancelado')).length;
+    const rated = all.filter(b => Number(b.rating) > 0);
+    const avgRating = rated.length ? (rated.reduce((s,b) => s + Number(b.rating), 0) / rated.length) : 0;
 
     // Receita por mês (últimos 6 meses)
     const revenueByMonth = {};
@@ -2087,6 +2174,8 @@ async function renderAdminPanel() {
             <div class="stat-box"><div class="stat-num" style="color:#fbbf24">${pend.length}</div><div class="stat-lbl">Pendentes</div></div>
             <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#22c55e">${formatBRL(rev)}</div><div class="stat-lbl">Receita Conf.</div></div>
             <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#fbbf24">${formatBRL(revPend)}</div><div class="stat-lbl">Pendente</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:#818cf8">${indicacoes}</div><div class="stat-lbl">Indicações</div></div>
+            <div class="stat-box"><div class="stat-num" style="color:var(--gold)">${rated.length ? '⭐ ' + avgRating.toFixed(1) : '—'}</div><div class="stat-lbl">${rated.length} avaliação(ões)</div></div>
         </div>
 
         <!-- Clientes Premium/VIP -->
@@ -2169,6 +2258,12 @@ async function renderAdminPanel() {
             </div>`;
         })()}
 
+        <!-- Horários mais procurados -->
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px">⏰ Horários Mais Procurados (todo o período)</p>
+            <canvas id="peakHoursChart" height="140"></canvas>
+        </div>
+
         <!-- Busca + Filtros -->
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
             <input type="text" id="adminSearch" class="input" placeholder="🔍  Buscar por nome ou data (DD/MM/AAAA)..." style="flex:1;min-width:200px;font-size:13px" oninput="filterAdminTable()" value="${adminSearch}">
@@ -2223,6 +2318,9 @@ async function renderAdminPanel() {
     // Agenda semanal
     renderWeekGrid(all, today);
 
+    // Horários mais procurados
+    renderPeakHoursChart(all);
+
     // Tabela
     adminAllData = all;
     filterAdminTable();
@@ -2270,6 +2368,34 @@ async function renderAdminPanel() {
 }
 
 // ── Agenda Semanal ──────────────────────────────
+let _peakHoursChart = null;
+function renderPeakHoursChart(all) {
+    const canvas = document.getElementById('peakHoursChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const counts = {};
+    CFG.hours.forEach(h => counts[h] = 0);
+    all.filter(b => !(b.status||'').toLowerCase().includes('cancelado')).forEach(b => {
+        const slots = Array.isArray(b.slots) ? b.slots : (b.slots||'').split(',').map(s => s.trim()).filter(Boolean);
+        slots.forEach(h => { if (counts[h] !== undefined) counts[h]++; });
+    });
+    if (_peakHoursChart) _peakHoursChart.destroy();
+    _peakHoursChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: CFG.hours,
+            datasets: [{ data: CFG.hours.map(h => counts[h]), backgroundColor: 'rgba(212,175,55,0.55)', hoverBackgroundColor: 'rgba(212,175,55,0.85)', borderRadius: 4, maxBarThickness: 28 }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + ' reserva(s)' } } },
+            scales: {
+                x: { ticks: { color: '#a09a8e', font: { size: 10 } }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: '#a09a8e', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.06)' } }
+            }
+        }
+    });
+}
+
 function renderWeekGrid(all, today) {
     const grid = document.getElementById('weekGrid'); if (!grid) return;
     const base = new Date(today);
@@ -3247,7 +3373,7 @@ function goToWeeklyCheckout() {
     // Guarda datas válidas para buildWeeklyBookings
     weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
     navTo('checkout');
-    setTimeout(() => renderPixQr(total), 100);
+    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); }, 100);
 }
 
 function buildWeeklyBookings(method, status) {
@@ -3473,15 +3599,37 @@ function applyCoupon() {
 // ══════════════════════════════════════════════
 //  F9 — AVALIAÇÃO PÓS-USO
 // ══════════════════════════════════════════════
+let ratingBookingId = null;
+let ratingValue = 0;
+
 function rateBooking(id) {
     const b = myBookings.find(x => x.id === id); if (!b) return;
-    const stars = ['⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐'];
-    const chosen = prompt('Como foi sua experiência no WB Coworking?\n\n1 = Ruim  2 = Regular  3 = Bom  4 = Ótimo  5 = Excelente\n\nDigite de 1 a 5:');
-    const n = parseInt(chosen);
-    if (!n || n < 1 || n > 5) return;
-    const msg = 'Olá! Avalio minha reserva #' + b.id + ' do dia ' + formatDateBR(b.date) + ' com ' + stars[n - 1]
-        + (n <= 3 ? '\n\nPontos a melhorar: ' : '\n\nFoi ótimo! ');
-    window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+    ratingBookingId = id;
+    ratingValue = 0;
+    document.getElementById('ratingComment').value = '';
+    renderRatingStars();
+    openModal('ratingModal');
+}
+
+function renderRatingStars() {
+    const el = document.getElementById('ratingStars');
+    el.innerHTML = [1,2,3,4,5].map(n =>
+        '<span onclick="ratingValue=' + n + ';renderRatingStars()" style="opacity:' + (n <= ratingValue ? '1' : '0.25') + ';transition:.15s">⭐</span>'
+    ).join('');
+}
+
+async function submitRating() {
+    if (!ratingValue) return toast('Escolha de 1 a 5 estrelas.');
+    const b = myBookings.find(x => x.id === ratingBookingId); if (!b) return;
+    const comment = document.getElementById('ratingComment').value.trim();
+    const btn = document.getElementById('btnSubmitRating');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    const { error } = await sb.from('bookings').update({ rating: ratingValue, rating_comment: comment || null }).eq('id', ratingBookingId);
+    btn.disabled = false; btn.textContent = 'Enviar Avaliação';
+    if (error) return toast('Erro ao enviar: ' + error.message);
+    b.rating = ratingValue; b.rating_comment = comment || null;
+    closeModal('ratingModal');
+    toast('Obrigado pela avaliação! ⭐');
 }
 
 // ══════════════════════════════════════════════
