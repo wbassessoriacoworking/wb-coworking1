@@ -855,6 +855,14 @@
     <button onclick="dismissInstallBanner()" class="btn-text" style="padding:4px;font-size:16px;line-height:1">✕</button>
 </div>
 
+<!-- Banner de notificações de lembrete -->
+<div id="notifBanner" style="display:none;align-items:center;gap:10px;background:var(--surface2);border-bottom:1px solid var(--border-gold);padding:10px 16px;position:relative;z-index:2">
+    <span style="font-size:20px">🔔</span>
+    <span style="flex:1;font-size:12px;color:var(--text)">Ative os lembretes e receba um aviso 1h antes da sua reserva.</span>
+    <button onclick="enableNotifications()" class="btn-gold" style="width:auto;padding:7px 14px;font-size:11px">Ativar</button>
+    <button onclick="dismissNotifBanner()" class="btn-text" style="padding:4px;font-size:16px;line-height:1">✕</button>
+</div>
+
 <!-- LOGIN -->
 <section id="screen-login" class="screen">
     <div class="login-wrap">
@@ -1166,6 +1174,7 @@ const CFG = {
     pixKey:        "chriskaires@gmail.com",
     whatsappAdmin: "5511962826658",
     wifiPassword:  "caires151826",
+    vapidPublicKey: "BOPvcQGMYsOTqUxtM9mYcaXXVGFBC69LzmALqvjtzXiOMzXLIQ2x84m1ArCgj814r6lWhpifGaGcFbUJtwSnqm0",
     mapsUrl:       "https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+São+Paulo",
     address:       "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
     hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
@@ -1265,6 +1274,50 @@ async function installApp() {
 function dismissInstallBanner() {
     document.getElementById('installBanner').style.display = 'none';
     localStorage.setItem('wb_install_dismissed', '1');
+}
+
+// ══════════════════════════════════════════════
+//  LEMBRETES (Web Push)
+// ══════════════════════════════════════════════
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function maybeShowNotifBanner() {
+    if (!user || !('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (Notification.permission !== 'default') return;
+    if (localStorage.getItem('wb_notif_dismissed')) return;
+    document.getElementById('notifBanner').style.display = 'flex';
+}
+
+async function enableNotifications() {
+    try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { toast('Permissão negada — você pode ativar depois nas configurações do navegador.'); dismissNotifBanner(); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(CFG.vapidPublicKey) });
+        const subJson = sub.toJSON();
+        const { error } = await sb.from('push_subscriptions').upsert({
+            user_doc: user ? user.doc : null,
+            user_name: user ? user.name : null,
+            endpoint: subJson.endpoint,
+            p256dh: subJson.keys.p256dh,
+            auth: subJson.keys.auth
+        }, { onConflict: 'endpoint' });
+        if (error) { toast('Erro ao salvar inscrição: ' + error.message); return; }
+        toast('Lembretes ativados! 🔔');
+        dismissNotifBanner();
+    } catch (e) {
+        toast('Não foi possível ativar: ' + e.message);
+    }
+}
+
+function dismissNotifBanner() {
+    document.getElementById('notifBanner').style.display = 'none';
+    localStorage.setItem('wb_notif_dismissed', '1');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -1426,6 +1479,7 @@ function applyUser() {
     const mainEl = document.querySelector('main');
     if (nav) nav.classList.add('visible');
     if (mainEl) mainEl.classList.add('with-nav');
+    maybeShowNotifBanner();
 }
 
 function logout() {
