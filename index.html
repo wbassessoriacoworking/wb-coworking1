@@ -728,6 +728,22 @@
 </div>
 
 <!-- MODAL CANCELAR -->
+<!-- MODAL: Estender reserva +1h -->
+<div id="extendModal" class="modal-overlay" onclick="if(event.target===this)closeModal('extendModal')">
+    <div class="modal-box" style="text-align:center">
+        <div class="modal-title">Estender Reserva</div>
+        <p id="extendModalDesc" style="font-size:13px;color:var(--muted);margin-bottom:16px"></p>
+        <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:16px">
+            <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Custo adicional</p>
+            <p id="extendModalPrice" style="font-size:26px;font-weight:700;color:var(--gold);font-family:'Cormorant Garamond',serif">R$ 0,00</p>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Pague a chave Pix abaixo e confirme:</p>
+        <div class="pix-row" style="margin-bottom:16px"><input id="extendPixDisplay" class="input" type="text" readonly><button class="btn-copy" onclick="copyExtendPix()">Copiar</button></div>
+        <button onclick="confirmExtend()" class="btn-gold" style="width:100%;margin-bottom:10px" id="btnConfirmExtend">Já Paguei — Confirmar Extensão</button>
+        <button onclick="closeModal('extendModal')" class="modal-cancel">Cancelar</button>
+    </div>
+</div>
+
 <!-- MODAL: Avaliação pós-uso -->
 <div id="ratingModal" class="modal-overlay" onclick="if(event.target===this)closeModal('ratingModal')">
     <div class="modal-box" style="text-align:center">
@@ -1999,6 +2015,7 @@ function renderHistory() {
                     '<button class="btn-pdf" onclick="downloadReceiptById(' + b.id + ')">📄 PDF</button>' +
                     '<button class="btn-pdf" onclick="shareBookingImage(' + b.id + ')" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.2);color:#22c55e">📲</button>' +
                     (isPast && paid ? '<button class="btn-pdf" onclick="rateBooking(' + b.id + ')" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.2);color:#fbbf24">⭐ Avaliar</button>' : '') +
+                    (!canc && paid && !isPast && !isPkg ? '<button class="btn-pdf" onclick="askExtend(' + b.id + ')" style="background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25);color:#818cf8">+1h</button>' : '') +
                     (!canc && !isPast ? '<button class="btn-pdf" onclick="rebook(' + b.id + ')" style="background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.25);color:var(--gold)">🔄 Reagendar</button>' : '') +
                     (!canc && !isPast ? '<button class="btn-danger" onclick="askCancel(' + b.id + ')">✕ Cancelar</button>' : '') +
                 '</div>' +
@@ -2184,6 +2201,7 @@ async function renderAdminPanel() {
     const indicacoes = all.filter(b => b.coupon === 'INDICA15' && !(b.status||'').toLowerCase().includes('cancelado')).length;
     const rated = all.filter(b => Number(b.rating) > 0);
     const avgRating = rated.length ? (rated.reduce((s,b) => s + Number(b.rating), 0) / rated.length) : 0;
+    const noShows = all.filter(b => (b.status||'').toLowerCase().includes('compareceu')).length;
 
     // Receita por mês (últimos 6 meses)
     const revenueByMonth = {};
@@ -2215,17 +2233,21 @@ async function renderAdminPanel() {
 
         <!-- Stats -->
         <div class="admin-stats">
-            <div class="stat-box"><div class="stat-num">${all.length}</div><div class="stat-lbl">Total</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#22c55e">${paid.length}</div><div class="stat-lbl">Confirmadas</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#fbbf24">${pend.length}</div><div class="stat-lbl">Pendentes</div></div>
-            <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#22c55e">${formatBRL(rev)}</div><div class="stat-lbl">Receita Conf.</div></div>
-            <div class="stat-box"><div class="stat-num" style="font-size:18px;color:#fbbf24">${formatBRL(revPend)}</div><div class="stat-lbl">Pendente</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:#818cf8">${indicacoes}</div><div class="stat-lbl">Indicações</div></div>
-            <div class="stat-box"><div class="stat-num" style="color:var(--gold)">${rated.length ? '⭐ ' + avgRating.toFixed(1) : '—'}</div><div class="stat-lbl">${rated.length} avaliação(ões)</div></div>
+            <div class="stat-box"><div class="stat-num" id="statTotal">${all.length}</div><div class="stat-lbl">Total</div></div>
+            <div class="stat-box"><div class="stat-num" id="statConfirmadas" style="color:#22c55e">${paid.length}</div><div class="stat-lbl">Confirmadas</div></div>
+            <div class="stat-box"><div class="stat-num" id="statPendentes" style="color:#fbbf24">${pend.length}</div><div class="stat-lbl">Pendentes</div></div>
+            <div class="stat-box"><div class="stat-num" id="statReceitaConf" style="font-size:18px;color:#22c55e">${formatBRL(rev)}</div><div class="stat-lbl">Receita Conf.</div></div>
+            <div class="stat-box"><div class="stat-num" id="statReceitaPend" style="font-size:18px;color:#fbbf24">${formatBRL(revPend)}</div><div class="stat-lbl">Pendente</div></div>
+            <div class="stat-box"><div class="stat-num" id="statIndicacoes" style="color:#818cf8">${indicacoes}</div><div class="stat-lbl">Indicações</div></div>
+            <div class="stat-box"><div class="stat-num" id="statAvaliacaoNum" style="color:var(--gold)">${rated.length ? '⭐ ' + avgRating.toFixed(1) : '—'}</div><div class="stat-lbl" id="statAvaliacaoLbl">${rated.length} avaliação(ões)</div></div>
+            <div class="stat-box"><div class="stat-num" id="statNoShow" style="color:#f97316">${noShows}</div><div class="stat-lbl">Não Compareceu</div></div>
         </div>
 
         <!-- Clientes Premium/VIP -->
         <div id="premiumClientsSection" style="margin-bottom:20px"></div>
+
+        <!-- Clientes com não-comparecimento recorrente -->
+        <div id="noShowSection" style="margin-bottom:20px"></div>
 
         <!-- Hoje -->
         ${todayBookings.length > 0 ? `
@@ -2327,8 +2349,8 @@ async function renderAdminPanel() {
             <button class="btn-text" onclick="document.getElementById('periodPdfRow').style.display='none'" style="font-size:12px;color:var(--muted)">Cancelar</button>
         </div>
         <div class="admin-filters" id="adminFilterBtns">
-            ${['todos','confirmado','pendente','cancelado'].map(f =>
-                `<button class="filter-btn${adminFilter===f?' active':''}" onclick="adminFilter='${f}';adminSearch='';renderAdminPanel()">${{todos:'Todas',confirmado:'Confirmadas',pendente:'Pendentes',cancelado:'Canceladas'}[f]}</button>`
+            ${['todos','confirmado','pendente','naocompareceu','cancelado'].map(f =>
+                `<button class="filter-btn${adminFilter===f?' active':''}" onclick="adminFilter='${f}';adminSearch='';renderAdminPanel()">${{todos:'Todas',confirmado:'Confirmadas',pendente:'Pendentes',naocompareceu:'Não Compareceu',cancelado:'Canceladas'}[f]}</button>`
             ).join('')}
         </div>
 
@@ -2392,7 +2414,7 @@ async function renderAdminPanel() {
                 userDoc: b.user_doc, userName: b.user_name, name: b.user_name,
                 userPhone: b.user_phone, phone: b.user_phone,
                 userEmail: b.user_email, total: b.total, method: b.method,
-                coupon: b.coupon, discount: b.discount,
+                coupon: b.coupon, discount: b.discount, rating: b.rating, rating_comment: b.rating_comment,
                 weeklyGroupId: b.weekly_group_id, weeklyDow: b.weekly_dow, weeklyTotal: b.weekly_total,
                 fileName: b.file_name, fileData: b.file_data,
                 notes: b.notes || null,
@@ -2404,6 +2426,9 @@ async function renderAdminPanel() {
             filterAdminTable();
             renderCouponAdmin();
             renderPremiumClients();
+            renderNoShowClients();
+            refreshAdminStats(adminAllData);
+            renderPeakHoursChart(adminAllData);
             const today2 = new Date().toISOString().split('T')[0];
             renderWeekGrid(adminAllData, today2);
             const pendCount = adminAllData.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); }).length;
@@ -2555,6 +2580,57 @@ function adminSendCoupon(code) {
 }
 
 // ── Clientes Premium / VIP ──────────────────────
+// Recalcula e escreve os cards de estatística (chamada tanto na 1ª pintura,
+// com dados limitados de globalBusy, quanto depois que o fetch completo do
+// admin chega — só assim total/cupom/avaliação aparecem certos).
+function refreshAdminStats(all) {
+    const paid = all.filter(b => (b.status||'').includes('PAGO') || (b.status||'').includes('Confirmado'));
+    const pend = all.filter(b => { const s=(b.status||'').toLowerCase(); return s.includes('análise')||s.includes('aguardando'); });
+    const rev  = paid.reduce((s,b) => s + (Number(b.total)||0), 0);
+    const revPend = pend.reduce((s,b) => s + (Number(b.total)||0), 0);
+    const indicacoes = all.filter(b => b.coupon === 'INDICA15' && !(b.status||'').toLowerCase().includes('cancelado')).length;
+    const rated = all.filter(b => Number(b.rating) > 0);
+    const avgRating = rated.length ? (rated.reduce((s,b) => s + Number(b.rating), 0) / rated.length) : 0;
+    const noShows = all.filter(b => (b.status||'').toLowerCase().includes('compareceu')).length;
+    const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    set('statTotal', all.length);
+    set('statConfirmadas', paid.length);
+    set('statPendentes', pend.length);
+    set('statReceitaConf', formatBRL(rev));
+    set('statReceitaPend', formatBRL(revPend));
+    set('statIndicacoes', indicacoes);
+    set('statAvaliacaoNum', rated.length ? '⭐ ' + avgRating.toFixed(1) : '—');
+    set('statAvaliacaoLbl', rated.length + ' avaliação(ões)');
+    set('statNoShow', noShows);
+}
+
+function renderNoShowClients() {
+    const section = document.getElementById('noShowSection'); if (!section) return;
+    const map = {};
+    adminAllData
+        .filter(b => (b.status||'').toLowerCase().includes('compareceu'))
+        .forEach(b => {
+            const key = b.userDoc || b.userPhone || b.userName || b.name || b.id;
+            if (!map[key]) map[key] = { name: b.userName || b.name || '—', phone: b.userPhone || b.phone || '', count: 0 };
+            map[key].count++;
+        });
+    const clients = Object.values(map).filter(c => c.count >= 2).sort((a, b) => b.count - a.count);
+    if (!clients.length) { section.innerHTML = ''; return; }
+    section.innerHTML = '<p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#f97316;margin-bottom:10px">👻 Não-Comparecimento Recorrente</p>' +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+        clients.map(c => {
+            const waLink = c.phone ? 'https://wa.me/55' + c.phone.replace(/\D/g,'') : '';
+            return `<div style="background:rgba(249,115,22,0.05);border:1px solid rgba(249,115,22,0.2);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+                <div>
+                    <div style="font-weight:600;font-size:13px">${c.name}</div>
+                    <div style="font-size:11px;color:var(--muted)">${c.count} não-comparecimentos</div>
+                </div>
+                ${waLink ? `<a href="${waLink}" target="_blank" style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);color:#25d366;padding:5px 10px;border-radius:8px;font-size:11px;text-decoration:none;white-space:nowrap">📱 Contatar</a>` : ''}
+            </div>`;
+        }).join('') +
+        '</div>';
+}
+
 function renderPremiumClients() {
     const section = document.getElementById('premiumClientsSection'); if (!section) return;
     // Agrupa reservas confirmadas por cliente (chave = doc ou telefone)
@@ -2610,6 +2686,7 @@ function filterAdminTable() {
         if (adminFilter==='todos'      && s.includes('cancelado')) return false;
         if (adminFilter==='confirmado' && !(s.includes('pago')||s.includes('confirmado'))) return false;
         if (adminFilter==='pendente'   && !(s.includes('análise')||s.includes('aguardando'))) return false;
+        if (adminFilter==='naocompareceu' && !s.includes('compareceu')) return false;
         if (adminFilter==='cancelado'  && !s.includes('cancelado')) return false;
         if (adminSearch) {
             const nameMatch = (b.name||b.userName||'').toLowerCase().includes(adminSearch);
@@ -2631,7 +2708,8 @@ function filterAdminTable() {
         const isPaid    = s.includes('PAGO')||s.includes('Confirmado');
         const phone     = (b.userPhone||b.phone||'').replace(/\D/g,'');
         const waLink    = phone ? `https://wa.me/55${phone}` : '';
-        const statusColor = isPaid ? '#22c55e' : s.toLowerCase().includes('cancelado') ? '#ef4444' : '#fbbf24';
+        const isNoShow = s.toLowerCase().includes('compareceu');
+        const statusColor = isNoShow ? '#f97316' : isPaid ? '#22c55e' : s.toLowerCase().includes('cancelado') ? '#ef4444' : '#fbbf24';
         const tr = document.createElement('tr');
         tr.innerHTML =
             `<td style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:16px">${formatDateBR(b.date)}</td>
@@ -2644,7 +2722,7 @@ function filterAdminTable() {
             <td style="font-weight:600">${formatBRL(b.total||0)}</td>
             <td>
                 <select class="status-select" style="border-color:${statusColor}33;color:${statusColor}" onchange="updateStatus('${b.id}', this.value, this)">
-                    ${['EM ANÁLISE','Aguardando Pagamento','PAGO — Confirmado','PAGO — Aguardando Verificação','Cancelado'].map(opt =>
+                    ${['EM ANÁLISE','Aguardando Pagamento','PAGO — Confirmado','PAGO — Aguardando Verificação','Não Compareceu','Cancelado'].map(opt =>
                         `<option value="${opt}" ${s===opt?'selected':''}>${opt}</option>`
                     ).join('')}
                 </select>
@@ -2655,6 +2733,7 @@ function filterAdminTable() {
                     <button onclick="adminConfirmBooking('${b.id}')" title="Confirmar reserva" style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#22c55e;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✓</button>
                     <button onclick="adminRejectBooking('${b.id}')" title="Cancelar reserva" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">✗</button>
                     ` : ''}
+                    ${isPaid && !isNoShow ? `<button onclick="updateStatus('${b.id}','Não Compareceu',null)" title="Marcar não-comparecimento" style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:#f97316;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">👻</button>` : ''}
                     ${waLink ? `<a href="${waLink}" target="_blank" title="WhatsApp do cliente" style="background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);color:#25d366;padding:4px 8px;border-radius:6px;font-size:11px;text-decoration:none">📱</a>` : ''}
                     ${b.fileData ? `<button onclick="viewProof('${b.id}')" title="Ver comprovante" style="background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">🖼</button>` : ''}
                     ${b.notes ? `<button title="${b.notes.replace(/"/g,'&quot;')}" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);color:#818cf8;padding:4px 8px;border-radius:6px;font-size:11px;cursor:default">📝</button>` : ''}
@@ -2667,9 +2746,9 @@ function filterAdminTable() {
 
 // ── Alterar status ──────────────────────────────
 async function updateStatus(id, newStatus, selectEl) {
-    selectEl.disabled = true;
+    if (selectEl) selectEl.disabled = true;
     const { error } = await sb.from('bookings').update({ status: newStatus }).eq('id', id);
-    if (error) { toast('Erro ao atualizar.'); selectEl.disabled = false; return; }
+    if (error) { toast('Erro ao atualizar.'); if (selectEl) selectEl.disabled = false; return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = newStatus;
     // Recalcula globalBusy excluindo cancelados → libera horário imediatamente
@@ -2677,7 +2756,8 @@ async function updateStatus(id, newStatus, selectEl) {
         .filter(b => b.slots && b.date && !(b.status || '').toLowerCase().includes('cancelado'))
         .map(b => ({ id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: '' }));
     toast('Status atualizado!');
-    selectEl.disabled = false;
+    if (selectEl) selectEl.disabled = false;
+    renderNoShowClients();
     filterAdminTable();
     // Atualiza calendário semanal imediatamente
     const today2 = new Date().toISOString().split('T')[0];
@@ -3645,6 +3725,59 @@ function applyCoupon() {
 // ══════════════════════════════════════════════
 //  F9 — AVALIAÇÃO PÓS-USO
 // ══════════════════════════════════════════════
+let extendTarget = null;
+let extendNextHour = null;
+
+function askExtend(id) {
+    const b = myBookings.find(x => x.id === id); if (!b) return;
+    const sala = CFG.salas.find(s => s.id === b.salaId) || CFG.salas.find(s => s.nome === b.sala) || CFG.salas[0];
+    const sortedSlots = (b.slots || []).slice().sort();
+    const lastSlot = sortedSlots[sortedSlots.length - 1];
+    const idx = CFG.hours.indexOf(lastSlot);
+    if (idx === -1 || idx === CFG.hours.length - 1) return toast('Não há mais horários disponíveis para estender essa reserva.');
+    const nextHour = CFG.hours[idx + 1];
+    const busy = globalBusy.some(x => x.date === b.date && (x.slots || []).includes(nextHour) && String(x.id) !== String(b.id) && !(x.status || '').toLowerCase().includes('cancelado'))
+        || blockedHours.some(x => x.date === b.date && x.hour === nextHour);
+    if (busy) return toast('O horário seguinte (' + nextHour + ') já está ocupado.');
+    extendTarget = id;
+    extendNextHour = nextHour;
+    document.getElementById('extendModalDesc').textContent = formatDateBR(b.date) + ' · mais 1 hora às ' + nextHour;
+    document.getElementById('extendModalPrice').textContent = formatBRL(sala.price);
+    document.getElementById('extendPixDisplay').value = CFG.pixKey;
+    openModal('extendModal');
+}
+
+function copyExtendPix() {
+    const el = document.getElementById('extendPixDisplay'); el.select();
+    try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(el.value); }
+    toast('Chave Pix copiada!');
+}
+
+async function confirmExtend() {
+    if (!extendTarget || !extendNextHour) return;
+    const idx = myBookings.findIndex(x => x.id === extendTarget); if (idx < 0) return;
+    const b = myBookings[idx];
+    const sala = CFG.salas.find(s => s.id === b.salaId) || CFG.salas.find(s => s.nome === b.sala) || CFG.salas[0];
+    const newSlots  = (b.slots || []).concat([extendNextHour]);
+    const newTotal  = (Number(b.total) || 0) + sala.price;
+    const newStatus = (b.status || '').includes('PAGO') ? 'PAGO — Aguardando Verificação' : b.status;
+    const btn = document.getElementById('btnConfirmExtend');
+    btn.disabled = true; btn.textContent = 'Confirmando...';
+    const { error } = await sb.from('bookings').update({ slots: newSlots, total: newTotal, status: newStatus }).eq('id', b.id);
+    btn.disabled = false; btn.textContent = 'Já Paguei — Confirmar Extensão';
+    if (error) return toast('Erro ao estender: ' + error.message);
+    myBookings[idx].slots  = newSlots;
+    myBookings[idx].total  = newTotal;
+    myBookings[idx].status = newStatus;
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    closeModal('extendModal');
+    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: b.id, userName: b.userName || (user && user.name), date: b.date, sala: b.sala, slots: newSlots, total: newTotal, status: newStatus, notes: 'Extensão de +1h (' + extendNextHour + ')' }) }); } catch(e) {}
+    extendTarget = null; extendNextHour = null;
+    toast('Reserva estendida! Aguarde a confirmação do pagamento extra.');
+    renderHistory();
+    fetchGlobalBookings();
+}
+
 let ratingBookingId = null;
 let ratingValue = 0;
 
