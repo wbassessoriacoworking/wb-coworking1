@@ -1081,6 +1081,7 @@
         <h2 class="section-title">Finalizar <span>Reserva</span></h2>
         <div class="order-summary">
             <div class="order-row"><span style="color:var(--muted)">Sala</span><span id="co-sala" style="color:var(--gold)">—</span></div>
+            <div class="order-row" id="co-address-row" style="display:none"><span style="color:var(--muted)">Local</span><span id="co-address" style="font-size:11px;text-align:right;max-width:220px">—</span></div>
             <div class="order-row" id="co-date-row"><span style="color:var(--muted)">Data</span><span id="co-date">—</span></div>
             <div class="order-row" id="co-weekly-row" style="display:none"><span style="color:var(--muted)">Plano</span><span id="co-weekly-info" style="color:var(--gold);font-size:12px;text-align:right;max-width:200px">—</span></div>
             <div class="order-row"><span style="color:var(--muted)">Horários</span><span id="co-slots" style="font-size:12px;text-align:right;max-width:200px">—</span></div>
@@ -1176,7 +1177,8 @@ const CFG = {
         { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 35, stations: 1 },
         { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 35, stations: 1 },
         { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 35, stations: 1 },
-        { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', price: 35, stations: 8 }
+        { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', price: 35, stations: 8,
+          address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP' }
     ],
     coupons: {
         'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
@@ -1389,6 +1391,8 @@ function openModal(id) {
                 html += row('Data', formatDateBR(b.date));
             }
             html += row('Sala', b.sala || '—');
+            const addr = salaAddress(b.salaId);
+            if (addr !== CFG.address) html += row('Local', addr);
             if (b.stations > 1) html += row('Pessoas', b.stations + ' (' + (b.guestNames||[]).join(', ') + ')');
             html += row('Horários', (b.slots || []).join(' · '));
             html += '<div style="border-top:1px solid var(--border);margin:8px 0 7px"></div>';
@@ -1771,6 +1775,12 @@ function goToCheckout() {
     localStorage.setItem('wb_temp_multi', JSON.stringify({ validBookings, multiGroupId, price, stations, guests }));
     // Preenche checkout
     document.getElementById('co-sala').textContent = selectedSala.emoji + ' ' + selectedSala.nome;
+    if (selectedSala.address) {
+        document.getElementById('co-address-row').style.display = 'flex';
+        document.getElementById('co-address').textContent = selectedSala.address;
+    } else {
+        document.getElementById('co-address-row').style.display = 'none';
+    }
     if (dates.length > 1) {
         document.getElementById('co-date-row').style.display = 'none';
         document.getElementById('co-weekly-row').style.display = 'flex';
@@ -2169,7 +2179,7 @@ function generatePDF(b) {
     // Rodapé
     doc.setFillColor(212, 175, 55); doc.rect(0, 293, W, 4, 'F');
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(107, 107, 117);
-    doc.text(CFG.address + '  ·  WB Coworking', W / 2, 289, { align: 'center' });
+    doc.text(salaAddress(b.salaId) + '  ·  WB Coworking', W / 2, 289, { align: 'center' });
 
     doc.save('recibo-wb-' + b.id + '.pdf');
     toast('Recibo baixado com sucesso!');
@@ -3316,6 +3326,12 @@ function copyWifi() {
 //  UTILS
 // ══════════════════════════════════════════════
 function formatBRL(v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+// Algumas salas ficam em unidades diferentes do mesmo prédio/andar (ex: Sala
+// Coworking fica na Sala 15, as demais na Sala 19) — resolve o endereço certo.
+function salaAddress(salaId) {
+    const sala = CFG.salas.find(s => s.id === salaId);
+    return (sala && sala.address) || CFG.address;
+}
 function formatDateBR(iso) { return iso ? iso.split('-').reverse().join('/') : '—'; }
 function copyPix() { const el = document.getElementById('pixDisplay'); el.select(); try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(el.value); } toast('Chave Pix copiada!'); }
 function openSupport(e) { if(e) e.preventDefault(); window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent('Olá! Preciso de ajuda com o sistema WB Coworking.'), '_blank'); }
@@ -3562,6 +3578,12 @@ function goToWeeklyCheckout() {
     const total = validDates.length * selection.slots.length * price * stations;
     // Preenche checkout
     document.getElementById('co-sala').textContent     = selectedSala.emoji + ' ' + selectedSala.nome;
+    if (selectedSala.address) {
+        document.getElementById('co-address-row').style.display = 'flex';
+        document.getElementById('co-address').textContent = selectedSala.address;
+    } else {
+        document.getElementById('co-address-row').style.display = 'none';
+    }
     document.getElementById('co-date-row').style.display   = 'none';
     document.getElementById('co-weekly-row').style.display = 'flex';
     document.getElementById('co-weekly-info').textContent  = selectedDows.map(d => DOW_NAMES[d]).join(' · ') + ' · ' + validDates.length + ' ocorrências';
@@ -3716,7 +3738,7 @@ function addToGoogleCalendar() {
         const eh    = String(lastH).padStart(2,'0') + '00';
         const title = encodeURIComponent('WB Coworking — ' + (b.sala || 'Sala'));
         const det   = encodeURIComponent('Reserva #' + b.id + '\nSala: ' + (b.sala||'—') + '\nHorários: ' + slots.join(', ') + '\nTotal: ' + formatBRL(b.total));
-        const loc   = encodeURIComponent(CFG.address);
+        const loc   = encodeURIComponent(salaAddress(b.salaId));
         const url   = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title
             + '&dates=' + date + 'T' + sh + '00/' + date + 'T' + eh + '00'
             + '&details=' + det + '&location=' + loc;
@@ -3941,7 +3963,7 @@ function shareBookingImage(id) {
     ctx.fillText('TOTAL: ' + formatBRL(b.weeklyTotal || b.total), 320, y + 29);
     // Rodapé
     ctx.fillStyle = '#5a5560'; ctx.font = '9px sans-serif';
-    ctx.fillText(CFG.address, 320, 365);
+    ctx.fillText(salaAddress(b.salaId), 320, 365);
 
     canvas.toBlob(blob => {
         const file = new File([blob], 'reserva-wb-' + b.id + '.png', { type: 'image/png' });
