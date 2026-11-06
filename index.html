@@ -519,6 +519,12 @@
     .badge-cancelled { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
     .booking-total { font-size: 17px; font-weight: 700; color: var(--text); }
     .booking-actions { display: flex; gap: 6px; margin-top: 2px; flex-wrap: wrap; justify-content: flex-end; }
+    /* Celular: com 4-6 botões a coluna da direita estourava a largura do card */
+    @media (max-width: 520px) {
+        .booking-card { flex-wrap: wrap; }
+        .booking-right { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        .booking-actions { width: 100%; justify-content: flex-start; }
+    }
     .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
     .empty-icon { font-size: 52px; margin-bottom: 16px; opacity: .25; }
 
@@ -765,6 +771,30 @@
         <textarea id="ratingComment" class="input" rows="2" placeholder="Comentário (opcional)" style="resize:vertical;min-height:54px;margin-bottom:16px;text-align:left"></textarea>
         <button onclick="submitRating()" class="btn-gold" style="width:100%;margin-bottom:10px" id="btnSubmitRating">Enviar Avaliação</button>
         <button onclick="closeModal('ratingModal')" class="modal-cancel">Agora não</button>
+    </div>
+</div>
+
+<!-- MODAL: Ingresso de check-in (QR da reserva) -->
+<div id="ticketModal" class="modal-overlay" onclick="if(event.target===this)closeModal('ticketModal')">
+    <div class="modal-box" style="text-align:center">
+        <div class="modal-title">🎟️ Seu Check-in</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Mostre este QR na recepção ou faça o check-in direto pelo app quando chegar.</p>
+        <div id="ticketQr" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;margin-bottom:14px"></div>
+        <div id="ticketInfo" style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7"></div>
+        <button onclick="checkinFromTicket()" class="btn-gold" style="width:100%;margin-bottom:10px" id="btnTicketCheckin">📍 Cheguei — fazer check-in</button>
+        <button onclick="downloadTicket()" class="btn-pdf" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px">⬇️ Baixar no celular</button>
+        <button onclick="closeModal('ticketModal')" class="modal-cancel">Fechar</button>
+    </div>
+</div>
+
+<!-- MODAL: Resultado do check-in -->
+<div id="checkinModal" class="modal-overlay" onclick="if(event.target===this)closeModal('checkinModal')">
+    <div class="modal-box" style="text-align:center">
+        <div id="checkinIcon" class="success-icon">✓</div>
+        <div class="modal-title" id="checkinTitle">Check-in feito!</div>
+        <div id="checkinBody" style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7"></div>
+        <div id="checkinActions"></div>
+        <button onclick="closeModal('checkinModal')" class="modal-cancel">Fechar</button>
     </div>
 </div>
 
@@ -1344,6 +1374,14 @@ window.addEventListener('DOMContentLoaded', () => {
         openModal('successModal');
     }
     if (user) { applyUser(); navTo('menu'); } else navTo('login');
+    // QR da porta (?checkin=porta) e ingresso do cliente (?ticket=ID)
+    const ticketId = p.get('ticket');
+    if (p.get('checkin') || ticketId) history.replaceState(null, '', window.location.pathname);
+    if (ticketId) handleTicketScan(ticketId);
+    else if (p.get('checkin')) {
+        if (user) doCheckin();
+        else { localStorage.setItem('wb_pending_checkin', '1'); toast('Entre com seus dados para fazer o check-in.'); }
+    } else if (user) setTimeout(maybeAskRating, 1500);
 });
 
 // ══════════════════════════════════════════════
@@ -1479,6 +1517,7 @@ document.getElementById('loginForm').addEventListener('submit', e => {
     remembered[phone] = { name, email, phone: user.phone };
     localStorage.setItem('wb_remembered_users', JSON.stringify(remembered));
     applyUser(); navTo('menu');
+    if (localStorage.getItem('wb_pending_checkin')) { localStorage.removeItem('wb_pending_checkin'); doCheckin(); }
 });
 
 function applyUser() {
@@ -2070,6 +2109,7 @@ function renderHistory() {
                 '<span class="badge ' + bc + '">' + bt + '</span>' +
                 '<div class="booking-total">' + totalLabel + '</div>' +
                 '<div class="booking-actions">' +
+                    (!canc && !isPast ? '<button class="btn-pdf" onclick="openTicket(' + b.id + ')" style="background:rgba(212,175,55,0.12);border-color:rgba(212,175,55,0.35);color:var(--gold)">' + (b.checkedInAt ? '✅ Chegou' : '🎟️ Check-in') + '</button>' : '') +
                     '<button class="btn-pdf" onclick="downloadReceiptById(' + b.id + ')">📄 PDF</button>' +
                     '<button class="btn-pdf" onclick="shareBookingImage(' + b.id + ')" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.2);color:#22c55e">📲</button>' +
                     (isPast && paid ? '<button class="btn-pdf" onclick="rateBooking(' + b.id + ')" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.2);color:#fbbf24">⭐ Avaliar</button>' : '') +
@@ -2240,6 +2280,8 @@ async function adminLogin() {
     }
     adminUnlocked = true;
     renderAdminPanel();
+    const pendingTicket = localStorage.getItem('wb_pending_ticket');
+    if (pendingTicket) { localStorage.removeItem('wb_pending_ticket'); handleTicketScan(pendingTicket); }
 }
 
 async function adminLogout() {
@@ -2299,6 +2341,9 @@ async function renderAdminPanel() {
             <div class="stat-box"><div class="stat-num" id="statAvaliacaoNum" style="color:var(--gold)">${rated.length ? '⭐ ' + avgRating.toFixed(1) : '—'}</div><div class="stat-lbl" id="statAvaliacaoLbl">${rated.length} avaliação(ões)</div></div>
             <div class="stat-box"><div class="stat-num" id="statNoShow" style="color:#f97316">${noShows}</div><div class="stat-lbl">Não Compareceu</div></div>
         </div>
+
+        <!-- Check-in de hoje -->
+        <div id="checkinTodaySection"></div>
 
         <!-- Clientes Premium/VIP -->
         <div id="premiumClientsSection" style="margin-bottom:20px"></div>
@@ -2476,12 +2521,14 @@ async function renderAdminPanel() {
                 weeklyGroupId: b.weekly_group_id, weeklyDow: b.weekly_dow, weeklyTotal: b.weekly_total,
                 fileName: b.file_name, fileData: b.file_data,
                 notes: b.notes || null,
+                checkedInAt: b.checked_in_at || null,
                 createdAt: b.created_at
             }));
             globalBusy = adminAllData.filter(b => b.slots && b.date && b.status !== 'Cancelado').map(b => ({
                 id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: ''
             }));
             filterAdminTable();
+            renderCheckinToday(adminAllData);
             renderCouponAdmin();
             renderPremiumClients();
             renderNoShowClients();
@@ -2784,6 +2831,7 @@ function filterAdminTable() {
                         `<option value="${opt}" ${s===opt?'selected':''}>${opt}</option>`
                     ).join('')}
                 </select>
+                ${b.checkedInAt ? `<div style="font-size:10px;color:#22c55e;margin-top:4px">✅ chegou ${hhmm(b.checkedInAt)}</div>` : ''}
             </td>
             <td>
                 <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
@@ -3898,6 +3946,7 @@ function rateBooking(id) {
     const b = myBookings.find(x => x.id === id); if (!b) return;
     ratingBookingId = id;
     ratingValue = 0;
+    document.querySelector('#ratingModal .modal-title').textContent = 'Como foi sua experiência?';
     document.getElementById('ratingComment').value = '';
     renderRatingStars();
     openModal('ratingModal');
@@ -3916,10 +3965,14 @@ async function submitRating() {
     const comment = document.getElementById('ratingComment').value.trim();
     const btn = document.getElementById('btnSubmitRating');
     btn.disabled = true; btn.textContent = 'Enviando...';
-    const { error } = await sb.from('bookings').update({ rating: ratingValue, rating_comment: comment || null }).eq('id', ratingBookingId);
+    // wb_rate (supabase/sql/checkin_avaliacao_setup.sql) grava mesmo sem o site
+    // poder ler bookings; se a função ainda não existir, cai no update antigo.
+    let { error } = await sb.rpc('wb_rate', { p_id: String(ratingBookingId), p_doc: user.doc, p_rating: ratingValue, p_comment: comment });
+    if (error) ({ error } = await sb.from('bookings').update({ rating: ratingValue, rating_comment: comment || null }).eq('id', ratingBookingId));
     btn.disabled = false; btn.textContent = 'Enviar Avaliação';
     if (error) return toast('Erro ao enviar: ' + error.message);
     b.rating = ratingValue; b.rating_comment = comment || null;
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
     closeModal('ratingModal');
     toast('Obrigado pela avaliação! ⭐');
 }
@@ -3992,6 +4045,198 @@ function downloadCanvas(canvas, id) {
     a.download = 'reserva-wb-' + id + '.png';
     a.click();
     toast('Imagem salva!');
+}
+
+// ══════════════════════════════════════════════
+//  CHECK-IN (QR da porta + ingresso do cliente)
+// ══════════════════════════════════════════════
+// Data/hora local (o resto do app usa toISOString, que é UTC e vira o dia às 21h)
+function localTodayISO() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function ticketUrl(id) { return 'https://wbcoworkingaagenda.vercel.app/?ticket=' + id; }
+function doorCheckinUrl() { return 'https://wbcoworkingaagenda.vercel.app/?checkin=porta'; }
+function hhmm(iso) { return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+
+let ticketBookingId = null;
+function openTicket(id) {
+    const b = myBookings.find(x => x.id === id); if (!b) return;
+    ticketBookingId = id;
+    const qr = document.getElementById('ticketQr');
+    qr.innerHTML = '';
+    new QRCode(qr, { text: ticketUrl(b.id), width: 190, height: 190, colorDark: '#1a1a2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    document.getElementById('ticketInfo').innerHTML =
+        '<strong style="color:var(--gold);font-size:16px">' + formatDateBR(b.date) + '</strong><br>' +
+        escHtml(b.sala) + ' · ' + (b.slots || []).join(' · ') + '<br>' +
+        '<span style="font-size:11px;color:var(--muted)">Ref. #' + b.id + '</span>' +
+        (b.checkedInAt ? '<br><span style="color:#22c55e;font-weight:600">✅ Check-in feito às ' + hhmm(b.checkedInAt) + '</span>' : '');
+    const btn = document.getElementById('btnTicketCheckin');
+    btn.style.display = (b.date === localTodayISO() && !b.checkedInAt) ? 'block' : 'none';
+    openModal('ticketModal');
+}
+
+function checkinFromTicket() { closeModal('ticketModal'); doCheckin(); }
+
+// Gera a imagem do ingresso (QR + dados) pra salvar na galeria do celular
+function downloadTicket() {
+    const b = myBookings.find(x => x.id === ticketBookingId); if (!b) return;
+    const qrCanvas = document.querySelector('#ticketQr canvas');
+    const canvas = document.createElement('canvas');
+    canvas.width = 600; canvas.height = 820;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#080810'; ctx.fillRect(0, 0, 600, 820);
+    ctx.fillStyle = '#d4af37'; ctx.fillRect(0, 0, 600, 6); ctx.fillRect(0, 814, 600, 6);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 30px sans-serif'; ctx.fillText('WB COWORKING', 300, 66);
+    ctx.fillStyle = '#a09a8e'; ctx.font = '13px sans-serif'; ctx.fillText('INGRESSO DE CHECK-IN', 300, 92);
+    ctx.fillStyle = '#ffffff';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(150, 120, 300, 300, 16); ctx.fill(); } else ctx.fillRect(150, 120, 300, 300);
+    if (qrCanvas) ctx.drawImage(qrCanvas, 170, 140, 260, 260);
+    ctx.fillStyle = '#d4af37'; ctx.font = 'bold 34px sans-serif'; ctx.fillText(formatDateBR(b.date), 300, 485);
+    ctx.fillStyle = '#ede8df'; ctx.font = '20px sans-serif'; ctx.fillText(b.sala || '', 300, 525);
+    ctx.font = '17px sans-serif'; ctx.fillText((b.slots || []).join('  ·  '), 300, 560);
+    ctx.fillStyle = '#a09a8e'; ctx.font = '16px sans-serif'; ctx.fillText(b.userName || '', 300, 600);
+    ctx.fillStyle = '#5a5560'; ctx.font = '13px sans-serif'; ctx.fillText('Ref. #' + b.id, 300, 630);
+    ctx.fillStyle = '#a09a8e'; ctx.font = '14px sans-serif';
+    ctx.fillText('Mostre este QR na recepção ao chegar', 300, 700);
+    ctx.fillStyle = '#5a5560'; ctx.font = '12px sans-serif'; ctx.fillText(salaAddress(b.salaId), 300, 780);
+    canvas.toBlob(blob => {
+        const file = new File([blob], 'checkin-wb-' + b.id + '.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: 'Check-in WB Coworking' }).catch(() => downloadCanvas(canvas, b.id));
+        } else downloadCanvas(canvas, b.id);
+    }, 'image/png');
+}
+
+function showCheckinResult(ok, title, bodyHtml, actionsHtml) {
+    const icon = document.getElementById('checkinIcon');
+    icon.textContent = ok ? '✓' : '!';
+    icon.style.background = ok ? '' : 'rgba(251,191,36,0.12)';
+    icon.style.color = ok ? '' : '#fbbf24';
+    document.getElementById('checkinTitle').textContent = title;
+    document.getElementById('checkinBody').innerHTML = bodyHtml;
+    document.getElementById('checkinActions').innerHTML = actionsHtml || '';
+    openModal('checkinModal');
+}
+
+// Cliente chegou: marca no banco todas as reservas dele de hoje
+async function doCheckin() {
+    if (!user) return navTo('login');
+    const { data, error } = await sb.rpc('wb_checkin', { p_doc: user.doc });
+    if (error) return showCheckinResult(false, 'Check-in indisponível', 'Não foi possível registrar agora. Avise a recepção ou fale com a gente pelo WhatsApp.',
+        '<button class="btn-gold" style="width:100%;margin-bottom:10px" onclick="openSupport()">💬 WhatsApp</button>');
+    const rows = data || [];
+    if (!rows.length) return showCheckinResult(false, 'Nenhuma reserva hoje',
+        'Não encontramos reserva confirmada no seu WhatsApp para hoje (' + formatDateBR(localTodayISO()) + ').',
+        '<button class="btn-gold" style="width:100%;margin-bottom:10px" onclick="closeModal(\'checkinModal\');navTo(\'booking\')">📅 Reservar agora</button>' +
+        '<button class="btn-pdf" style="width:100%;padding:12px;margin-bottom:10px" onclick="openSupport()">💬 Falar com a recepção</button>');
+    rows.forEach(r => {
+        const b = myBookings.find(x => String(x.id) === String(r.id));
+        if (b) b.checkedInAt = r.checked_in_at;
+    });
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    showCheckinResult(true, 'Bem-vindo, ' + escHtml(user.name.split(' ')[0]) + '!',
+        rows.map(r => '<strong style="color:var(--gold)">' + escHtml(r.sala) + '</strong> · ' + (r.slots || []).join(' · ')).join('<br>') +
+        '<br><span style="color:#22c55e">✅ Check-in às ' + hhmm(rows[0].checked_in_at) + '</span>' +
+        '<div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">📶 Wi-Fi: <strong style="color:var(--gold)">' + escHtml(CFG.wifiPassword) + '</strong></div>');
+    if (document.getElementById('screen-history').classList.contains('active')) renderHistory();
+}
+
+// QR do ingresso aberto no celular: se for a recepção (admin logado), registra a chegada
+async function handleTicketScan(id) {
+    id = String(id).replace(/\D/g, '');
+    if (!id) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+        const own = myBookings.find(x => String(x.id) === String(id));
+        if (own) return openTicket(own.id);
+        return showCheckinResult(false, 'Ingresso #' + escHtml(id), 'Este QR é o ingresso de check-in de uma reserva. Mostre na recepção ao chegar.',
+            '<button class="btn-pdf" style="width:100%;padding:12px;margin-bottom:10px" onclick="localStorage.setItem(\'wb_pending_ticket\',\'' + escHtml(id) + '\');closeModal(\'checkinModal\');openAdmin()">🔐 Sou da recepção — entrar</button>');
+    }
+    adminUnlocked = true;
+    const { data: rows, error } = await sb.from('bookings').select('*').eq('id', id);
+    const b = rows && rows[0];
+    if (error || !b) return showCheckinResult(false, 'Reserva não encontrada', 'Não achamos a reserva #' + escHtml(id) + '.');
+    const warn = [];
+    if ((b.status || '').toLowerCase().includes('cancelado')) warn.push('⚠️ Esta reserva está CANCELADA.');
+    if (String(b.date) !== localTodayISO()) warn.push('⚠️ Reserva é para ' + formatDateBR(String(b.date)) + ', não para hoje.');
+    if (!(b.status || '').includes('PAGO') && !(b.status || '').includes('Confirmado')) warn.push('⚠️ Pagamento: ' + escHtml(b.status));
+    let at = b.checked_in_at;
+    if (!at && !warn.some(w => w.includes('CANCELADA'))) {
+        at = new Date().toISOString();
+        const { error: upErr } = await sb.from('bookings').update({ checked_in_at: at }).eq('id', id);
+        if (upErr) return showCheckinResult(false, 'Erro no check-in', escHtml(upErr.message) + '<br><span style="font-size:11px;color:var(--muted)">Rodou o supabase/sql/checkin_avaliacao_setup.sql?</span>');
+    }
+    showCheckinResult(!warn.length, at ? escHtml(b.user_name) + ' chegou' : 'Check-in não registrado',
+        '<strong style="color:var(--gold)">' + escHtml(b.sala) + '</strong> · ' + (b.slots || []).join(' · ') + '<br>' +
+        (b.stations > 1 ? '👥 ' + b.stations + ' pessoas<br>' : '') +
+        (at ? '<span style="color:#22c55e">✅ Check-in às ' + hhmm(at) + (b.checked_in_at ? ' (já tinha sido feito)' : '') + '</span>' : '') +
+        (warn.length ? '<div style="margin-top:10px;color:#fbbf24">' + warn.join('<br>') + '</div>' : ''),
+        '<button class="btn-gold" style="width:100%;margin-bottom:10px" onclick="closeModal(\'checkinModal\');openAdmin()">Abrir painel</button>');
+}
+
+// Painel admin: quem já chegou hoje
+function renderCheckinToday(all) {
+    const el = document.getElementById('checkinTodaySection'); if (!el) return;
+    const today = localTodayISO();
+    const list = all.filter(b => String(b.date) === today && !(b.status || '').toLowerCase().includes('cancelado'))
+        .sort((a, c) => String((a.slots || [])[0]).localeCompare(String((c.slots || [])[0])));
+    el.innerHTML =
+        '<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+        '<p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">📍 Check-in de Hoje (' + list.filter(b => b.checkedInAt).length + '/' + list.length + ')</p>' +
+        '<button class="btn-pdf" onclick="printDoorQr()" style="background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.3);color:var(--gold)">🖨️ QR da porta</button>' +
+        '</div>' +
+        (list.length ? list.map(b =>
+            '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">' +
+            '<span>' + escHtml(b.userName || b.name || '—') + ' <span style="color:var(--muted);font-size:11px">· ' + escHtml(b.sala) + ' · ' + (Array.isArray(b.slots) ? b.slots.join(', ') : '') + '</span></span>' +
+            (b.checkedInAt ? '<span style="color:#22c55e;white-space:nowrap">✅ ' + hhmm(b.checkedInAt) + '</span>' : '<span style="color:var(--muted);white-space:nowrap">⏳ aguardando</span>') +
+            '</div>').join('') : '<p style="font-size:12px;color:var(--muted)">Nenhuma reserva para hoje.</p>') +
+        '</div>';
+}
+
+// Página pra imprimir e colar na porta/recepção
+function printDoorQr() {
+    const tmp = document.createElement('div');
+    new QRCode(tmp, { text: doorCheckinUrl(), width: 600, height: 600, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    const img = tmp.querySelector('canvas').toDataURL('image/png');
+    const w = window.open('', '_blank');
+    if (!w) return toast('Libere pop-ups para imprimir o QR.');
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>QR Check-in — WB Coworking</title>' +
+        '<style>body{font-family:Arial,sans-serif;text-align:center;padding:40px 20px;color:#111}h1{font-size:44px;letter-spacing:.12em;margin:0 0 6px}' +
+        'h2{font-size:22px;font-weight:400;color:#8a6d1a;margin:0 0 30px;letter-spacing:.2em}img{width:380px;max-width:80vw}' +
+        'p{font-size:22px;margin:26px 0 6px}small{font-size:15px;color:#555}</style></head><body>' +
+        '<h1>WB COWORKING</h1><h2>CHECK-IN</h2><img src="' + img + '">' +
+        '<p><strong>Chegou? Aponte a câmera do celular</strong></p><small>O check-in é feito automaticamente pelo app</small>' +
+        '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
+    w.document.close();
+}
+
+// ══════════════════════════════════════════════
+//  AVALIAÇÃO AUTOMÁTICA (pede uma vez, após o uso)
+// ══════════════════════════════════════════════
+function bookingEnded(b) {
+    const today = localTodayISO();
+    if (b.date < today) return true;
+    if (b.date > today) return false;
+    const last = (b.slots || []).slice().sort().pop();
+    return !!last && new Date().getHours() >= parseInt(last, 10) + 1;
+}
+
+function maybeAskRating() {
+    if (!user || document.querySelector('.modal-overlay.open')) return;
+    const asked = JSON.parse(localStorage.getItem('wb_rating_asked') || '[]');
+    const limit = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    const b = myBookings
+        .filter(x => (x.status || '').match(/PAGO|Confirmado/) && !x.rating && x.date >= limit && bookingEnded(x) && !asked.includes(x.id))
+        .sort((a, c) => c.date.localeCompare(a.date))[0];
+    if (!b) return;
+    asked.push(b.id);
+    localStorage.setItem('wb_rating_asked', JSON.stringify(asked));
+    rateBooking(b.id);
+    document.querySelector('#ratingModal .modal-title').textContent = 'Como foi sua experiência em ' + formatDateBR(b.date) + '?';
 }
 </script>
 </body>
