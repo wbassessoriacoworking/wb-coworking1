@@ -549,6 +549,9 @@
     .sala-photos-track img { flex: 0 0 88%; max-width: 520px; height: auto; min-width: 0; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius); scroll-snap-align: start; cursor: zoom-in; border: 1px solid var(--border); }
     .sala-photos-track img:only-child { flex-basis: 100%; max-width: none; aspect-ratio: auto; }
     .sala-photos-cap { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .sala-photos-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+    .sala-photos-dots button { width: 6px; height: 6px; border-radius: 3px; border: none; padding: 0; background: rgba(255,255,255,0.25); cursor: pointer; transition: .25s; }
+    .sala-photos-dots button.active { width: 18px; background: var(--gold); }
     #photoViewer { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.94); display: none; align-items: center; justify-content: center; padding: 16px; }
     #photoViewer.open { display: flex; }
     #photoViewer img { max-width: 100%; max-height: 82vh; border-radius: 12px; }
@@ -3366,7 +3369,49 @@ function renderSalaPhotos() {
         '<div class="sala-photos-track">' +
         photos.map((src, i) => '<img src="' + src + '" alt="' + selectedSala.nome + ' — foto ' + (i + 1) + '" onclick="openPhotoViewer(' + i + ')">').join('') +
         '</div>' +
-        '<p class="sala-photos-cap">' + selectedSala.emoji + ' ' + selectedSala.nome + ' · ' + photos.length + ' foto' + (photos.length > 1 ? 's' : '') + (photos.length > 1 ? ' — arraste para o lado' : '') + '</p>';
+        (photos.length > 1 ? '<div class="sala-photos-dots">' + photos.map((_, i) => '<button aria-label="Foto ' + (i + 1) + '" onclick="salaPhotoGo(' + i + ', true)"></button>').join('') + '</div>' : '') +
+        '<p class="sala-photos-cap">' + selectedSala.emoji + ' ' + selectedSala.nome + ' · ' + photos.length + ' foto' + (photos.length > 1 ? 's' : '') + '</p>';
+    startSalaCarousel(photos.length);
+}
+
+// Carrossel automático das fotos da sala: troca a cada 3,5s e pausa
+// por alguns segundos quando o cliente arrasta ou toca numa bolinha.
+let _salaCarTimer = null, _salaCarIdx = 0, _salaCarPauseUntil = 0;
+function startSalaCarousel(total) {
+    clearInterval(_salaCarTimer);
+    _salaCarIdx = 0;
+    const track = document.querySelector('#salaPhotos .sala-photos-track');
+    if (!track) return;
+    updateSalaDots();
+    if (total < 2) return;
+    const pause = () => { _salaCarPauseUntil = Date.now() + 6000; };
+    track.addEventListener('touchstart', pause, { passive: true });
+    track.addEventListener('pointerdown', pause);
+    let _st;
+    track.addEventListener('scroll', () => {
+        clearTimeout(_st);
+        _st = setTimeout(() => {
+            const imgs = [...track.querySelectorAll('img')];
+            const near = imgs.reduce((best, img, i) => Math.abs(img.offsetLeft - track.scrollLeft) < Math.abs(imgs[best].offsetLeft - track.scrollLeft) ? i : best, 0);
+            _salaCarIdx = near; updateSalaDots();
+        }, 120);
+    }, { passive: true });
+    _salaCarTimer = setInterval(() => {
+        if (Date.now() < _salaCarPauseUntil || !track.isConnected || !track.offsetParent || document.getElementById('photoViewer').classList.contains('open')) return;
+        salaPhotoGo(_salaCarIdx + 1);
+    }, 3500);
+}
+function salaPhotoGo(i, byUser) {
+    const track = document.querySelector('#salaPhotos .sala-photos-track');
+    if (!track) return;
+    const imgs = track.querySelectorAll('img');
+    _salaCarIdx = (i + imgs.length) % imgs.length;
+    track.scrollTo({ left: imgs[_salaCarIdx].offsetLeft - imgs[0].offsetLeft, behavior: 'smooth' });
+    if (byUser) _salaCarPauseUntil = Date.now() + 6000;
+    updateSalaDots();
+}
+function updateSalaDots() {
+    document.querySelectorAll('#salaPhotos .sala-photos-dots button').forEach((d, i) => d.classList.toggle('active', i === _salaCarIdx));
 }
 
 let _viewerIdx = 0;
