@@ -542,6 +542,23 @@
     .carousel-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: .25s; border: none; padding: 0; }
     .carousel-dot.active { background: var(--gold); width: 16px; border-radius: 3px; }
 
+    /* ── FOTOS DA SALA (tela de reserva) ── */
+    .sala-photos { margin-top: 12px; }
+    .sala-photos-track { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: var(--radius); }
+    .sala-photos-track::-webkit-scrollbar { display: none; }
+    .sala-photos-track img { flex: 0 0 88%; max-width: 520px; aspect-ratio: 16/10; object-fit: cover; border-radius: var(--radius); scroll-snap-align: start; cursor: zoom-in; border: 1px solid var(--border); }
+    .sala-photos-track img:only-child { flex-basis: 100%; }
+    .sala-photos-cap { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    #photoViewer { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.94); display: none; align-items: center; justify-content: center; padding: 16px; }
+    #photoViewer.open { display: flex; }
+    #photoViewer img { max-width: 100%; max-height: 82vh; border-radius: 12px; }
+    #photoViewer .pv-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 20px; align-items: center; justify-content: center; cursor: pointer; }
+    #photoViewer .pv-close { position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 20px; cursor: pointer; }
+    #photoViewerCount { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.7); font-size: 13px; }
+    /* ── SCANNER (admin) ── */
+    #scannerVideo { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); background: #000; display: block; }
+    .scanner-frame { position: relative; margin-bottom: 14px; overflow: hidden; border-radius: var(--radius); }
+    .scanner-frame::after { content: ''; position: absolute; inset: 18%; border: 3px solid var(--gold); border-radius: 18px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.35); pointer-events: none; }
     /* ── ADMIN ── */
     .admin-wrap { width: 100%; max-width: 960px; margin: 0 auto; padding-bottom: 40px; }
     .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 20px; }
@@ -798,6 +815,26 @@
     </div>
 </div>
 
+<!-- MODAL: Scanner de QR (admin / recepção) -->
+<div id="scannerModal" class="modal-overlay" onclick="if(event.target===this)stopScanner()">
+    <div class="modal-box" style="text-align:center">
+        <div class="modal-title">📷 Escanear check-in</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Aponte para o QR do ingresso do cliente (na tela do celular ou na imagem salva).</p>
+        <div class="scanner-frame"><video id="scannerVideo" playsinline muted></video></div>
+        <p id="scannerStatus" style="font-size:12px;color:var(--muted);margin-bottom:14px">Abrindo câmera...</p>
+        <button onclick="stopScanner()" class="modal-cancel">Fechar</button>
+    </div>
+</div>
+
+<!-- Visualizador de fotos da sala -->
+<div id="photoViewer" onclick="this.classList.remove('open')">
+    <button class="pv-close" aria-label="Fechar">✕</button>
+    <button class="pv-nav" style="left:12px" onclick="viewerMove(-1, event)" aria-label="Anterior">‹</button>
+    <img id="photoViewerImg" alt="" onclick="event.stopPropagation()">
+    <button class="pv-nav" style="right:12px" onclick="viewerMove(1, event)" aria-label="Próxima">›</button>
+    <div id="photoViewerCount"></div>
+</div>
+
 <!-- MODAL: Definir nova senha do admin (fluxo de recuperação Supabase) -->
 <div id="resetPasswordModal" class="modal-overlay">
     <div class="modal-box">
@@ -933,21 +970,6 @@
             <strong id="greetName">—</strong>
         </div>
 
-        <!-- Galeria de fotos -->
-        <div class="carousel-wrap" id="carousel">
-            <div class="carousel-track" id="carouselTrack">
-                <div class="carousel-slide"><img src="img/recepcao-1.jpg" alt="Recepção do WB Coworking" loading="lazy"><span class="slide-caption">🛋️ Recepção &amp; Espera</span></div>
-                <div class="carousel-slide"><img src="img/recepcao-2.jpg" alt="Área de espera do WB Coworking" loading="lazy"><span class="slide-caption">🛋️ Recepção &amp; Espera</span></div>
-                <div class="carousel-slide"><img src="img/sala-compartilhada-1.jpg" alt="Sala Compartilhada do WB Coworking" loading="lazy"><span class="slide-caption">🤝 Sala Compartilhada</span></div>
-                <div class="carousel-slide"><img src="img/sala-compartilhada-2.jpg" alt="Sala Compartilhada do WB Coworking" loading="lazy"><span class="slide-caption">🤝 Sala Compartilhada</span></div>
-                <div class="carousel-slide"><img src="img/sala-particular-1.jpg" alt="Sala Particular do WB Coworking" loading="lazy"><span class="slide-caption">🔒 Sala Particular</span></div>
-                <div class="carousel-slide"><img src="img/sala-particular-2.jpg" alt="Sala Particular do WB Coworking" loading="lazy"><span class="slide-caption">🔒 Sala Particular</span></div>
-            </div>
-            <button class="carousel-btn prev" onclick="carouselMove(-1)">‹</button>
-            <button class="carousel-btn next" onclick="carouselMove(1)">›</button>
-            <div class="carousel-dots" id="carouselDots"></div>
-        </div>
-
         <!-- Hero CTA -->
         <div class="menu-hero" onclick="navTo('booking')">
             <div class="menu-hero-text">
@@ -1032,6 +1054,7 @@
             <div class="field" style="margin-bottom:20px">
                 <label class="field-label">Escolha a sala</label>
                 <div id="salaGrid" style="margin-top:8px"></div>
+                <div id="salaPhotos" class="sala-photos" style="display:none"></div>
             </div>
 
             <!-- Estações / pessoas (salas multi-estação) -->
@@ -1215,11 +1238,15 @@ const CFG = {
     address:       "Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 19 · Penha · SP",
     hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
     salas: [
-        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 35, stations: 1 },
-        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 35, stations: 1 },
-        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 35, stations: 1 },
+        // photos: aparecem na tela de reserva quando o cliente seleciona a sala
+        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 35, stations: 1,
+          photos: ['img/sala-particular-1.jpg', 'img/sala-particular-2.jpg'] },
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · ❄️ AC · 📷 Câmera',     price: 35, stations: 1,
+          photos: ['img/sala-compartilhada-1.jpg', 'img/sala-compartilhada-2.jpg'] },
+        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 35, stations: 1,
+          photos: ['img/recepcao-1.jpg', 'img/recepcao-2.jpg'] },
         { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', price: 35, stations: 8,
-          address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP' }
+          address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP', photos: [] }
     ],
     coupons: {
         'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
@@ -1394,7 +1421,7 @@ function navTo(screen) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (screen === 'history') renderHistory();
     if (screen === 'booking') { renderSalaGrid(); fetchGlobalBookings(); }
-    if (screen === 'menu')    { updateMenuSummary(); setTimeout(carouselInit, 50); }
+    if (screen === 'menu')    updateMenuSummary();
     // Bottom nav
     const nav = document.getElementById('bottomNav');
     const mainEl = document.querySelector('main');
@@ -2329,6 +2356,9 @@ async function renderAdminPanel() {
                 <button class="btn-text" onclick="adminLogout()">Sair do Admin</button>
             </div>
         </div>
+
+        <!-- Scanner de check-in -->
+        <button class="btn-gold" style="width:100%;margin-bottom:20px;font-size:15px" onclick="openScanner()">📷 Escanear QR do cliente (check-in)</button>
 
         <!-- Stats -->
         <div class="admin-stats">
@@ -3321,7 +3351,37 @@ function renderSalaGrid() {
         grid.appendChild(btn);
     });
     renderStationsSection();
+    renderSalaPhotos();
 }
+
+// Fotos da sala escolhida (rolagem lateral; toque abre em tela cheia)
+function renderSalaPhotos() {
+    const box = document.getElementById('salaPhotos');
+    if (!box) return;
+    const photos = (selectedSala && selectedSala.photos) || [];
+    if (!photos.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'block';
+    box.innerHTML =
+        '<div class="sala-photos-track">' +
+        photos.map((src, i) => '<img src="' + src + '" alt="' + selectedSala.nome + ' — foto ' + (i + 1) + '" onclick="openPhotoViewer(' + i + ')">').join('') +
+        '</div>' +
+        '<p class="sala-photos-cap">' + selectedSala.emoji + ' ' + selectedSala.nome + ' · ' + photos.length + ' foto' + (photos.length > 1 ? 's' : '') + (photos.length > 1 ? ' — arraste para o lado' : '') + '</p>';
+}
+
+let _viewerIdx = 0;
+function openPhotoViewer(i) {
+    _viewerIdx = i;
+    showViewerPhoto();
+    document.getElementById('photoViewer').classList.add('open');
+}
+function showViewerPhoto() {
+    const photos = selectedSala.photos;
+    _viewerIdx = (_viewerIdx + photos.length) % photos.length;
+    document.getElementById('photoViewerImg').src = photos[_viewerIdx];
+    document.getElementById('photoViewerCount').textContent = (_viewerIdx + 1) + ' / ' + photos.length;
+    document.querySelectorAll('#photoViewer .pv-nav').forEach(b => b.style.display = photos.length > 1 ? 'flex' : 'none');
+}
+function viewerMove(dir, e) { if (e) e.stopPropagation(); _viewerIdx += dir; showViewerPhoto(); }
 
 // ══════════════════════════════════════════════
 //  ESTAÇÕES / PESSOAS (salas multi-estação)
@@ -4174,7 +4234,8 @@ async function handleTicketScan(id) {
         (b.stations > 1 ? '👥 ' + b.stations + ' pessoas<br>' : '') +
         (at ? '<span style="color:#22c55e">✅ Check-in às ' + hhmm(at) + (b.checked_in_at ? ' (já tinha sido feito)' : '') + '</span>' : '') +
         (warn.length ? '<div style="margin-top:10px;color:#fbbf24">' + warn.join('<br>') + '</div>' : ''),
-        '<button class="btn-gold" style="width:100%;margin-bottom:10px" onclick="closeModal(\'checkinModal\');openAdmin()">Abrir painel</button>');
+        '<button class="btn-gold" style="width:100%;margin-bottom:10px" onclick="closeModal(\'checkinModal\');openScanner()">📷 Escanear próximo</button>' +
+        '<button class="btn-pdf" style="width:100%;padding:12px;margin-bottom:10px" onclick="closeModal(\'checkinModal\');openAdmin()">Abrir painel</button>');
 }
 
 // Painel admin: quem já chegou hoje
@@ -4187,7 +4248,10 @@ function renderCheckinToday(all) {
         '<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
         '<p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">📍 Check-in de Hoje (' + list.filter(b => b.checkedInAt).length + '/' + list.length + ')</p>' +
+        '<div style="display:flex;gap:6px">' +
+        '<button class="btn-pdf" onclick="openScanner()" style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#22c55e">📷 Escanear</button>' +
         '<button class="btn-pdf" onclick="printDoorQr()" style="background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.3);color:var(--gold)">🖨️ QR da porta</button>' +
+        '</div>' +
         '</div>' +
         (list.length ? list.map(b =>
             '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">' +
@@ -4212,6 +4276,86 @@ function printDoorQr() {
         '<p><strong>Chegou? Aponte a câmera do celular</strong></p><small>O check-in é feito automaticamente pelo app</small>' +
         '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
     w.document.close();
+}
+
+// ── Scanner de QR dentro do painel ──
+// Usa o leitor nativo do navegador (BarcodeDetector, Chrome/Android) e, onde
+// não existe (iPhone/Safari), carrega o jsQR sob demanda.
+let _scanStream = null, _scanTimer = null, _scanDetector = null;
+function loadJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    return new Promise((ok, fail) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        s.onload = ok; s.onerror = () => fail(new Error('não carregou o leitor de QR'));
+        document.head.appendChild(s);
+    });
+}
+
+async function openScanner() {
+    const status = document.getElementById('scannerStatus');
+    status.textContent = 'Abrindo câmera...'; status.style.color = 'var(--muted)';
+    openModal('scannerModal');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        status.textContent = 'Este navegador não permite usar a câmera. Use a câmera do celular para ler o QR.'; return;
+    }
+    try {
+        if ('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('qr_code')) {
+            _scanDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        } else { _scanDetector = null; await loadJsQR(); }
+        _scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    } catch (e) {
+        status.style.color = '#fbbf24';
+        status.textContent = e.name === 'NotAllowedError' ? 'Permissão da câmera negada. Libere a câmera para este site nas configurações do navegador.' : 'Não foi possível abrir a câmera: ' + e.message;
+        return;
+    }
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = _scanStream;
+    await video.play().catch(() => {});
+    status.textContent = 'Procurando QR Code...';
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let busy = false;
+    _scanTimer = setInterval(async () => {
+        if (busy || video.readyState < 2) return;
+        busy = true;
+        try {
+            let text = null;
+            if (_scanDetector) {
+                const codes = await _scanDetector.detect(video);
+                if (codes.length) text = codes[0].rawValue;
+            } else {
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+                if (code) text = code.data;
+            }
+            if (text) onScanResult(text);
+        } catch (e) { /* frame ruim, tenta o próximo */ }
+        busy = false;
+    }, 250);
+}
+
+function onScanResult(text) {
+    const m = String(text).match(/[?&]ticket=(\d+)/) || String(text).match(/^\s*(\d{6,})\s*$/);
+    const status = document.getElementById('scannerStatus');
+    if (!m) {
+        status.style.color = '#fbbf24';
+        status.textContent = /checkin=porta/.test(text) ? 'Esse é o QR da porta — escaneie o ingresso do cliente.' : 'QR não reconhecido como ingresso do WB Coworking.';
+        return;
+    }
+    if (navigator.vibrate) navigator.vibrate(120);
+    stopScanner();
+    handleTicketScan(m[1]);
+}
+
+function stopScanner() {
+    clearInterval(_scanTimer); _scanTimer = null;
+    if (_scanStream) { _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
+    const video = document.getElementById('scannerVideo');
+    if (video) video.srcObject = null;
+    closeModal('scannerModal');
 }
 
 // ══════════════════════════════════════════════
