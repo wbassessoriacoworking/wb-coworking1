@@ -165,6 +165,17 @@
         background-position: center;
     }
     #screen-login.active { display: flex; }
+    /* Celular: foto inteira no topo (com cover o letreiro era cortado nas laterais) */
+    @media (max-width: 700px) and (orientation: portrait) {
+        #screen-login {
+            align-items: flex-start;
+            padding-top: 62vw;
+            background:
+                linear-gradient(rgba(6,6,12,0.15) 0, rgba(6,6,12,0.15) 45vw, var(--bg) 73vw),
+                url('img/login-bg.jpg') center top / 100% auto no-repeat,
+                var(--bg);
+        }
+    }
     #screen-admin {
         min-height: calc(100dvh - var(--header-h));
         display: none; padding: 24px 16px 40px;
