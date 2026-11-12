@@ -542,6 +542,23 @@
     .carousel-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: .25s; border: none; padding: 0; }
     .carousel-dot.active { background: var(--gold); width: 16px; border-radius: 3px; }
 
+    /* ── TABELA DE PREÇOS / PACOTES ── */
+    .price-perks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .price-perks span { font-size: 11px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; padding: 4px 10px; }
+    .price-sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin: 4px 0 8px; }
+    .price-sec small { text-transform: none; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+    .price-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+    .price-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+    .price-row b { color: var(--gold); white-space: nowrap; }
+    .plan-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; position: relative; }
+    .plan-card.recommended { border-color: var(--gold); background: linear-gradient(160deg, rgba(212,175,55,0.14), var(--surface2) 65%); box-shadow: 0 0 0 1px rgba(212,175,55,0.25), 0 8px 24px rgba(212,175,55,0.12); }
+    .plan-card .plan-badge { position: absolute; top: -9px; left: 14px; background: linear-gradient(135deg, var(--gold2), var(--gold)); color: #080810; font-size: 9px; font-weight: 800; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .06em; }
+    .plan-card .plan-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .plan-card .plan-name { font-size: 14px; font-weight: 600; }
+    .plan-card .plan-price { color: var(--gold); font-weight: 700; font-size: 17px; white-space: nowrap; }
+    .plan-card .plan-meta { font-size: 11px; color: var(--muted); margin: 3px 0 10px; }
+    .plan-card .plan-btn { width: 100%; min-height: 40px; font-size: 13px; padding: 8px; }
+    .credit-box { background: linear-gradient(160deg, rgba(212,175,55,0.12), var(--surface) 70%); border: 1px solid var(--border-gold); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
     /* ── FOTOS DA SALA (tela de reserva) ── */
     .sala-photos { margin-top: 12px; }
     .sala-photos-track { display: flex; align-items: flex-start; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-radius: var(--radius); }
@@ -644,54 +661,38 @@
 
 <!-- MODAL PLANOS -->
 <div id="planosModal" class="modal-overlay" onclick="if(event.target===this)closeModal('planosModal')">
-    <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto">
-        <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;margin-bottom:4px">Planos <em style="color:var(--gold);font-style:italic">WB Coworking</em></h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">📍 2 minutos do Fórum Trabalhista · Wi-Fi · Café · ❄️ AC</p>
-
-        <!-- Avulso -->
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">⏱ Uso Avulso <span style="text-transform:none;font-weight:400;color:var(--muted)">(valor por hora)</span></p>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-            <div id="avulsoPriceList" style="display:contents"></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-                <span style="font-size:13px">Sala de Reunião</span>
-                <span style="color:var(--gold);font-weight:700">R$ 60 – 80/h</span>
-            </div>
-            <p style="font-size:11px;color:var(--muted);padding:0 2px">🔒 Sala Particular: R$50/hora</p>
-            <p style="font-size:11px;color:var(--muted);padding:0 2px">💻 Sala Coworking: R$35 por pessoa/hora (até 8 pessoas)</p>
+    <div class="modal-box" style="max-width:500px;max-height:90vh;overflow-y:auto">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;margin-bottom:10px">Tabela de <em style="color:var(--gold);font-style:italic">Preços</em></h3>
+        <div class="price-perks">
+            <span>📍 2 min do Fórum Trabalhista da Penha</span><span>📶 Wi-Fi</span><span>☕ Café</span>
+            <span>❄️ Ar-condicionado</span><span>🕘 9h às 18h</span><span>💻 8 postos de trabalho</span>
         </div>
-
-        <!-- Pacotes de Horas -->
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">📦 Pacotes de Horas</p>
-        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                    <span style="font-size:13px;font-weight:600">Pacote 10h</span>
-                    <span style="color:var(--gold);font-weight:700">R$ 300,00</span>
-                </div>
-                <p style="font-size:11px;color:var(--muted)">R$ 30/hora · Economize R$ 50</p>
-            </div>
-            <div style="background:var(--surface2);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:12px 14px;position:relative">
-                <span style="position:absolute;top:-8px;left:14px;background:var(--gold);color:#080810;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em">Mais popular</span>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                    <span style="font-size:13px;font-weight:600">Pacote 20h</span>
-                    <span style="color:var(--gold);font-weight:700">R$ 560,00</span>
-                </div>
-                <p style="font-size:11px;color:var(--muted)">R$ 28/hora · Economize R$ 140</p>
-            </div>
-        </div>
-
-        <!-- Plano Mensal -->
-        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:8px">🏆 Plano Mensal</p>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:20px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-                <span style="font-size:13px;font-weight:600">Posto Compartilhado</span>
-                <span style="color:var(--gold);font-weight:700">R$ 650 – 900</span>
-            </div>
-            <p style="font-size:11px;color:var(--muted)">Uso mensal fixo · Sujeito à disponibilidade · Consulte condições</p>
-        </div>
-
-        <a href="https://wa.me/5511962826658?text=Olá!%20Tenho%20interesse%20em%20um%20plano%20do%20WB%20Coworking.%20Pode%20me%20passar%20mais%20informações%3F" target="_blank" class="btn-gold" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">💬 Falar no WhatsApp sobre Planos</a>
+        <!-- Conteúdo montado por renderPlanos() a partir de PRICING -->
+        <div id="planosContent"></div>
+        <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20os%20planos%20do%20WB%20Coworking." target="_blank" class="btn-ghost" style="display:block;text-align:center;text-decoration:none;margin:6px 0 10px;padding:12px;font-size:13px">💬 Dúvidas? Fale no WhatsApp</a>
         <button onclick="closeModal('planosModal')" class="modal-cancel">Fechar</button>
+    </div>
+</div>
+
+<!-- MODAL: Contratar pacote de horas / plano mensal -->
+<div id="buyModal" class="modal-overlay" onclick="if(event.target===this)closeModal('buyModal')">
+    <div class="modal-box" style="max-width:440px;max-height:92vh;overflow-y:auto">
+        <div class="modal-title" id="buyTitle">Contratar</div>
+        <div id="buySummary" class="order-summary" style="margin-bottom:16px"></div>
+        <div class="pix-box">
+            <p class="pix-box-title" style="margin-bottom:12px">💠 Pagamento via Pix</p>
+            <div style="text-align:center;margin-bottom:12px">
+                <div id="buyPixQr" style="display:inline-block;background:#fff;padding:10px;border-radius:12px"></div>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:6px">Ou copie a chave Pix</p>
+            <div class="pix-row"><input id="buyPixKey" class="input" type="text" readonly><button class="btn-copy" onclick="copyBuyPix()">Copiar</button></div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Após pagar, anexe o comprovante:</p>
+            <label class="file-upload-label" for="buyProofFile" id="buyUploadLabel">📎 &nbsp;Clique para anexar comprovante (PDF, JPG, PNG)</label>
+            <input type="file" id="buyProofFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="document.getElementById('buyUploadLabel').textContent = this.files[0] ? '✓  ' + this.files[0].name : '📎 Clique para anexar comprovante'">
+            <button class="btn-gold" id="btnBuySubmit" onclick="submitBuy()" style="margin-top:12px">Enviar Comprovante</button>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin:12px 0;line-height:1.5">Seu saldo é liberado assim que confirmarmos o pagamento. A validade começa a contar a partir da confirmação.</p>
+        <button onclick="closeModal('buyModal')" class="modal-cancel">Cancelar</button>
     </div>
 </div>
 
@@ -738,7 +739,7 @@
                 <ul>
                     <li>O horário reservado inclui entrada e saída. Atrasos não são compensados.</li>
                     <li>Caso precise estender, verifique disponibilidade com antecedência.</li>
-                    <li>Saídas com mais de 10 min de atraso geram cobrança de 1 hora adicional (R$ 30,00).</li>
+                    <li>Saídas com mais de 10 min de atraso geram cobrança de 1 hora adicional, conforme a tabela de preços da sala.</li>
                 </ul>
             </div>
             <div class="terms-section">
@@ -992,14 +993,20 @@
             <div class="info-pill" onclick="copyWifi()">
                 <span class="pill-icon">📶</span><span id="wifiDisplay">Wi-Fi</span><span id="wifiHint" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
             </div>
+            <div class="info-pill"><span class="pill-icon">⚖️</span><span>2 min do Fórum Trabalhista</span></div>
+            <div class="info-pill"><span class="pill-icon">☕</span><span>Café · ❄️ Ar-condicionado</span></div>
+            <div class="info-pill"><span class="pill-icon">💻</span><span>8 postos de trabalho</span></div>
         </div>
+
+        <!-- Meu saldo (pacotes / plano mensal) — montado por renderMenuCredits -->
+        <div id="menuCredits"></div>
 
 
         <!-- Planos -->
         <div onclick="openModal('planosModal')" style="background:linear-gradient(135deg,rgba(212,175,55,0.12),rgba(212,175,55,0.04));border:1px solid rgba(212,175,55,0.35);border-radius:16px;padding:16px 20px;margin-bottom:20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px">
             <div>
-                <p style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">⚖️ Planos Semanais e Mensais</p>
-                <p style="font-size:12px;color:var(--text2);line-height:1.4">Use com frequência? Economize até 30% com um plano fixo. Ideal para audiências regulares no Fórum.</p>
+                <p style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">💲 Preços, Pacotes e Planos</p>
+                <p style="font-size:12px;color:var(--text2);line-height:1.4">Estação a partir de <span class="js-from-price">R$ 25</span>/h. Pacotes de horas e planos mensais para quem atende toda semana no Fórum.</p>
             </div>
             <div style="font-size:20px;flex-shrink:0">›</div>
         </div>
@@ -1174,7 +1181,9 @@
             <input type="checkbox" id="termsCheckbox">
             <span class="terms-check-text">Li e aceito as <a onclick="openModal('termsModal');return false;">regras e termos de uso</a> do WB Coworking.</span>
         </label>
-        <!-- PIX — único método de pagamento -->
+        <!-- Pagar com saldo de pacote / plano mensal (montado por renderCreditOptions) -->
+        <div id="creditOptions"></div>
+        <!-- PIX -->
         <div class="pix-box" style="margin-top:8px">
             <p class="pix-box-title" style="margin-bottom:16px">💠 Pagamento via Pix</p>
             <!-- Valor em destaque -->
@@ -1243,13 +1252,15 @@ const CFG = {
     hours:         ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'],
     salas: [
         // photos: aparecem na tela de reserva quando o cliente seleciona a sala
-        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', price: 50, stations: 1,
+        // pricing: 'hora' (valor fixo/h, PRICING.particular) | 'estacao' (tabela da
+        // estação compartilhada, por pessoa). A Compartilhada também pode ser
+        // reservada inteira como Sala de Reunião (meetingMax pessoas).
+        // Valores ficam em PRICING (editável pelo painel admin), não aqui.
+        { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', pricing: 'hora', stations: 1,
           photos: ['img/sala-particular-1.jpg'] },
-        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '⚖️ Uso compartilhado · 🌀 Ventilador · 📷 Câmera', price: 35, stations: 1,
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '🪑 Estação ou 👥 Sala de Reunião · 🌀 Ventilador · 📷 Câmera', pricing: 'estacao', stations: 4, meetingMax: 8,
           photos: ['img/sala-compartilhada-1.jpg'] },
-        { id: 'recepcao',      nome: 'Recepção / Espera',  emoji: '🛋️', desc: '📺 TV · ☕ Café · 🛋️ Espera de clientes',     price: 35, stations: 1,
-          photos: ['img/recepcao-1.jpg', 'img/recepcao-2.jpg'] },
-        { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', price: 35, stations: 8,
+        { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', pricing: 'estacao', stations: 8,
           address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP',
           photos: [1,2,3,4,5,6,7].map(n => 'img/coworking-' + n + '.jpg') }
     ],
@@ -1263,6 +1274,74 @@ const CFG = {
 };
 
 const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
+
+// ══════════════════════════════════════════════
+//  TABELA DE PREÇOS
+// ══════════════════════════════════════════════
+// Valores padrão; os oficiais vêm do Supabase (app_settings 'pricing'),
+// editáveis no painel admin. Ver supabase/sql/precos_pacotes_setup.sql.
+const DEFAULT_PRICING = {
+    estacao:    { h1: 25, h2: 40, h4: 70, diaria: 100 },   // por pessoa
+    particular: 50,                                         // por hora
+    reuniao:    { ate4: 60, ate8: 80 },                     // por hora, sala inteira
+    pacotes: [
+        { id: 'p10', nome: 'Pacote 10 horas', horas: 10, preco: 200, validade: 60 },
+        { id: 'p20', nome: 'Pacote 20 horas', horas: 20, preco: 360, validade: 60, destaque: true },
+        { id: 'p40', nome: 'Pacote 40 horas', horas: 40, preco: 680, validade: 90 }
+    ],
+    mensal: [
+        { id: 'rotativo', nome: 'Posto compartilhado rotativo', preco: 450, validade: 30 },
+        { id: 'fixo',     nome: 'Posto fixo',                   preco: 650, validade: 30 }
+    ]
+};
+let PRICING = JSON.parse(JSON.stringify(DEFAULT_PRICING));
+try { const cached = JSON.parse(localStorage.getItem('wb_pricing')); if (cached && cached.estacao) PRICING = cached; } catch (e) {}
+
+async function loadPricing() {
+    try {
+        const { data, error } = await sb.from('app_settings').select('value').eq('key', 'pricing').maybeSingle();
+        if (error || !data || !data.value || !data.value.estacao) return;
+        PRICING = data.value;
+        localStorage.setItem('wb_pricing', JSON.stringify(PRICING));
+        applyPricingTexts();
+        // Atualiza os cartões só se o cliente ainda não começou a escolher data/horário
+        if (document.getElementById('screen-booking').classList.contains('active') && !selection.date && !selectedDates.length) renderSalaGrid();
+    } catch (e) { /* sem internet ou SQL ainda não rodado: fica com o padrão */ }
+}
+function applyPricingTexts() {
+    document.querySelectorAll('.js-from-price').forEach(el => { el.textContent = formatBRL(PRICING.estacao.h1); });
+}
+
+// Estação: combina os blocos (1h, 2h, 4h, diária) pelo menor preço, com a
+// diária como teto. Ex.: 3h = 2h + 1h; 6h = diária.
+function estacaoPrice(hours) {
+    const e = PRICING.estacao;
+    const blocks = [[1, e.h1], [2, e.h2], [4, e.h4], [CFG.hours.length, e.diaria]];
+    const best = [0];
+    for (let h = 1; h <= hours; h++) {
+        best[h] = Math.min(...blocks.map(([len, p]) => p + best[Math.max(0, h - len)]));
+    }
+    return best[hours] || 0;
+}
+
+// Modo da reserva: 'hora' (particular) | 'estacao' | 'reuniao' (Compartilhada inteira)
+let salaMode = 'estacao';
+function modeFor(sala) { return sala.pricing === 'hora' ? 'hora' : (sala.meetingMax && salaMode === 'reuniao' ? 'reuniao' : 'estacao'); }
+function modeOfBooking(b) {
+    if (b.mode) return b.mode;
+    if (/Reuni/i.test(b.sala || '')) return 'reuniao';
+    const s = CFG.salas.find(x => x.id === b.salaId);
+    return s && s.pricing === 'hora' ? 'hora' : 'estacao';
+}
+function sessionPrice(sala, hours, people, mode) {
+    if (!hours) return 0;
+    mode = mode || modeFor(sala);
+    if (mode === 'hora')    return hours * PRICING.particular;
+    if (mode === 'reuniao') return hours * (people <= 4 ? PRICING.reuniao.ate4 : PRICING.reuniao.ate8);
+    return estacaoPrice(hours) * Math.max(1, people);
+}
+function salaDisplayName(sala, mode) { return mode === 'reuniao' ? 'Sala de Reunião (' + sala.nome + ')' : sala.nome; }
+function peopleOf(sala, mode) { return mode === 'hora' ? 1 : selectedStations; }
 
 // Fluxo de recuperação de senha do admin: o Supabase loga automaticamente
 // a sessão a partir do link do e-mail e dispara este evento.
@@ -1394,6 +1473,8 @@ window.addEventListener('DOMContentLoaded', () => {
     renderCalendar();
     document.getElementById('infoAddress').textContent = CFG.address;
     setupMasks();
+    applyPricingTexts();
+    loadPricing();
     fetchGlobalBookings();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     maybeShowInstallBanner();
@@ -1426,7 +1507,7 @@ function navTo(screen) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (screen === 'history') renderHistory();
     if (screen === 'booking') { renderSalaGrid(); fetchGlobalBookings(); }
-    if (screen === 'menu')    updateMenuSummary();
+    if (screen === 'menu')    { updateMenuSummary(); renderMenuCredits(); loadMyCredits(); }
     // Bottom nav
     const nav = document.getElementById('bottomNav');
     const mainEl = document.querySelector('main');
@@ -1444,7 +1525,7 @@ function navTo(screen) {
 // ══════════════════════════════════════════════
 function openModal(id) {
     document.getElementById(id).classList.add('open');
-    if (id === 'planosModal') renderAvulsoPriceList();
+    if (id === 'planosModal') renderPlanos();
     if (id === 'successModal') {
         const el = document.getElementById('successWifi');
         if (el) el.textContent = CFG.wifiPassword;
@@ -1500,24 +1581,192 @@ function applyPendingReferralCoupon() {
     localStorage.removeItem('wb_ref_coupon');
 }
 
-// Monta a tabela de preços "Avulso" do modal de Planos a partir do valor-hora
-// real (CFG.salas) e da carga horária real (CFG.hours), pra nunca ficar
-// dessincronizada do que é de fato cobrado no checkout (updateTotal/goToCheckout).
-function renderAvulsoPriceList() {
-    const price = Math.min(...CFG.salas.map(s => s.price));
-    const dayHours = CFG.hours.length;
-    const rows = [
-        { label: '1 hora', hours: 1 },
-        { label: '2 horas', hours: 2 },
-        { label: 'Meio período <span style="font-size:11px;color:var(--muted)">(4h)</span>', hours: 4 },
-        { label: 'Diária <span style="font-size:11px;color:var(--muted)">(' + dayHours + 'h)</span>', hours: dayHours },
-    ];
-    document.getElementById('avulsoPriceList').innerHTML = rows.map(r =>
-        '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px">' +
-        '<span style="font-size:13px">' + r.label + '</span>' +
-        '<span style="color:var(--gold);font-weight:700">' + formatBRL(r.hours * price) + '</span>' +
-        '</div>'
-    ).join('');
+// Monta a Tabela de Preços (modal de Planos) a partir de PRICING — os mesmos
+// valores usados no cálculo da reserva (sessionPrice) e na compra (wb_buy).
+const MENSAL_DESC = {
+    rotativo: 'Estação compartilhada sem custo por hora, conforme disponibilidade',
+    fixo: 'Estação garantida para você, sem custo por hora'
+};
+function renderPlanos() {
+    const P = PRICING, e = P.estacao;
+    const row = (label, val) => '<div class="price-row"><span>' + label + '</span><b>' + val + '</b></div>';
+    const small = t => ' <span style="font-size:11px;color:var(--muted)">' + t + '</span>';
+    const pacotes = P.pacotes.map(p =>
+        '<div class="plan-card' + (p.destaque ? ' recommended' : '') + '">' +
+            (p.destaque ? '<span class="plan-badge">⭐ Recomendado</span>' : '') +
+            '<div class="plan-top"><span class="plan-name">' + escHtml(p.nome) + '</span><span class="plan-price">' + formatBRL(p.preco) + '</span></div>' +
+            '<p class="plan-meta">' + formatBRL(p.preco / p.horas) + '/hora · validade de ' + p.validade + ' dias</p>' +
+            '<button class="' + (p.destaque ? 'btn-gold' : 'btn-ghost') + ' plan-btn" onclick="openBuy(\'' + p.id + '\')">Contratar</button>' +
+        '</div>').join('');
+    const mensais = P.mensal.map(m =>
+        '<div class="plan-card">' +
+            '<div class="plan-top"><span class="plan-name">' + escHtml(m.nome) + '</span><span class="plan-price">' + formatBRL(m.preco) + '<span style="font-size:11px;color:var(--muted);font-weight:400">/mês</span></span></div>' +
+            '<p class="plan-meta">' + (MENSAL_DESC[m.id] || '') + ' · ' + m.validade + ' dias</p>' +
+            '<button class="btn-ghost plan-btn" onclick="openBuy(\'' + m.id + '\')">Contratar</button>' +
+        '</div>').join('');
+    document.getElementById('planosContent').innerHTML =
+        '<p class="price-sec">⏱ Uso avulso · Estação compartilhada <small>(por pessoa)</small></p>' +
+        '<div class="price-list">' +
+            row('1 hora', formatBRL(e.h1)) + row('2 horas', formatBRL(e.h2)) +
+            row('Meio período' + small('(4h)'), formatBRL(e.h4)) + row('Diária' + small('(' + CFG.hours.length + 'h)'), formatBRL(e.diaria)) +
+            '<p style="font-size:11px;color:var(--muted);padding:0 2px">💻 Sala Coworking e 🤝 Sala Compartilhada</p>' +
+        '</div>' +
+        '<p class="price-sec">📦 Pacotes de horas <small>(estação compartilhada)</small></p>' +
+        '<div class="price-list" style="gap:12px">' + pacotes + '</div>' +
+        '<p class="price-sec">🚪 Salas</p>' +
+        '<div class="price-list">' +
+            row('🔒 Sala particular', formatBRL(P.particular) + '/h') +
+            row('👥 Sala de reunião' + small('(até 4 pessoas)'), formatBRL(P.reuniao.ate4) + '/h') +
+            row('👥 Sala de reunião' + small('(5 a 8 pessoas)'), formatBRL(P.reuniao.ate8) + '/h') +
+            '<button class="btn-ghost" style="min-height:40px;font-size:13px" onclick="closeModal(\'planosModal\');navTo(\'booking\')">📅 Reservar sala</button>' +
+        '</div>' +
+        '<p class="price-sec">🏆 Planos mensais</p>' +
+        '<div class="price-list" style="gap:12px">' + mensais + '</div>';
+}
+
+// ══════════════════════════════════════════════
+//  PACOTES E PLANOS — compra e saldo
+// ══════════════════════════════════════════════
+let buyPlan = null;
+let myCredits = [];
+
+function findPlan(id) {
+    const p = PRICING.pacotes.find(x => x.id === id);
+    if (p) return Object.assign({ kind: 'pacote' }, p);
+    const m = PRICING.mensal.find(x => x.id === id);
+    return m ? Object.assign({ kind: 'mensal' }, m) : null;
+}
+
+function openBuy(id) {
+    closeModal('planosModal');
+    if (!user) { toast('Entre com seus dados para contratar.'); return navTo('login'); }
+    const p = findPlan(id); if (!p) return;
+    buyPlan = p;
+    const r = (l, v) => '<div class="order-row"><span style="color:var(--muted)">' + l + '</span><span>' + v + '</span></div>';
+    document.getElementById('buyTitle').textContent = p.kind === 'pacote' ? '📦 Contratar pacote' : '🏆 Contratar plano mensal';
+    document.getElementById('buySummary').innerHTML =
+        r('Plano', '<span style="color:var(--gold)">' + escHtml(p.nome) + '</span>') +
+        (p.kind === 'pacote' ? r('Horas', p.horas + ' horas') + r('Valor por hora', formatBRL(p.preco / p.horas)) : r('Tipo', 'Mensal')) +
+        r('Validade', '<strong>' + p.validade + ' dias</strong>') +
+        r('Vale para', '<span style="font-size:11px;text-align:right">Estação compartilhada<br>(Coworking e Compartilhada)</span>') +
+        '<div class="order-row total"><span style="font-weight:600">Total</span><span class="val">' + formatBRL(p.preco) + '</span></div>';
+    const qr = document.getElementById('buyPixQr');
+    qr.innerHTML = '';
+    new QRCode(qr, { text: buildPixPayload(CFG.pixKey, 'WB Coworking', 'Sao Paulo', p.preco), width: 180, height: 180, colorDark: '#1a1a2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    document.getElementById('buyPixKey').value = CFG.pixKey;
+    document.getElementById('buyProofFile').value = '';
+    document.getElementById('buyUploadLabel').textContent = '📎 Clique para anexar comprovante (PDF, JPG, PNG)';
+    openModal('buyModal');
+}
+
+function copyBuyPix() {
+    navigator.clipboard?.writeText(CFG.pixKey).then(() => toast('Chave Pix copiada!'));
+}
+
+async function submitBuy() {
+    const file = document.getElementById('buyProofFile').files[0];
+    if (!file) return toast('Anexe o comprovante de pagamento.');
+    const btn = document.getElementById('btnBuySubmit');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    const fileData = await new Promise(ok => { const rd = new FileReader(); rd.onload = ev => ok(ev.target.result); rd.readAsDataURL(file); });
+    const { data: id, error } = await sb.rpc('wb_buy', { p_doc: user.doc, p_name: user.name, p_phone: user.phone, p_plan_id: buyPlan.id, p_file_name: file.name, p_file_data: fileData });
+    btn.disabled = false; btn.textContent = 'Enviar Comprovante';
+    if (error) return toast('Não foi possível registrar a compra: ' + error.message);
+    closeModal('buyModal');
+    const msg = '🔔 *Nova compra de ' + (buyPlan.kind === 'pacote' ? 'pacote de horas' : 'plano mensal') + '*\n\nCliente: ' + user.name
+        + '\nPlano: ' + buyPlan.nome + '\nValor: ' + formatBRL(buyPlan.preco) + '\nRef: #' + id
+        + '\n\n_Verifique o comprovante e aprove no painel admin._';
+    window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
+    toast('Compra enviada! O saldo é liberado após a confirmação do pagamento.');
+    loadMyCredits();
+}
+
+async function loadMyCredits() {
+    if (!user) return;
+    try {
+        const { data, error } = await sb.rpc('wb_my_credits', { p_doc: user.doc });
+        if (error) return;   // SQL de pacotes ainda não rodado
+        myCredits = data || [];
+        renderMenuCredits();
+    } catch (e) {}
+}
+const isLive = c => c.status === 'Ativo' && c.expires_at && new Date(c.expires_at) > new Date();
+function activePackages() { return myCredits.filter(c => c.kind === 'pacote' && isLive(c) && Number(c.hours) - Number(c.hours_used) > 0); }
+function activeMonthly()  { return myCredits.find(c => c.kind === 'mensal' && isLive(c)); }
+function hoursLeft()      { return activePackages().reduce((s, c) => s + Number(c.hours) - Number(c.hours_used), 0); }
+const dateBR = iso => new Date(iso).toLocaleDateString('pt-BR');
+
+function renderMenuCredits() {
+    const el = document.getElementById('menuCredits'); if (!el) return;
+    const pk = activePackages(), mo = activeMonthly(), pend = myCredits.filter(c => c.status === 'Aguardando Verificação');
+    if (!pk.length && !mo && !pend.length) { el.innerHTML = ''; return; }
+    const line = t => '<p style="font-size:13px;color:var(--text2);margin-top:6px">' + t + '</p>';
+    el.innerHTML = '<div class="credit-box" style="margin-bottom:20px">' +
+        '<p class="price-sec" style="margin:0">💳 Meu saldo</p>' +
+        (mo ? line('🏆 ' + escHtml(mo.plan_name) + ' · ativo até <strong style="color:var(--gold)">' + dateBR(mo.expires_at) + '</strong>') : '') +
+        pk.map(c => line('📦 ' + escHtml(c.plan_name) + ' — <strong style="color:var(--gold)">' + (Number(c.hours) - Number(c.hours_used)) + 'h</strong> restantes · vence ' + dateBR(c.expires_at))).join('') +
+        pend.map(c => line('⏳ ' + escHtml(c.plan_name) + ' — aguardando confirmação do pagamento')).join('') +
+        '</div>';
+}
+
+// Checkout: opção de pagar com saldo (só estação compartilhada)
+let _checkoutCtx = null;
+function checkoutHours() {
+    const c = _checkoutCtx;
+    if (!c || !c.validBookings) return 0;
+    return c.validBookings.reduce((s, vb) => s + vb.slots.length, 0) * c.stations;
+}
+function renderCreditOptions() {
+    const box = document.getElementById('creditOptions'); if (!box) return;
+    box.innerHTML = '';
+    const c = _checkoutCtx;
+    if (!c || c.weekly || c.mode !== 'estacao' || !user) return;
+    const draw = () => {
+        const need = checkoutHours(), left = hoursLeft(), mo = activeMonthly();
+        let html = '';
+        if (mo && c.stations === 1) {
+            html += '<button class="btn-gold credit-btn" style="width:100%;margin-bottom:8px" onclick="finalizeWithCredit(\'mensal\')">🏆 Usar meu plano mensal — sem custo</button>';
+        }
+        if (left > 0) {
+            html += left >= need
+                ? '<button class="btn-gold credit-btn" style="width:100%;margin-bottom:8px" onclick="finalizeWithCredit(\'pacote\')">📦 Usar ' + need + 'h do meu pacote</button>' +
+                  '<p style="font-size:11px;color:var(--muted)">Você tem ' + left + 'h · ficam ' + (left - need) + 'h depois desta reserva.</p>'
+                : '<p style="font-size:12px;color:var(--text2)">📦 Seu saldo (' + left + 'h) não cobre esta reserva (' + need + 'h).</p>';
+        }
+        box.innerHTML = html ? '<div class="credit-box"><p class="price-sec" style="margin-top:0">💳 Pagar com meu saldo</p>' + html +
+            '<p style="font-size:11px;color:var(--muted);margin-top:8px">Ou pague pelo Pix abaixo.</p></div>' : '';
+    };
+    draw();
+    loadMyCredits().then(draw);
+}
+
+async function finalizeWithCredit(kind) {
+    if (!checkTerms()) return;
+    const method = kind === 'mensal' ? 'Plano mensal' : 'Pacote de horas';
+    const status = kind === 'mensal' ? 'PAGO — Plano mensal' : 'PAGO — Saldo do pacote';
+    let list = selectedDates.length > 1 ? buildMultiBookings(method, status, false) : [buildBooking(method, status, false)];
+    if (!list || !list.length) return toast('Nenhuma data disponível.');
+    if (kind === 'mensal' && !activeMonthly()) return toast('Seu plano mensal não está ativo.');
+    document.querySelectorAll('.credit-btn').forEach(b => { b.disabled = true; });
+    if (kind === 'pacote') {
+        const ok = [];
+        for (const b of list) {
+            const hrs = b.slots.length * (b.stations || 1);
+            const { data, error } = await sb.rpc('wb_use_credit', { p_doc: user.doc, p_hours: hrs, p_booking_id: String(b.id) });
+            if (error || !data || !data.ok) break;
+            b.creditPurchaseId = data.purchase_id; b.creditHours = hrs;
+            ok.push(b);
+        }
+        if (!ok.length) {
+            document.querySelectorAll('.credit-btn').forEach(b => { b.disabled = false; });
+            return toast('Saldo insuficiente ou pacote vencido. Pague pelo Pix.');
+        }
+        if (ok.length < list.length) toast('Saldo cobriu ' + ok.length + ' de ' + list.length + ' datas — as demais não foram reservadas.');
+        list = ok;
+    }
+    if (list.length > 1) await saveMultiAndWebhook(list, true);
+    else { tempBooking = list[0]; await saveAndWebhook(list[0], true); }
+    loadMyCredits();
 }
 
 let _tt;
@@ -1660,12 +1909,13 @@ async function insertBooking(data) {
         stations:        data.stations || 1,
         guest_names:     (data.guestNames && data.guestNames.length) ? data.guestNames : null,
     };
+    if (data.creditHours) { row.credit_purchase_id = data.creditPurchaseId; row.credit_hours = data.creditHours; }
     let { error } = await sb.from('bookings').upsert(row);
     if (error) {
         // Colunas novas (stations/guest_names/notes) podem não existir ainda
         // num banco mais antigo — tenta de novo sem elas em vez de falhar.
         if (error.code === '42703') {
-            const { notes: _n, stations: _s, guest_names: _g, ...rowFallback } = row;
+            const { notes: _n, stations: _s, guest_names: _g, credit_purchase_id: _c, credit_hours: _h, ...rowFallback } = row;
             const res2 = await sb.from('bookings').upsert(rowFallback);
             if (res2.error) { console.warn('Supabase insert:', res2.error); return false; }
         } else { console.warn('Supabase insert:', error); return false; }
@@ -1809,22 +2059,22 @@ function toggleSlot(h, btn) {
     updateTotal();
 }
 function updateTotal() {
-    const price = selectedSala ? selectedSala.price : CFG.salas[0].price;
+    const sala  = selectedSala || CFG.salas[0];
+    const mode  = modeFor(sala);
     const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
     if (!dates.length || !selection.slots.length) {
         document.getElementById('totalPrice').textContent = formatBRL(0); return;
     }
-    // Conta combinações (data × horário) que estão disponíveis
-    let valid = 0;
+    // Preço por data (a tabela da estação é por bloco de horas no mesmo dia)
+    let total = 0;
     dates.forEach(date => {
-        selection.slots.forEach(h => {
-            const busy = globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
-                myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
-                blockedHours.some(x => x.date === date && x.hour === h);
-            if (!busy) valid++;
-        });
+        const free = selection.slots.filter(h => !(
+            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
+            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
+            blockedHours.some(x => x.date === date && x.hour === h)));
+        total += sessionPrice(sala, free.length, peopleOf(sala, mode), mode);
     });
-    document.getElementById('totalPrice').textContent = formatBRL(valid * price * selectedStations);
+    document.getElementById('totalPrice').textContent = formatBRL(total);
 }
 
 // ══════════════════════════════════════════════
@@ -1836,7 +2086,7 @@ function goToCheckout() {
     const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
     if (!dates.length) return toast('Adicione ao menos uma data.');
     selection.slots.sort();
-    const price = selectedSala.price;
+    const mode = modeFor(selectedSala);
     // Monta reservas válidas por data
     const validBookings = [];
     dates.forEach(date => {
@@ -1849,14 +2099,14 @@ function goToCheckout() {
     });
     if (!validBookings.length) return toast('Nenhum horário disponível nas datas selecionadas.');
     const totalSlots = validBookings.reduce((s, b) => s + b.slots.length, 0);
-    const stations = selectedSala.stations > 1 ? selectedStations : 1;
+    const stations = peopleOf(selectedSala, mode);
     const guests = stations > 1 ? guestNames.slice(0, stations - 1).filter(Boolean) : [];
-    const total = totalSlots * price * stations;
+    const total = validBookings.reduce((s, vb) => s + sessionPrice(selectedSala, vb.slots.length, stations, mode), 0);
     // Salva para uso no pagamento
     const multiGroupId = Date.now() + Math.floor(Math.random() * 10000);
-    localStorage.setItem('wb_temp_multi', JSON.stringify({ validBookings, multiGroupId, price, stations, guests }));
+    localStorage.setItem('wb_temp_multi', JSON.stringify({ validBookings, multiGroupId, mode, stations, guests }));
     // Preenche checkout
-    document.getElementById('co-sala').textContent = selectedSala.emoji + ' ' + selectedSala.nome;
+    document.getElementById('co-sala').textContent = selectedSala.emoji + ' ' + salaDisplayName(selectedSala, mode);
     if (selectedSala.address) {
         document.getElementById('co-address-row').style.display = 'flex';
         document.getElementById('co-address').textContent = selectedSala.address;
@@ -1879,8 +2129,9 @@ function goToCheckout() {
     document.getElementById('couponInput').value = '';
     document.getElementById('couponMsg').textContent = '';
     document.getElementById('couponRow').style.display = 'none';
+    _checkoutCtx = { validBookings, mode, stations, total };
     navTo('checkout');
-    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); }, 100);
+    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); renderCreditOptions(); }, 100);
 }
 
 function checkTerms() {
@@ -1974,30 +2225,14 @@ function finalizeBooking(method) {
             window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
         } else if (selectedDates.length > 1) {
             const sala = selectedSala || CFG.salas[0];
-            const multiData = JSON.parse(localStorage.getItem('wb_temp_multi'));
-            if (!multiData || !multiData.validBookings.length) { btn.disabled = false; btn.textContent = 'Enviar Comprovante'; return toast('Nenhuma data disponível.'); }
-            const stations  = multiData.stations || 1;
-            const guests    = multiData.guests || [];
-            const baseTotal = multiData.validBookings.reduce((s, vb) => s + vb.slots.length, 0) * sala.price * stations;
-            const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
-            const total     = baseTotal - discount;
-            const groupId   = multiData.multiGroupId;
-            const bookings  = multiData.validBookings.map((vb, i) => ({
-                id: groupId + i, userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
-                date: vb.date, slots: vb.slots.sort(), total: vb.slots.length * sala.price * stations,
-                sala: sala.nome, salaId: sala.id, method, status: 'PAGO — Aguardando Verificação',
-                coupon: i === 0 && activeCoupon ? activeCoupon.code : null,
-                discount: i === 0 ? discount : 0,
-                stations, guestNames: i === 0 ? guests : [],
-                weeklyGroupId: groupId, weeklyTotal: total,
-                fileName: i === 0 ? file.name : null, fileData: i === 0 ? e.target.result : null,
-                notes: i === 0 ? bookingNotesVal : null,
-                createdAt: new Date().toISOString()
-            }));
+            const bookings = buildMultiBookings(method, 'PAGO — Aguardando Verificação', true);
+            if (!bookings) { btn.disabled = false; btn.textContent = 'Enviar Comprovante'; return toast('Nenhuma data disponível.'); }
+            const total = bookings[0].weeklyTotal;
+            bookings[0].fileName = file.name; bookings[0].fileData = e.target.result;
             await saveMultiAndWebhook(bookings, true);
             const msg = '🔔 *Nova reserva MÚLTIPLA com comprovante PIX*\n\nCliente: ' + bookings[0].userName
                 + '\n' + bookings.length + ' datas · ' + bookings.reduce((s, b) => s + b.slots.length, 0) + ' hora(s)'
-                + '\nSala: ' + sala.nome
+                + '\nSala: ' + bookings[0].sala
                 + '\nTotal: ' + formatBRL(total)
                 + '\n\n_Verifique o comprovante e confirme no painel admin._';
             window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(msg), '_blank');
@@ -2020,19 +2255,50 @@ function finalizeBooking(method) {
     reader.readAsDataURL(file);
 }
 
-function buildBooking(method, status) {
+// useCoupon=false nas reservas pagas com saldo de pacote/plano (total vira 0)
+function buildBooking(method, status, useCoupon = true) {
     const sala      = selectedSala || CFG.salas[0];
-    const stations  = sala.stations > 1 ? selectedStations : 1;
+    const mode      = modeFor(sala);
+    const stations  = peopleOf(sala, mode);
     const guests    = stations > 1 ? guestNames.slice(0, stations - 1).filter(Boolean) : [];
-    const baseTotal = selection.slots.length * sala.price * stations;
-    const discount  = activeCoupon ? Math.round(baseTotal * activeCoupon.pct / 100) : 0;
-    const total     = baseTotal - discount;
+    const baseTotal = sessionPrice(sala, selection.slots.length, stations, mode);
+    const coupon    = useCoupon ? activeCoupon : null;
+    const discount  = coupon ? Math.round(baseTotal * coupon.pct / 100) : 0;
+    const total     = useCoupon ? baseTotal - discount : 0;
     const notes     = (document.getElementById('bookingNotes')||{value:''}).value.trim() || null;
     return { id: Date.now(), userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
         date: selection.date, slots: [...selection.slots].sort(), total,
-        coupon: activeCoupon ? activeCoupon.code : null, discount,
-        stations, guestNames: guests,
-        sala: sala.nome, salaId: sala.id, method, status, notes, createdAt: new Date().toISOString() };
+        coupon: coupon ? coupon.code : null, discount,
+        stations, guestNames: guests, mode,
+        sala: salaDisplayName(sala, mode), salaId: sala.id, method, status, notes, createdAt: new Date().toISOString() };
+}
+
+// Várias datas: uma reserva por data, agrupadas (weeklyGroupId)
+function buildMultiBookings(method, status, useCoupon = true) {
+    const sala      = selectedSala || CFG.salas[0];
+    const multiData = JSON.parse(localStorage.getItem('wb_temp_multi') || 'null');
+    if (!multiData || !multiData.validBookings.length) return null;
+    const mode      = multiData.mode || modeFor(sala);
+    const stations  = multiData.stations || 1;
+    const guests    = multiData.guests || [];
+    const perDate   = multiData.validBookings.map(vb => sessionPrice(sala, vb.slots.length, stations, mode));
+    const baseTotal = perDate.reduce((s, v) => s + v, 0);
+    const coupon    = useCoupon ? activeCoupon : null;
+    const discount  = coupon ? Math.round(baseTotal * coupon.pct / 100) : 0;
+    const total     = useCoupon ? baseTotal - discount : 0;
+    const groupId   = multiData.multiGroupId;
+    const notes     = (document.getElementById('bookingNotes')||{value:''}).value.trim() || null;
+    return multiData.validBookings.map((vb, i) => ({
+        id: groupId + i, userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
+        date: vb.date, slots: vb.slots.sort(), total: useCoupon ? perDate[i] : 0,
+        sala: salaDisplayName(sala, mode), salaId: sala.id, mode, method, status,
+        coupon: i === 0 && coupon ? coupon.code : null,
+        discount: i === 0 ? discount : 0,
+        stations, guestNames: i === 0 ? guests : [],
+        weeklyGroupId: groupId, weeklyTotal: total,
+        notes: i === 0 ? notes : null,
+        createdAt: new Date().toISOString()
+    }));
 }
 
 // ══════════════════════════════════════════════
@@ -2166,6 +2432,17 @@ function updateMenuSummary() {
 // ══════════════════════════════════════════════
 //  CANCELAMENTO
 // ══════════════════════════════════════════════
+// Reserva paga com pacote cancelada → devolve as horas (wb_refund_credit só
+// devolve uma vez). Retorna as horas devolvidas, ou 0.
+async function refundCreditIfAny(doc, b) {
+    if (!b || !(Number(b.creditHours) > 0) || !doc) return 0;
+    const { data } = await sb.rpc('wb_refund_credit', { p_doc: doc, p_booking_id: String(b.id) });
+    if (!data) return 0;
+    const h = Number(b.creditHours);
+    b.creditHours = 0;
+    return h;
+}
+
 async function confirmCancel() {
     if (!cancelTarget) return;
     const idx = myBookings.findIndex(b => b.id === cancelTarget); if (idx < 0) return;
@@ -2176,11 +2453,13 @@ async function confirmCancel() {
     const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', bk.id);
     if (error) { closeModal('cancelModal'); return toast('Erro ao cancelar. Tente novamente.'); }
     myBookings[idx].status = 'Cancelado';
+    const refunded = await refundCreditIfAny(user.doc, bk);
     localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
     globalBusy = globalBusy.filter(b => String(b.id) !== String(bk.id));
     closeModal('cancelModal');
     cancelTarget = null;
-    toast('Reserva cancelada.');
+    toast(refunded ? 'Reserva cancelada — ' + refunded + 'h devolvidas ao seu pacote.' : 'Reserva cancelada.');
+    if (refunded) loadMyCredits();
     renderHistory();
     updateMenuSummary();
     fetchGlobalBookings();
@@ -2499,6 +2778,12 @@ async function renderAdminPanel() {
             </table>
         </div>
 
+        <!-- Pacotes e planos comprados -->
+        <div id="purchasesAdminSection" style="margin:20px 0"></div>
+
+        <!-- Tabela de preços (editável) -->
+        <div id="pricingAdminSection" style="margin-bottom:20px"></div>
+
         <!-- Gestão de Cupons -->
         <div id="couponAdminSection" style="margin-bottom:20px"></div>
 
@@ -2531,6 +2816,8 @@ async function renderAdminPanel() {
     filterAdminTable();
     renderCouponAdmin();
     renderBlockedDates();
+    renderPricingAdmin();
+    renderAdminPurchases();
 
     // Atualiza em segundo plano — admin autenticado lê dados completos
     sb.from('bookings').select('*').order('date', { ascending: false })
@@ -2557,6 +2844,7 @@ async function renderAdminPanel() {
                 fileName: b.file_name, fileData: b.file_data,
                 notes: b.notes || null,
                 checkedInAt: b.checked_in_at || null,
+                creditHours: Number(b.credit_hours) || 0,
                 createdAt: b.created_at
             }));
             globalBusy = adminAllData.filter(b => b.slots && b.date && b.status !== 'Cancelado').map(b => ({
@@ -2892,6 +3180,7 @@ async function updateStatus(id, newStatus, selectEl) {
     if (error) { toast('Erro ao atualizar.'); if (selectEl) selectEl.disabled = false; return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
     if (item) item.status = newStatus;
+    if (item && newStatus === 'Cancelado') await refundCreditIfAny(item.userDoc, item);
     // Recalcula globalBusy excluindo cancelados → libera horário imediatamente
     globalBusy = adminAllData
         .filter(b => b.slots && b.date && !(b.status || '').toLowerCase().includes('cancelado'))
@@ -3000,7 +3289,7 @@ async function adminRejectBooking(id) {
     const { error } = await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', id);
     if (error) { toast('Erro ao cancelar.'); return; }
     const item = adminAllData.find(b => String(b.id) === String(id));
-    if (item) item.status = 'Cancelado';
+    if (item) { item.status = 'Cancelado'; await refundCreditIfAny(item.userDoc, item); }
     globalBusy = globalBusy.filter(b => String(b.id) !== String(id));
     toast('Reserva cancelada — horário liberado.');
     filterAdminTable();
@@ -3350,8 +3639,8 @@ function renderSalaGrid() {
         btn.innerHTML = '<div style="font-size:24px;margin-bottom:6px">' + sala.emoji + '</div>'
             + '<div style="font-size:11px;font-weight:700;color:' + (isSelected ? 'var(--gold)' : 'var(--text)') + ';margin-bottom:4px;line-height:1.3">' + sala.nome + '</div>'
             + '<div style="font-size:10px;color:var(--muted);line-height:1.4;word-break:break-word">' + sala.desc.replace(/ · /g,'<br>') + '</div>'
-            + '<div style="font-size:14px;font-weight:700;color:var(--gold);margin-top:8px">R$ ' + sala.price + '/h' + (sala.stations > 1 ? ' <span style="font-size:10px;color:var(--muted);font-weight:400">por pessoa</span>' : '') + '</div>';
-        btn.onclick = () => { selectedSala = sala; selectedStations = 1; guestNames = []; renderSalaGrid(); renderStationsSection(); };
+            + '<div style="font-size:14px;font-weight:700;color:var(--gold);margin-top:8px">' + salaPriceLabel(sala) + '</div>';
+        btn.onclick = () => { if (!selectedSala || selectedSala.id !== sala.id) salaMode = 'estacao'; selectedSala = sala; selectedStations = 1; guestNames = []; renderSalaGrid(); renderStationsSection(); };
 
         grid.appendChild(btn);
     });
@@ -3436,12 +3725,31 @@ function viewerMove(dir, e) { if (e) e.stopPropagation(); _viewerIdx += dir; sho
 let selectedStations = 1;
 let guestNames = [];
 
+// Preço curto mostrado no cartão da sala
+function salaPriceLabel(sala) {
+    const small = t => ' <span style="font-size:10px;color:var(--muted);font-weight:400">' + t + '</span>';
+    if (sala.pricing === 'hora') return formatBRL(PRICING.particular) + '/h';
+    if (sala.meetingMax) return formatBRL(PRICING.estacao.h1) + '/h' + small('estação') + '<br>' + formatBRL(PRICING.reuniao.ate4) + '/h' + small('reunião');
+    return formatBRL(PRICING.estacao.h1) + '/h' + small('por pessoa');
+}
+
+function maxPeople(sala) { return modeFor(sala) === 'reuniao' ? sala.meetingMax : sala.stations; }
+
+function setSalaMode(mode) {
+    salaMode = mode;
+    if (selectedSala && selectedStations > maxPeople(selectedSala)) selectedStations = maxPeople(selectedSala);
+    renderStationsSection();
+    updateTotal();
+}
+
 function renderStationsSection() {
     const box = document.getElementById('stationsSection');
     if (!box) return;
-    if (!selectedSala || !(selectedSala.stations > 1)) { box.style.display = 'none'; return; }
+    if (!selectedSala || selectedSala.pricing === 'hora') { box.style.display = 'none'; return; }
     box.style.display = 'block';
-    if (selectedStations > selectedSala.stations) selectedStations = selectedSala.stations;
+    const mode = modeFor(selectedSala);
+    const max  = maxPeople(selectedSala);
+    if (selectedStations > max) selectedStations = max;
     const guestInputs = [];
     for (let i = 0; i < selectedStations - 1; i++) {
         guestInputs.push(
@@ -3449,20 +3757,31 @@ function renderStationsSection() {
             'value="' + (guestNames[i] || '').replace(/"/g,'&quot;') + '" oninput="guestNames[' + i + ']=this.value">'
         );
     }
-    box.innerHTML =
-        '<label class="field-label" style="margin-bottom:8px;display:block">Quantas pessoas vão usar? <span style="color:var(--muted);font-size:11px">(máx. ' + selectedSala.stations + ' estações)</span></label>' +
-        '<div style="display:flex;align-items:center;gap:14px;margin-bottom:' + (selectedStations > 1 ? '10px' : '0') + '">' +
+    const e = PRICING.estacao;
+    const modeToggle = selectedSala.meetingMax
+        ? '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+            '<button type="button" class="' + (mode === 'estacao' ? 'btn-gold' : 'btn-ghost') + '" style="flex:1;min-height:42px;font-size:12px" onclick="setSalaMode(\'estacao\')">🪑 Estação (por pessoa)</button>' +
+            '<button type="button" class="' + (mode === 'reuniao' ? 'btn-gold' : 'btn-ghost') + '" style="flex:1;min-height:42px;font-size:12px" onclick="setSalaMode(\'reuniao\')">👥 Sala de Reunião</button>' +
+          '</div>'
+        : '';
+    const priceHint = mode === 'reuniao'
+        ? 'Sala inteira · até 4 pessoas ' + formatBRL(PRICING.reuniao.ate4) + '/h · 5 a 8 pessoas ' + formatBRL(PRICING.reuniao.ate8) + '/h'
+        : 'Por pessoa · 1h ' + formatBRL(e.h1) + ' · 2h ' + formatBRL(e.h2) + ' · 4h ' + formatBRL(e.h4) + ' · diária ' + formatBRL(e.diaria);
+    box.innerHTML = modeToggle +
+        '<label class="field-label" style="margin-bottom:8px;display:block">Quantas pessoas vão usar? <span style="color:var(--muted);font-size:11px">(máx. ' + max + (mode === 'reuniao' ? ' pessoas' : ' estações') + ')</span></label>' +
+        '<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">' +
             '<button type="button" class="cal-nav" onclick="changeStations(-1)">−</button>' +
             '<span style="font-size:20px;font-weight:700;color:var(--gold);min-width:24px;text-align:center">' + selectedStations + '</span>' +
             '<button type="button" class="cal-nav" onclick="changeStations(1)">+</button>' +
-            '<span style="font-size:12px;color:var(--muted)">pessoa' + (selectedStations > 1 ? 's' : '') + ' · R$ ' + (selectedSala.price * selectedStations) + '/h no total</span>' +
+            '<span style="font-size:12px;color:var(--muted)">pessoa' + (selectedStations > 1 ? 's' : '') + '</span>' +
         '</div>' +
+        '<p style="font-size:11px;color:var(--gold);opacity:.85;margin-bottom:' + (selectedStations > 1 ? '10px' : '0') + '">' + priceHint + '</p>' +
         (selectedStations > 1 ? '<p style="font-size:11px;color:var(--muted);margin-bottom:4px">Nome das outras pessoas:</p>' + guestInputs.join('') : '');
 }
 
 function changeStations(dir) {
     if (!selectedSala) return;
-    selectedStations = Math.min(selectedSala.stations, Math.max(1, selectedStations + dir));
+    selectedStations = Math.min(maxPeople(selectedSala), Math.max(1, selectedStations + dir));
     renderStationsSection();
     updateTotal();
 }
@@ -3717,8 +4036,8 @@ function updateWeeklyPreview() {
     if (warnEl) warnEl.style.display = conflictDates.length ? 'block' : 'none';
     document.getElementById('semanalPreview').style.display = 'block';
     // Atualiza total com apenas datas válidas
-    const price = selectedSala ? selectedSala.price : CFG.salas[0].price;
-    document.getElementById('totalPrice').textContent = formatBRL(validDates.length * selection.slots.length * price);
+    const sala = selectedSala || CFG.salas[0];
+    document.getElementById('totalPrice').textContent = formatBRL(validDates.length * sessionPrice(sala, selection.slots.length, peopleOf(sala, modeFor(sala))));
 }
 
 function handleContinuar() {
@@ -3739,11 +4058,11 @@ function goToWeeklyCheckout() {
     const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
     if (!validDates.length) return toast('Todas as datas têm conflito. Escolha outro horário.');
     selection.slots.sort();
-    const price = selectedSala.price;
-    const stations = selectedSala.stations > 1 ? selectedStations : 1;
-    const total = validDates.length * selection.slots.length * price * stations;
+    const mode = modeFor(selectedSala);
+    const stations = peopleOf(selectedSala, mode);
+    const total = validDates.length * sessionPrice(selectedSala, selection.slots.length, stations, mode);
     // Preenche checkout
-    document.getElementById('co-sala').textContent     = selectedSala.emoji + ' ' + selectedSala.nome;
+    document.getElementById('co-sala').textContent     = selectedSala.emoji + ' ' + salaDisplayName(selectedSala, mode);
     if (selectedSala.address) {
         document.getElementById('co-address-row').style.display = 'flex';
         document.getElementById('co-address').textContent = selectedSala.address;
@@ -3762,8 +4081,9 @@ function goToWeeklyCheckout() {
     document.getElementById('couponRow').style.display = 'none';
     // Guarda datas válidas para buildWeeklyBookings
     weeklyGroupId = Date.now() + Math.floor(Math.random() * 10000);
+    _checkoutCtx = { weekly: true, mode, stations, total };
     navTo('checkout');
-    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); }, 100);
+    setTimeout(() => { renderPixQr(total); applyPendingReferralCoupon(); renderCreditOptions(); }, 100);
 }
 
 function buildWeeklyBookings(method, status) {
@@ -3775,16 +4095,17 @@ function buildWeeklyBookings(method, status) {
         )
     );
     const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
-    const stations = sala.stations > 1 ? selectedStations : 1;
+    const mode = modeFor(sala);
+    const stations = peopleOf(sala, mode);
     const guests = stations > 1 ? guestNames.slice(0, stations - 1).filter(Boolean) : [];
-    const basePerSession = selection.slots.length * sala.price * stations;
+    const basePerSession = sessionPrice(sala, selection.slots.length, stations, mode);
     const discount = activeCoupon ? Math.round(basePerSession * activeCoupon.pct / 100) : 0;
     const notes = (document.getElementById('bookingNotes')||{value:''}).value.trim() || null;
     return validDates.map((date, i) => ({
         id: weeklyGroupId + i,
         userDoc: user.doc, userName: user.name, userPhone: user.phone, userEmail: user.email,
         date, slots: [...selection.slots].sort(), total: basePerSession - discount,
-        sala: sala.nome, salaId: sala.id, method, status,
+        sala: salaDisplayName(sala, mode), salaId: sala.id, mode, method, status,
         coupon: activeCoupon ? activeCoupon.code : null, discount,
         stations, guestNames: i === 0 ? guests : [],
         weeklyGroupId, weeklyDow: new Date(date + 'T12:00:00').getDay(), weeklyTotal: validDates.length * (basePerSession - discount),
@@ -3953,7 +4274,7 @@ function applyCoupon() {
     if (!code) { msgEl.textContent = ''; return; }
 
     const coupon = CFG.coupons && CFG.coupons[code];
-    const baseNoDisc = _checkoutTotal || (selection.slots.length * (selectedSala ? selectedSala.price : CFG.salas[0].price));
+    const baseNoDisc = (_checkoutCtx && _checkoutCtx.total) || _checkoutTotal;
     const resetInvalid = msg => {
         activeCoupon = null; rowEl.style.display = 'none';
         msgEl.style.color = '#ef4444'; msgEl.textContent = msg;
@@ -3995,6 +4316,14 @@ function applyCoupon() {
 let extendTarget = null;
 let extendNextHour = null;
 
+// +1h custa a diferença na tabela (ex.: estação de 2h→3h = R$65−R$40)
+function extendPrice(b, sala) {
+    const mode = modeOfBooking(b);
+    const people = b.stations > 1 ? b.stations : 1;
+    const h = (b.slots || []).length;
+    return sessionPrice(sala, h + 1, people, mode) - sessionPrice(sala, h, people, mode);
+}
+
 function askExtend(id) {
     const b = myBookings.find(x => x.id === id); if (!b) return;
     const sala = CFG.salas.find(s => s.id === b.salaId) || CFG.salas.find(s => s.nome === b.sala) || CFG.salas[0];
@@ -4010,7 +4339,7 @@ function askExtend(id) {
     extendNextHour = nextHour;
     const extendStations = b.stations > 1 ? b.stations : 1;
     document.getElementById('extendModalDesc').textContent = formatDateBR(b.date) + ' · mais 1 hora às ' + nextHour + (extendStations > 1 ? ' · ' + extendStations + ' pessoas' : '');
-    document.getElementById('extendModalPrice').textContent = formatBRL(sala.price * extendStations);
+    document.getElementById('extendModalPrice').textContent = formatBRL(extendPrice(b, sala));
     document.getElementById('extendPixDisplay').value = CFG.pixKey;
     openModal('extendModal');
 }
@@ -4027,7 +4356,7 @@ async function confirmExtend() {
     const b = myBookings[idx];
     const sala = CFG.salas.find(s => s.id === b.salaId) || CFG.salas.find(s => s.nome === b.sala) || CFG.salas[0];
     const newSlots  = (b.slots || []).concat([extendNextHour]);
-    const newTotal  = (Number(b.total) || 0) + sala.price * (b.stations > 1 ? b.stations : 1);
+    const newTotal  = (Number(b.total) || 0) + extendPrice(b, sala);
     const newStatus = (b.status || '').includes('PAGO') ? 'PAGO — Aguardando Verificação' : b.status;
     const btn = document.getElementById('btnConfirmExtend');
     btn.disabled = true; btn.textContent = 'Confirmando...';
@@ -4306,6 +4635,136 @@ function renderCheckinToday(all) {
             (b.checkedInAt ? '<span style="color:#22c55e;white-space:nowrap">✅ ' + hhmm(b.checkedInAt) + '</span>' : '<span style="color:var(--muted);white-space:nowrap">⏳ aguardando</span>') +
             '</div>').join('') : '<p style="font-size:12px;color:var(--muted)">Nenhuma reserva para hoje.</p>') +
         '</div>';
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN — PACOTES/PLANOS COMPRADOS
+// ══════════════════════════════════════════════
+let adminPurchases = [];
+async function renderAdminPurchases() {
+    const el = document.getElementById('purchasesAdminSection'); if (!el) return;
+    const box = inner => '<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">' +
+        '<p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px">💳 Pacotes e Planos Mensais</p>' + inner + '</div>';
+    const { data, error } = await sb.from('wb_purchases')
+        .select('id,user_doc,user_name,user_phone,kind,plan_name,hours,hours_used,price,validity_days,status,created_at,approved_at,expires_at,file_name')
+        .order('created_at', { ascending: false }).limit(150);
+    if (error) { el.innerHTML = box('<p style="font-size:12px;color:#fbbf24">Rode o arquivo supabase/sql/precos_pacotes_setup.sql no Supabase para ativar os pacotes.</p>'); return; }
+    adminPurchases = data || [];
+    const pend   = adminPurchases.filter(p => p.status === 'Aguardando Verificação');
+    const active = adminPurchases.filter(p => isLive(p));
+    const btn = (label, onclick, color) => '<button onclick="' + onclick + '" style="background:' + color + '1a;border:1px solid ' + color + '55;color:' + color + ';padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer">' + label + '</button>';
+    const who = p => '<strong>' + escHtml(p.user_name || '—') + '</strong> <span style="color:var(--muted);font-size:11px">' + escHtml(p.user_phone || '') + '</span>';
+    const rev = active.reduce((s, p) => s + Number(p.price), 0);
+    el.innerHTML = box(
+        '<p style="font-size:12px;color:var(--text2);margin-bottom:12px">Ativos: <strong style="color:var(--gold)">' + active.length + '</strong> · Receita dos ativos: <strong style="color:#22c55e">' + formatBRL(rev) + '</strong></p>' +
+        (pend.length ? '<p style="font-size:11px;color:#fbbf24;margin-bottom:6px">⏳ Aguardando aprovação (' + pend.length + ')</p>' : '') +
+        pend.map(p =>
+            '<div style="padding:10px 0;border-top:1px solid var(--border);font-size:13px">' + who(p) +
+            '<div style="color:var(--text2);margin:2px 0 8px">' + escHtml(p.plan_name) + ' · ' + formatBRL(p.price) + ' · ' + dateBR(p.created_at) + '</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+                btn('🖼 Comprovante', 'viewPurchaseProof(' + p.id + ')', '#d4af37') +
+                btn('✓ Aprovar', 'adminApprovePurchase(' + p.id + ')', '#22c55e') +
+                btn('✗ Recusar', 'adminRejectPurchase(' + p.id + ')', '#ef4444') +
+            '</div></div>').join('') +
+        (active.length ? '<p style="font-size:11px;color:#22c55e;margin:12px 0 6px">✅ Ativos (' + active.length + ')</p>' : '') +
+        active.map(p =>
+            '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--border);font-size:13px">' +
+            '<span>' + who(p) + '<br><span style="color:var(--text2);font-size:12px">' + escHtml(p.plan_name) + '</span></span>' +
+            '<span style="text-align:right;font-size:12px;white-space:nowrap">' +
+                (p.kind === 'pacote' ? '<strong style="color:var(--gold)">' + (Number(p.hours) - Number(p.hours_used)) + 'h</strong> de ' + Number(p.hours) + 'h<br>' : '') +
+                '<span style="color:var(--muted)">vence ' + dateBR(p.expires_at) + '</span></span>' +
+            '</div>').join('') +
+        (!pend.length && !active.length ? '<p style="font-size:12px;color:var(--muted)">Nenhum pacote ou plano ativo ainda.</p>' : '')
+    );
+}
+
+async function viewPurchaseProof(id) {
+    const { data, error } = await sb.from('wb_purchases').select('file_name,file_data').eq('id', id).maybeSingle();
+    if (error || !data || !data.file_data) return toast('Comprovante não encontrado.');
+    const w = window.open('', '_blank');
+    if (!w) return toast('Libere pop-ups para ver o comprovante.');
+    const isPdf = /^data:application\/pdf/.test(data.file_data);
+    w.document.write('<title>' + escHtml(data.file_name || 'Comprovante') + '</title><body style="margin:0;background:#111">' +
+        (isPdf ? '<iframe src="' + data.file_data + '" style="width:100%;height:100vh;border:0"></iframe>'
+               : '<img src="' + data.file_data + '" style="max-width:100%;display:block;margin:auto">') + '</body>');
+}
+
+async function adminApprovePurchase(id) {
+    const p = adminPurchases.find(x => x.id === id); if (!p) return;
+    const now = new Date();
+    const expires = new Date(now.getTime() + Number(p.validity_days) * 864e5);
+    const { error } = await sb.from('wb_purchases').update({ status: 'Ativo', approved_at: now.toISOString(), expires_at: expires.toISOString() }).eq('id', id);
+    if (error) return toast('Erro ao aprovar: ' + error.message);
+    toast('Aprovado! Válido até ' + dateBR(expires.toISOString()) + '.');
+    const phone = (p.user_phone || '').replace(/\D/g, '');
+    if (phone) {
+        const msg = 'Olá, ' + (p.user_name || '').split(' ')[0] + '! Seu ' + p.plan_name + ' no WB Coworking foi confirmado ✅\n'
+            + (p.kind === 'pacote' ? 'Você tem ' + Number(p.hours) + ' horas para usar até ' : 'Seu plano vale até ')
+            + dateBR(expires.toISOString()) + '. É só reservar pelo app: https://wbcoworkingaagenda.vercel.app/';
+        window.open('https://wa.me/55' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+    renderAdminPurchases();
+}
+
+async function adminRejectPurchase(id) {
+    if (!confirm('Recusar esta compra? O cliente não recebe o saldo.')) return;
+    const { error } = await sb.from('wb_purchases').update({ status: 'Recusado' }).eq('id', id);
+    if (error) return toast('Erro: ' + error.message);
+    toast('Compra recusada.');
+    renderAdminPurchases();
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN — TABELA DE PREÇOS (sem mexer no código)
+// ══════════════════════════════════════════════
+function renderPricingAdmin() {
+    const el = document.getElementById('pricingAdminSection'); if (!el) return;
+    const P = PRICING, e = P.estacao;
+    const inp = (id, val, label, w) => '<label style="display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--muted);flex:1;min-width:' + (w || 90) + 'px">' + label +
+        '<input id="' + id + '" class="input" type="number" min="0" step="1" value="' + val + '" style="font-size:13px;padding:8px 10px"></label>';
+    const group = (title, inner) => '<p style="font-size:11px;color:var(--gold);margin:14px 0 6px">' + title + '</p><div style="display:flex;gap:8px;flex-wrap:wrap">' + inner + '</div>';
+    el.innerHTML =
+        '<div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px">' +
+        '<p style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">💲 Tabela de Preços</p>' +
+        '<p style="font-size:11px;color:var(--muted);margin-top:4px">Valores em R$. Ao salvar, o app e os novos pagamentos passam a usar os novos preços na hora. Pacotes já comprados não mudam.</p>' +
+        group('Estação compartilhada (por pessoa)',
+            inp('pr_h1', e.h1, '1 hora') + inp('pr_h2', e.h2, '2 horas') + inp('pr_h4', e.h4, 'Meio período (4h)') + inp('pr_d', e.diaria, 'Diária')) +
+        group('Salas (por hora)',
+            inp('pr_part', P.particular, 'Sala particular') + inp('pr_r4', P.reuniao.ate4, 'Reunião até 4') + inp('pr_r8', P.reuniao.ate8, 'Reunião 5 a 8')) +
+        P.pacotes.map((p, i) => group('Pacote ' + (i + 1),
+            inp('pr_pk_h' + i, p.horas, 'Horas', 70) + inp('pr_pk_p' + i, p.preco, 'Preço') + inp('pr_pk_v' + i, p.validade, 'Validade (dias)') +
+            '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);min-width:110px"><input type="radio" name="pr_dest" value="' + i + '"' + (p.destaque ? ' checked' : '') + '> ⭐ Recomendado</label>')).join('') +
+        P.mensal.map((m, i) => group(escHtml(m.nome) + ' (mensal)',
+            inp('pr_m_p' + i, m.preco, 'Preço por mês') + inp('pr_m_v' + i, m.validade, 'Validade (dias)'))).join('') +
+        '<button class="btn-gold" style="margin-top:16px;width:100%" id="btnSavePricing" onclick="savePricing()">💾 Salvar preços</button>' +
+        '</div>';
+}
+
+async function savePricing() {
+    const n = id => Number(String(document.getElementById(id).value).replace(',', '.'));
+    const dest = Number((document.querySelector('input[name="pr_dest"]:checked') || {}).value);
+    const next = {
+        estacao: { h1: n('pr_h1'), h2: n('pr_h2'), h4: n('pr_h4'), diaria: n('pr_d') },
+        particular: n('pr_part'),
+        reuniao: { ate4: n('pr_r4'), ate8: n('pr_r8') },
+        pacotes: PRICING.pacotes.map((p, i) => {
+            const horas = n('pr_pk_h' + i);
+            return { id: p.id, nome: 'Pacote ' + horas + ' horas', horas, preco: n('pr_pk_p' + i), validade: n('pr_pk_v' + i), destaque: i === dest };
+        }),
+        mensal: PRICING.mensal.map((m, i) => ({ id: m.id, nome: m.nome, preco: n('pr_m_p' + i), validade: n('pr_m_v' + i) }))
+    };
+    const all = [...Object.values(next.estacao), next.particular, ...Object.values(next.reuniao),
+        ...next.pacotes.flatMap(p => [p.horas, p.preco, p.validade]), ...next.mensal.flatMap(m => [m.preco, m.validade])];
+    if (all.some(v => !Number.isFinite(v) || v <= 0)) return toast('Preencha todos os valores com números maiores que zero.');
+    const btn = document.getElementById('btnSavePricing');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const { error } = await sb.from('app_settings').upsert({ key: 'pricing', value: next, updated_at: new Date().toISOString() });
+    btn.disabled = false; btn.textContent = '💾 Salvar preços';
+    if (error) return toast('Erro ao salvar: ' + error.message);
+    PRICING = next;
+    localStorage.setItem('wb_pricing', JSON.stringify(PRICING));
+    toast('Preços atualizados! ✅');
+    renderPricingAdmin();
 }
 
 // Página pra imprimir e colar na porta/recepção
