@@ -1340,6 +1340,52 @@ function sessionPrice(sala, hours, people, mode) {
     if (mode === 'reuniao') return hours * (people <= 4 ? PRICING.reuniao.ate4 : PRICING.reuniao.ate8);
     return estacaoPrice(hours) * Math.max(1, people);
 }
+// ══════════════════════════════════════════════
+//  AGENDA POR SALA (lugares livres por horário)
+// ══════════════════════════════════════════════
+// Cada sala tem a própria agenda. Particular: 1 cliente por horário.
+// Estação: até sala.stations pessoas somadas. Reunião ocupa a sala inteira
+// e só pode ser reservada com a sala vazia.
+function salaCapacity(sala) { return sala.pricing === 'hora' ? 1 : sala.stations; }
+function salaIdOf(b) {
+    if (b.salaId || b.sala_id) return b.salaId || b.sala_id;
+    const s = CFG.salas.find(x => b.sala && b.sala.includes(x.nome));
+    return s ? s.id : null;
+}
+// Reservas ativas no horário (servidor + deste aparelho), sem repetir a mesma
+function activeBookingsAt(date, h) {
+    const seen = new Set(), out = [];
+    [...globalBusy, ...myBookings].forEach(b => {
+        if (b.date !== date || !(b.slots || []).includes(h) || (b.status || '').toLowerCase().includes('cancelado')) return;
+        const k = String(b.id);
+        if (seen.has(k)) return;
+        seen.add(k); out.push(b);
+    });
+    return out;
+}
+function usedSeats(sala, date, h, ignoreId) {
+    const cap = salaCapacity(sala);
+    return activeBookingsAt(date, h)
+        .filter(b => salaIdOf(b) === sala.id && String(b.id) !== String(ignoreId))
+        .reduce((s, b) => s + (sala.pricing === 'hora' || /Reuni/i.test(b.sala || '') ? cap : Math.max(1, Number(b.stations) || 1)), 0);
+}
+// Lugares livres no horário para o modo escolhido (0 = indisponível)
+function seatsFree(sala, mode, date, h, ignoreId) {
+    if (blockedDates.includes(date) || blockedHours.some(x => x.date === date && x.hour === h)) return 0;
+    const used = usedSeats(sala, date, h, ignoreId);
+    if (mode === 'reuniao') return used === 0 ? sala.meetingMax : 0;
+    return Math.max(0, salaCapacity(sala) - used);
+}
+function slotOk(sala, mode, people, date, h, ignoreId) {
+    const free = seatsFree(sala, mode, date, h, ignoreId);
+    return mode === 'reuniao' ? free > 0 : free >= Math.max(1, people);
+}
+// Disponibilidade com a sala/modo/pessoas escolhidos agora na tela
+function slotOkNow(date, h) {
+    const sala = selectedSala || CFG.salas[0], mode = modeFor(sala);
+    return slotOk(sala, mode, peopleOf(sala, mode), date, h);
+}
+
 function salaDisplayName(sala, mode) { return mode === 'reuniao' ? 'Sala de Reunião (' + sala.nome + ')' : sala.nome; }
 function peopleOf(sala, mode) { return mode === 'hora' ? 1 : selectedStations; }
 
@@ -1857,11 +1903,14 @@ function tryAutoFill(key) {
 async function fetchGlobalBookings() {
     document.getElementById('syncBadge').classList.add('loading');
     try {
-        // Disponibilidade: função pública sem dados pessoais
-        const { data: avail } = await sb.rpc('get_booking_availability');
+        // Disponibilidade: função pública sem dados pessoais. wb_availability
+        // (supabase/sql/agenda_por_sala.sql) também traz as estações ocupadas;
+        // sem ela, cai na função antiga e conta 1 pessoa por reserva.
+        let { data: avail, error: avErr } = await sb.rpc('wb_availability');
+        if (avErr) ({ data: avail } = await sb.rpc('get_booking_availability'));
         globalBusy = (avail || []).map(b => ({
             id: b.id, date: b.date, slots: b.slots, status: b.status,
-            sala: b.sala, salaId: b.sala_id,
+            sala: b.sala, salaId: b.sala_id, stations: Number(b.stations) || 1,
             name: ''
         }));
         // Bloqueios
@@ -2028,23 +2077,29 @@ function renderSlots() {
     const grid = document.getElementById('slotsGrid'); grid.innerHTML = '';
     const dates = selectedDates.length ? selectedDates : (selection.date ? [selection.date] : []);
     if (!dates.length) return;
+    const sala = selectedSala || CFG.salas[0], mode = modeFor(sala);
+    // Tira da seleção horários que deixaram de caber (ex.: aumentou o nº de pessoas)
+    selection.slots = selection.slots.filter(h => dates.some(d => slotOkNow(d, h)));
     CFG.hours.forEach(h => {
         const btn = document.createElement('button'); btn.className = 'slot-btn';
-        const busyOnDates = dates.filter(date =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
-            blockedHours.some(x => x.date === date && x.hour === h)
-        ).length;
+        const busyOnDates = dates.filter(date => !slotOkNow(date, h)).length;
         const allBusy = busyOnDates === dates.length;
         const partialBusy = busyOnDates > 0 && dates.length > 1;
         if (allBusy) {
             btn.disabled = true; btn.textContent = 'Ocupado';
         } else {
             btn.textContent = h;
+            // Estação: mostra quantas estações sobram (uma data só)
+            if (mode === 'estacao' && salaCapacity(sala) > 1 && dates.length === 1) {
+                const free = seatsFree(sala, mode, dates[0], h);
+                btn.style.flexDirection = 'column'; btn.style.lineHeight = '1.15';
+                btn.innerHTML = h + '<span style="display:block;font-size:9px;font-weight:500;opacity:.7;margin-top:2px">' + free + ' livre' + (free > 1 ? 's' : '') + '</span>';
+            }
             if (partialBusy) {
                 btn.style.borderColor = 'rgba(251,191,36,0.5)';
                 btn.title = `Ocupado em ${busyOnDates} de ${dates.length} datas`;
             }
+            if (selection.slots.includes(h)) btn.classList.add('selected');
             btn.onclick = () => toggleSlot(h, btn);
         }
         grid.appendChild(btn);
@@ -2068,10 +2123,7 @@ function updateTotal() {
     // Preço por data (a tabela da estação é por bloco de horas no mesmo dia)
     let total = 0;
     dates.forEach(date => {
-        const free = selection.slots.filter(h => !(
-            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') ||
-            blockedHours.some(x => x.date === date && x.hour === h)));
+        const free = selection.slots.filter(h => slotOkNow(date, h));
         total += sessionPrice(sala, free.length, peopleOf(sala, mode), mode);
     });
     document.getElementById('totalPrice').textContent = formatBRL(total);
@@ -2090,11 +2142,7 @@ function goToCheckout() {
     // Monta reservas válidas por data
     const validBookings = [];
     dates.forEach(date => {
-        const slots = selection.slots.filter(h =>
-            !globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) &&
-            !myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado') &&
-            !blockedHours.some(x => x.date === date && x.hour === h)
-        );
+        const slots = selection.slots.filter(h => slotOkNow(date, h));
         if (slots.length) validBookings.push({ date, slots });
     });
     if (!validBookings.length) return toast('Nenhum horário disponível nas datas selecionadas.');
@@ -2848,7 +2896,7 @@ async function renderAdminPanel() {
                 createdAt: b.created_at
             }));
             globalBusy = adminAllData.filter(b => b.slots && b.date && b.status !== 'Cancelado').map(b => ({
-                id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: ''
+                id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, stations: b.stations, name: ''
             }));
             filterAdminTable();
             renderCheckinToday(adminAllData);
@@ -3184,7 +3232,7 @@ async function updateStatus(id, newStatus, selectEl) {
     // Recalcula globalBusy excluindo cancelados → libera horário imediatamente
     globalBusy = adminAllData
         .filter(b => b.slots && b.date && !(b.status || '').toLowerCase().includes('cancelado'))
-        .map(b => ({ id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, name: '' }));
+        .map(b => ({ id: b.id, date: b.date, slots: b.slots, status: b.status, sala: b.sala, salaId: b.salaId, stations: b.stations, name: '' }));
     toast('Status atualizado!');
     if (selectEl) selectEl.disabled = false;
     renderNoShowClients();
@@ -3739,7 +3787,12 @@ function setSalaMode(mode) {
     salaMode = mode;
     if (selectedSala && selectedStations > maxPeople(selectedSala)) selectedStations = maxPeople(selectedSala);
     renderStationsSection();
-    updateTotal();
+    refreshSlotsAfterChange();
+}
+
+// Pessoas/modo mudam quais horários cabem: redesenha a grade se já há data
+function refreshSlotsAfterChange() {
+    if (selection.date || selectedDates.length) renderSlots(); else updateTotal();
 }
 
 function renderStationsSection() {
@@ -3783,7 +3836,7 @@ function changeStations(dir) {
     if (!selectedSala) return;
     selectedStations = Math.min(maxPeople(selectedSala), Math.max(1, selectedStations + dir));
     renderStationsSection();
-    updateTotal();
+    refreshSlotsAfterChange();
 }
 
 // ══════════════════════════════════════════════
@@ -3994,8 +4047,7 @@ function renderSlotsWeekly() {
         const btn = document.createElement('button'); btn.className = 'slot-btn';
         // Verifica conflito em TODAS as datas da série
         const conflictCount = weeklyDates.filter(date =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h) && !(b.status||'').toLowerCase().includes('cancelado')) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+            !slotOkNow(date, h)
         ).length;
         if (conflictCount === weeklyDates.length) {
             btn.disabled = true; btn.textContent = 'Lotado';
@@ -4017,8 +4069,7 @@ function updateWeeklyPreview() {
     }
     const conflictDates = weeklyDates.filter(date =>
         selection.slots.some(h =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+            !slotOkNow(date, h)
         )
     );
     const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
@@ -4051,8 +4102,7 @@ function goToWeeklyCheckout() {
     if (!selection.slots.length) return toast('Selecione ao menos um horário.');
     const conflictDates = weeklyDates.filter(date =>
         selection.slots.some(h =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+            !slotOkNow(date, h)
         )
     );
     const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
@@ -4090,8 +4140,7 @@ function buildWeeklyBookings(method, status) {
     const sala = selectedSala || CFG.salas[0];
     const conflictDates = weeklyDates.filter(date =>
         selection.slots.some(h =>
-            globalBusy.some(b => b.date === date && b.slots.includes(h)) ||
-            myBookings.some(b => b.date === date && b.slots.includes(h) && b.status !== 'Cancelado')
+            !slotOkNow(date, h)
         )
     );
     const validDates = weeklyDates.filter(d => !conflictDates.includes(d));
@@ -4168,10 +4217,7 @@ function suggestNextAvailable(fromDate) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
         const iso = d.toISOString().split('T')[0];
         if (blockedDates.includes(iso)) continue;
-        const busy = globalBusy.filter(b => b.date === iso && !(b.status||'').toLowerCase().includes('cancelado')).flatMap(b => b.slots || []);
-        const mine = myBookings.filter(b => b.date === iso && b.status !== 'Cancelado').flatMap(b => b.slots || []);
-        const allBusy = new Set([...busy, ...mine]);
-        if (allBusy.size < CFG.hours.length) return iso;
+        if (CFG.hours.some(h => slotOkNow(iso, h))) return iso;
     }
     return null;
 }
@@ -4332,8 +4378,7 @@ function askExtend(id) {
     const idx = CFG.hours.indexOf(lastSlot);
     if (idx === -1 || idx === CFG.hours.length - 1) return toast('Não há mais horários disponíveis para estender essa reserva.');
     const nextHour = CFG.hours[idx + 1];
-    const busy = globalBusy.some(x => x.date === b.date && (x.slots || []).includes(nextHour) && String(x.id) !== String(b.id) && !(x.status || '').toLowerCase().includes('cancelado'))
-        || blockedHours.some(x => x.date === b.date && x.hour === nextHour);
+    const busy = !slotOk(sala, modeOfBooking(b), b.stations > 1 ? b.stations : 1, b.date, nextHour, b.id);
     if (busy) return toast('O horário seguinte (' + nextHour + ') já está ocupado.');
     extendTarget = id;
     extendNextHour = nextHour;
