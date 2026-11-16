@@ -2,6 +2,45 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <script>
+    // Domínio antigo (.vercel.app) → www.wbcoworking.com.br. Os dados do
+    // cliente ficam no localStorage, que é separado por domínio; por isso o
+    // endereço antigo leva login e reservas junto no #wbmigrate e o novo importa.
+    (function () {
+        var NEW = 'https://www.wbcoworking.com.br';
+        var OLD = ['wbcoworkingaagenda.vercel.app', 'wb-coworking1.vercel.app'];
+        var KEYS = ['wb_user', 'wb_bookings', 'wb_remembered_users', 'wb_rating_asked', 'wb_ref_coupon', 'wb_install_dismissed', 'wb_notif_dismissed'];
+        if (OLD.indexOf(location.hostname) !== -1) {
+            var data = {};
+            try {
+                KEYS.forEach(function (k) { var v = localStorage.getItem(k); if (v) data[k] = v; });
+                // comprovantes (imagens) ficam de fora: são pesados e já estão no servidor
+                if (data.wb_bookings) data.wb_bookings = JSON.stringify(JSON.parse(data.wb_bookings).map(function (b) { delete b.fileData; return b; }));
+            } catch (e) {}
+            var hash = Object.keys(data).length ? '#wbmigrate=' + encodeURIComponent(JSON.stringify(data)) : '';
+            location.replace(NEW + location.pathname + location.search + hash);
+            return;
+        }
+        var m = location.hash.match(/^#wbmigrate=(.*)$/);
+        if (!m) return;
+        try {
+            var d = JSON.parse(decodeURIComponent(m[1]));
+            Object.keys(d).forEach(function (k) {
+                if (KEYS.indexOf(k) === -1) return;
+                if (k === 'wb_bookings') {
+                    // junta com o que já existir aqui, sem duplicar a mesma reserva
+                    var here = JSON.parse(localStorage.getItem('wb_bookings') || '[]');
+                    var ids = here.map(function (b) { return String(b.id); });
+                    JSON.parse(d[k]).forEach(function (b) { if (ids.indexOf(String(b.id)) === -1) here.push(b); });
+                    localStorage.setItem('wb_bookings', JSON.stringify(here));
+                } else if (!localStorage.getItem(k)) {
+                    localStorage.setItem(k, d[k]);
+                }
+            });
+        } catch (e) {}
+        history.replaceState(null, '', location.pathname + location.search);
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WB Coworking — Reservas de Sala | Penha, São Paulo</title>
     <meta name="description" content="Reserve sua sala no WB Coworking — espaço profissional em Penha, São Paulo. Salas privativas e compartilhadas para atendimentos e reuniões.">
