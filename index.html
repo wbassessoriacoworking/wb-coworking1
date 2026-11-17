@@ -3181,9 +3181,8 @@ async function pixAutoPaid(ctx) {
         if (oi >= 0) myBookings[oi].status = 'Cancelado';
         localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
     }
-    // Aviso para a equipe (Make.com), agora que está pago
+    // O aviso para a equipe (WhatsApp/Make) é enviado pelo servidor (mp-pix)
     const b0 = ctx.bookings[0];
-    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: b0.id, userName: b0.userName, userPhone: b0.userPhone, date: b0.date, sala: b0.sala, slots: b0.slots, total: b0.weeklyTotal || b0.total, status, notes: b0.notes || null }) }); } catch (e) {}
     tempBooking = b0;
     resetBookingUI();
     openModal('successModal');
@@ -4035,6 +4034,32 @@ async function adminToggleCoupon(code, currentlyActive) {
     renderCouponAdmin();
 }
 
+// Admin → cliente: WhatsApp já com mensagem pronta, conforme o status da reserva
+function clientWaUrl(b) {
+    const phone = (b.userPhone || b.phone || '').replace(/\D/g, '');
+    if (!phone) return '';
+    const first = (b.userName || b.name || '').split(' ')[0].toLowerCase().replace(/^./, c => c.toUpperCase());
+    const s = (b.status || '').toLowerCase();
+    const slots = Array.isArray(b.slots) ? b.slots.join(', ') : (b.slots || '');
+    const det = '📅 ' + formatDateBR(b.date) + '\n🕘 ' + slots + '\n🚪 ' + (b.sala || 'Sala') + '\n📍 Av. Amador Bueno da Veiga, 1970 — 2º andar · Penha';
+    const total = b.weeklyTotal || b.total;
+    let msg;
+    if (s.includes('cancelado')) {
+        msg = 'Olá, ' + first + '! Aqui é do WB Coworking 😊\n\nSua reserva de ' + formatDateBR(b.date) + ' (' + slots + ') foi cancelada.\nSe quiser remarcar, é só reservar outro horário pelo app: https://www.wbcoworking.com.br\n\nQualquer dúvida, estamos à disposição!';
+    } else if (s.includes('confirmado') || s.includes('pago')) {
+        msg = 'Olá, ' + first + '! Aqui é do WB Coworking 😊\n\nSua reserva está *confirmada* ✅\n\n' + det +
+            (total ? '\n💰 Total pago: ' + formatBRL(total) : '') +
+            '\n\n📲 Na chegada, faça o check-in escaneando o QR Code da porta ou mostre o seu ingresso no app (Minhas Reservas → 🎟️ Check-in).' +
+            '\n📶 Wi-Fi: ' + CFG.wifiPassword +
+            '\n\nQualquer dúvida, é só chamar. Bom trabalho! 💼';
+    } else {
+        msg = 'Olá, ' + first + '! Aqui é do WB Coworking 😊\n\nRecebemos sua reserva:\n\n' + det +
+            (total ? '\n💰 Valor: ' + formatBRL(total) : '') +
+            '\n\nAssim que o pagamento for confirmado, sua reserva fica garantida. Se já pagou, pode nos enviar o comprovante por aqui. 🙏';
+    }
+    return 'https://wa.me/55' + phone + '?text=' + encodeURIComponent(msg);
+}
+
 function adminSendCoupon(code) {
     const c = CFG.coupons[code]; if (!c) return;
     const phone = prompt('Telefone do cliente (com DDD, só números):');
@@ -4173,7 +4198,7 @@ function filterAdminTable() {
         const isPending = s.toLowerCase().includes('análise')||s.toLowerCase().includes('aguardando');
         const isPaid    = s.includes('PAGO')||s.includes('Confirmado');
         const phone     = (b.userPhone||b.phone||'').replace(/\D/g,'');
-        const waLink    = phone ? `https://wa.me/55${phone}` : '';
+        const waLink    = clientWaUrl(b);
         const isNoShow = s.toLowerCase().includes('compareceu');
         const statusColor = isNoShow ? '#f97316' : isPaid ? '#22c55e' : s.toLowerCase().includes('cancelado') ? '#ef4444' : '#fbbf24';
         const tr = document.createElement('tr');
@@ -4380,7 +4405,7 @@ function showDayDetail(date) {
             const isPaid = (b.status||'').includes('PAGO')||(b.status||'').includes('Confirmado');
             const color  = isPaid ? '#22c55e' : (b.status||'').toLowerCase().includes('cancelado') ? '#ef4444' : '#fbbf24';
             const phone  = (b.userPhone||b.phone||'').replace(/\D/g,'');
-            const wa     = phone ? `<a href="https://wa.me/55${phone}" target="_blank" style="color:#25d366;font-size:11px;text-decoration:none">📱 WhatsApp</a>` : '';
+            const wa     = phone ? `<a href="${clientWaUrl(b)}" target="_blank" style="color:#25d366;font-size:11px;text-decoration:none">💬 Chamar cliente (mensagem pronta)</a>` : '';
             return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
                     <div>
