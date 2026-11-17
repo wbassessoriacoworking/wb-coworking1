@@ -41,6 +41,18 @@
         history.replaceState(null, '', location.pathname + location.search);
     })();
     </script>
+    <script>
+    // Visitante (sem login) vê primeiro o site de apresentação; cliente logado,
+    // app instalado e links de QR/ingresso/cupom vão direto para a agenda.
+    (function () {
+        var skip = false, p = new URLSearchParams(location.search);
+        try { skip = !!localStorage.getItem('wb_user'); } catch (e) {}
+        ['ticket', 'checkin', 'cupom', 'collection_status', 'app'].forEach(function (k) { if (p.has(k)) skip = true; });
+        if (location.hash === '#reservar') skip = true;
+        if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches)) skip = true;
+        if (!skip) document.documentElement.classList.add('site-mode');
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WB Coworking — Salas por hora na Penha, ao lado do Fórum Trabalhista</title>
     <meta name="description" content="Coworking na Penha, São Paulo, a 2 minutos do Fórum Trabalhista. Sala particular, sala de reunião e estações por hora a partir de R$ 25. Wi-Fi, café e ar-condicionado. Seg a sex, 9h às 18h. Reserve online.">
@@ -811,9 +823,391 @@
         .menu-side .info-pill:hover { background: var(--surface2); }
         .menu-side .info-pill .pill-icon { font-size: 17px; width: 24px; text-align: center; }
     }
+
+    /* ══════════════ SITE (página de apresentação antes da agenda) ══════════════
+       Aparece para visitantes (sem login). Ver script "site-mode" no <head>. */
+    #site { display: none; }
+    html.site-mode #site { display: block; }
+    html.site-mode body > :not(#site):not(#toast):not(script) { display: none !important; }
+    html.site-mode body { overflow-x: hidden; }
+    #site { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.6; }
+    #site a { color: inherit; text-decoration: none; }
+    #site img { display: block; max-width: 100%; }
+    #site .s-wrap { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
+    @media (min-width: 1300px) { #site .s-wrap { max-width: 1260px; padding: 0 32px; } }
+    #site section { padding: 84px 0; }
+    #site .s-eyebrow { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 10px; }
+    #site .s-title { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: clamp(34px, 5vw, 50px); line-height: 1.08; margin-bottom: 14px; color: var(--text); }
+    #site .s-title em, #site .s-hero h1 em, #site .s-final h2 em { font-style: italic; font-weight: 700; background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    #site .s-lead { color: var(--text2); max-width: 640px; font-size: 17px; }
+    #site .s-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px 28px; border-radius: 100px; font-weight: 600; font-size: 15px; letter-spacing: .02em; cursor: pointer; border: none; font-family: inherit; transition: transform .15s, box-shadow .2s, border-color .2s, color .2s; }
+    #site .s-btn:active { transform: scale(.98); }
+    #site .s-gold { background: linear-gradient(135deg, #f7dd7e, #d4af37 55%, #b8941f); color: #15120a; box-shadow: 0 8px 30px rgba(212,175,55,0.25); }
+    #site .s-gold:hover { box-shadow: 0 10px 40px rgba(212,175,55,0.42); }
+    #site .s-ghost { border: 1px solid rgba(255,255,255,0.25); color: var(--text); background: rgba(0,0,0,0.25); }
+    #site .s-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Topo */
+    #site .s-top { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background .3s, border-color .3s; border-bottom: 1px solid transparent; }
+    #site .s-top.scrolled { background: rgba(8,8,16,0.93); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: var(--border); }
+    #site .s-nav { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 16px; }
+    #site .s-brand { font-family: 'Cormorant Garamond', serif; font-weight: 700; letter-spacing: .2em; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+    #site .s-brand span { background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    #site .s-brand img { width: 34px; height: 34px; border-radius: 50%; }
+    #site .s-brand { white-space: nowrap; }
+    @media (max-width: 420px) { #site .s-brand { font-size: 15px; letter-spacing: .14em; gap: 8px; } #site .s-brand img { width: 30px; height: 30px; } }
+    #site .s-links { display: flex; gap: 28px; font-size: 14px; color: var(--text2); }
+    #site .s-links a:hover { color: var(--gold); }
+    #site .s-nav .s-btn { padding: 10px 20px; font-size: 13px; }
+    #site .s-nav .s-login { font-size: 13px; color: var(--text2); margin-right: 14px; }
+    #site .s-nav .s-login:hover { color: var(--gold); }
+    @media (max-width: 860px) { #site .s-links, #site .s-nav .s-login { display: none; } }
+
+    /* Hero: texto + foto do letreiro */
+    #site .s-hero { padding: 120px 0 70px; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; position: relative;
+        background: radial-gradient(ellipse at 80% 20%, rgba(212,175,55,0.13), transparent 55%), radial-gradient(ellipse at 0% 100%, rgba(212,175,55,0.06), transparent 50%); }
+    #site .s-hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+    #site .s-hero h1 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: clamp(42px, 6.2vw, 76px); line-height: 1.03; margin-bottom: 18px; color: var(--text); }
+    #site .s-hero .s-sub { font-size: clamp(16px, 2vw, 19px); color: var(--text2); max-width: 540px; margin-bottom: 30px; }
+    #site .s-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+    #site .s-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 32px; }
+    #site .s-chip { font-size: 13px; padding: 7px 14px; border-radius: 100px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text2); }
+    #site .s-pricetag { display: inline-block; margin-bottom: 18px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--border-gold); background: rgba(212,175,55,0.06); padding: 6px 14px; border-radius: 100px; font-weight: 600; }
+    #site .s-hero-photo { position: relative; }
+    #site .s-hero-photo img { width: 100%; border-radius: 26px; border: 1px solid var(--border-gold); box-shadow: 0 30px 80px rgba(0,0,0,0.55); aspect-ratio: 4/3; object-fit: cover; }
+    #site .s-hero-photo .s-badge { position: absolute; left: -18px; bottom: 26px; background: rgba(12,12,20,0.94); border: 1px solid var(--border-gold); border-radius: 16px; padding: 12px 16px; font-size: 13px; color: var(--text2); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
+    #site .s-hero-photo .s-badge b { display: block; font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--gold); line-height: 1.1; }
+    @media (max-width: 860px) {
+        #site .s-hero { padding: 84px 0 50px; min-height: 0; }
+        #site .s-hero-grid { grid-template-columns: 1fr; gap: 28px; }
+        #site .s-hero-photo { order: -1; }
+        #site .s-hero-photo img { aspect-ratio: auto; border-radius: 20px; }
+        #site .s-hero-photo .s-badge { display: none; }
+        #site .s-ctas .s-btn { flex: 1 1 100%; }
+    }
+
+    /* Espaços */
+    #site .s-spaces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+    #site .s-space { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; overflow: hidden; transition: border-color .2s, transform .2s; display: flex; flex-direction: column; }
+    #site .s-space:hover { border-color: var(--border-gold); transform: translateY(-3px); }
+    #site .s-space-img { aspect-ratio: 4/3; background: var(--surface2) center / cover no-repeat; position: relative; cursor: zoom-in; }
+    #site .s-space-img .s-count { position: absolute; right: 12px; bottom: 12px; font-size: 12px; background: rgba(0,0,0,0.65); color: #fff; padding: 4px 10px; border-radius: 100px; }
+    #site .s-space-body { padding: 20px 22px 24px; display: flex; flex-direction: column; flex: 1; }
+    #site .s-space h3 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    #site .s-space p { font-size: 14px; color: var(--text2); margin-bottom: 14px; flex: 1; }
+    #site .s-space .s-from { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    #site .s-space .s-from strong { color: var(--gold); font-size: 22px; font-family: 'Cormorant Garamond', serif; }
+    #site .s-space .s-btn { width: 100%; padding: 12px; font-size: 14px; }
+    @media (max-width: 960px) { #site .s-spaces { grid-template-columns: 1fr; } #site .s-space { flex-direction: row; } #site .s-space-img { flex: 0 0 42%; aspect-ratio: auto; min-height: 220px; } }
+    @media (max-width: 600px) { #site .s-space { flex-direction: column; } #site .s-space-img { aspect-ratio: 4/3; min-height: 0; } }
+
+    /* Estrutura */
+    #site .s-amen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 36px; }
+    #site .s-amen div { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 22px 16px; text-align: center; }
+    #site .s-amen span { font-size: 30px; display: block; margin-bottom: 8px; }
+    #site .s-amen strong { font-size: 15px; font-weight: 600; display: block; color: var(--text); }
+    #site .s-amen small { font-size: 12.5px; color: var(--muted); }
+    @media (max-width: 860px) { #site .s-amen { grid-template-columns: 1fr 1fr; } }
+
+    /* Galeria */
+    #site .s-gallery { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 180px; gap: 10px; margin-top: 36px; }
+    #site .s-gallery img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; cursor: zoom-in; transition: opacity .2s; }
+    #site .s-gallery img:hover { opacity: .85; }
+    #site .s-gallery .s-big { grid-column: span 2; grid-row: span 2; }
+    @media (max-width: 700px) { #site .s-gallery { grid-template-columns: 1fr 1fr; grid-auto-rows: 130px; } }
+    #site .s-lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.94); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+    #site .s-lightbox.open { display: flex; }
+    #site .s-lightbox img { max-height: 86vh; max-width: 100%; border-radius: 12px; }
+    #site .s-lb-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: none; color: #fff; width: 46px; height: 46px; border-radius: 50%; font-size: 22px; cursor: pointer; }
+    #site .s-lb-prev { left: 14px; } #site .s-lb-next { right: 14px; }
+    #site .s-lb-close { position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.12); border: none; color: #fff; width: 42px; height: 42px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+    #site .s-lb-cap { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: #ddd; font-size: 14px; }
+
+    /* Preços */
+    #site .s-prices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 40px; }
+    #site .s-plan { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 28px 26px; position: relative; display: flex; flex-direction: column; }
+    #site .s-plan.featured { border-color: var(--border-gold); background: linear-gradient(180deg, rgba(212,175,55,0.08), var(--surface) 60%); }
+    #site .s-plan h3 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); margin-bottom: 16px; font-weight: 600; }
+    #site .s-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text); }
+    #site .s-row:last-of-type { border-bottom: none; }
+    #site .s-row small { color: var(--muted); font-size: 12px; }
+    #site .s-row b { color: var(--gold); font-size: 18px; white-space: nowrap; }
+    #site .s-row .s-tag { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--gold); color: #111; padding: 2px 8px; border-radius: 100px; margin-left: 6px; vertical-align: middle; }
+    #site .s-plan .s-note { font-size: 12.5px; color: var(--muted); margin-top: 12px; flex: 1; }
+    #site .s-plan .s-btn { margin-top: 18px; width: 100%; }
+    #site .s-coupon { margin-top: 26px; text-align: center; font-size: 15px; color: var(--text2); background: rgba(212,175,55,0.06); border: 1px dashed var(--border-gold); border-radius: 16px; padding: 14px 18px; }
+    #site .s-coupon strong { color: var(--gold); letter-spacing: .06em; }
+    @media (max-width: 760px) { #site .s-prices { grid-template-columns: 1fr; } }
+
+    /* Como funciona */
+    #site .s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; counter-reset: s; }
+    #site .s-step { padding: 24px; border-left: 2px solid var(--border-gold); }
+    #site .s-step::before { counter-increment: s; content: '0' counter(s); font-family: 'Cormorant Garamond', serif; font-size: 46px; font-weight: 700; color: var(--gold); line-height: 1; display: block; margin-bottom: 10px; }
+    #site .s-step h3 { font-size: 18px; margin-bottom: 6px; color: var(--text); }
+    #site .s-step p { font-size: 14.5px; color: var(--text2); }
+    @media (max-width: 760px) { #site .s-steps { grid-template-columns: 1fr; } }
+
+    /* Avaliações */
+    #site #s-reviews { display: none; }
+    #site .s-reviews { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 30px; }
+    #site .s-review { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 22px; }
+    #site .s-review .s-stars { color: var(--gold); letter-spacing: 2px; margin-bottom: 10px; }
+    #site .s-review p { font-family: 'Cormorant Garamond', serif; font-size: 21px; line-height: 1.35; margin-bottom: 12px; color: var(--text); }
+    #site .s-review small { color: var(--muted); font-size: 13px; }
+
+    /* Localização */
+    #site .s-loc { display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; margin-top: 36px; }
+    #site .s-loc-info { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 18px; color: var(--text); }
+    #site .s-loc-info small { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+    #site .s-map { border-radius: 22px; overflow: hidden; border: 1px solid var(--border); min-height: 340px; }
+    #site .s-map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; filter: grayscale(.4) invert(.9) hue-rotate(180deg); }
+    @media (max-width: 760px) { #site .s-loc { grid-template-columns: 1fr; } }
+
+    /* CTA final / rodapé */
+    #site .s-final { text-align: center; padding: 90px 0; background: radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.13), transparent 60%); border-top: 1px solid var(--border); }
+    #site .s-final h2 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: clamp(34px, 6vw, 58px); line-height: 1.1; margin-bottom: 12px; color: var(--text); }
+    #site .s-final p { color: var(--text2); margin-bottom: 30px; }
+    #site .s-footer { padding: 30px 0 40px; text-align: center; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); }
+    #site .s-footer .s-brand { justify-content: center; margin-bottom: 8px; font-size: 15px; }
+    #site .s-footer a { color: var(--text2); text-decoration: underline; }
+    #site .s-float { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 60; display: none; gap: 10px; transition: transform .3s, opacity .3s; }
+    #site .s-float.hide { transform: translateY(120%); opacity: 0; pointer-events: none; }
+    #site .s-float .s-btn { flex: 1; padding: 14px; }
+    #site .s-float .s-wa { flex: 0 0 54px; padding: 0; background: #25d366; color: #fff; font-size: 22px; }
+    @media (max-width: 760px) { #site .s-float { display: flex; } #site section { padding: 60px 0; } #site .s-footer { padding-bottom: 100px; } }
+
+    #site .s-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s, transform .7s; }
+    #site .s-reveal.in { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) { #site .s-reveal { opacity: 1; transform: none; transition: none; } }
+
+    /* Link "conhecer o espaço" no login */
+    .login-back { display: inline-block; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; margin-bottom: 18px; background: rgba(8,8,16,0.55); }
+    .login-back:hover { color: var(--gold); border-color: var(--border-gold); }
 </style>
 </head>
 <body>
+
+<!-- ══════════════ SITE: apresentação para visitantes (antes da agenda) ══════════════ -->
+<div id="site">
+<header class="s-top" id="sTop">
+    <div class="s-wrap s-nav">
+        <a href="#" class="s-brand" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;"><img src="img/icon-192.png" alt=""><span>WB COWORKING</span></a>
+        <nav class="s-links">
+            <a href="#s-espacos">Espaços</a>
+            <a href="#s-precos">Preços</a>
+            <a href="#s-como">Como funciona</a>
+            <a href="#s-local">Localização</a>
+        </nav>
+        <div style="display:flex;align-items:center">
+            <a href="#reservar" class="s-login" onclick="enterApp();return false;">Já sou cliente</a>
+            <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">Reservar</a>
+        </div>
+    </div>
+</header>
+
+<section class="s-hero">
+    <div class="s-wrap s-hero-grid">
+        <div>
+            <span class="s-pricetag">A partir de <span class="js-site-from">R$ 25</span>/hora</span>
+            <h1>Sua sala profissional ao lado do <em>Fórum Trabalhista</em></h1>
+            <p class="s-sub">Sala particular, sala de reunião e estações de trabalho por hora na Penha. Chegue, conecte e atenda seus clientes com estrutura de escritório, pagando só pelo tempo que usar.</p>
+            <div class="s-ctas">
+                <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Reservar agora</a>
+                <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Vi%20o%20site%20do%20WB%20Coworking%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="s-btn s-ghost">💬 Falar no WhatsApp</a>
+            </div>
+            <div class="s-chips">
+                <span class="s-chip">📍 2 min do Fórum Trabalhista</span>
+                <span class="s-chip">🕘 Seg a sex, 9h às 18h</span>
+                <span class="s-chip">📶 Wi-Fi</span>
+                <span class="s-chip">☕ Café</span>
+            </div>
+        </div>
+        <div class="s-hero-photo">
+            <img src="img/login-bg.jpg" alt="Letreiro do WB Coworking — Foco, Trabalho, Resultados" fetchpriority="high">
+            <div class="s-badge"><b>Foco · Trabalho · Resultados</b>Penha · São Paulo</div>
+        </div>
+    </div>
+</section>
+
+<section id="s-espacos" style="padding-top:20px">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Espaços</p>
+        <h2 class="s-title s-reveal">Escolha o ambiente <em>ideal</em></h2>
+        <p class="s-lead s-reveal">Do atendimento sigiloso ao dia inteiro de trabalho focado: você reserva só as horas que precisa, direto pelo celular.</p>
+        <div class="s-spaces">
+            <article class="s-space s-reveal">
+                <div class="s-space-img" style="background-image:url('img/sala-particular-1.jpg')" onclick="siteGallery('particular')" role="button" aria-label="Ver fotos da Sala Particular"><span class="s-count">📷 Ver fotos</span></div>
+                <div class="s-space-body">
+                    <h3>Sala Particular</h3>
+                    <p>Só para você e seu cliente. Ideal para atendimentos, audiências online e reuniões sigilosas. ❄️ Ar-condicionado.</p>
+                    <div class="s-from"><strong class="js-site-particular">R$ 50</strong> /hora</div>
+                    <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">Reservar esta sala</a>
+                </div>
+            </article>
+            <article class="s-space s-reveal">
+                <div class="s-space-img" style="background-image:url('img/sala-compartilhada-1.jpg')" onclick="siteGallery('compartilhada')" role="button" aria-label="Ver fotos da Sala Compartilhada"><span class="s-count">📷 Ver fotos</span></div>
+                <div class="s-space-body">
+                    <h3>Sala Compartilhada</h3>
+                    <p>Reserve uma estação por pessoa ou a sala inteira como <strong style="color:var(--text)">sala de reunião</strong> para até 8 pessoas. 🌀 Ventilador.</p>
+                    <div class="s-from"><strong class="js-site-from">R$ 25</strong> /pessoa · reunião <strong class="js-site-reuniao" style="font-size:18px">R$ 60</strong>/h</div>
+                    <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">Reservar esta sala</a>
+                </div>
+            </article>
+            <article class="s-space s-reveal">
+                <div class="s-space-img" style="background-image:url('img/coworking-1.jpg')" onclick="siteGallery('coworking')" role="button" aria-label="Ver fotos da Sala Coworking"><span class="s-count">📷 7 fotos</span></div>
+                <div class="s-space-body">
+                    <h3>Sala Coworking</h3>
+                    <p>8 estações individuais com tomada, num ambiente silencioso para produzir. ❄️ Ar-condicionado.</p>
+                    <div class="s-from"><strong class="js-site-from">R$ 25</strong> /pessoa/hora</div>
+                    <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">Reservar estação</a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Estrutura</p>
+        <h2 class="s-title s-reveal">Tudo pronto para você <em>trabalhar</em></h2>
+        <div class="s-amen">
+            <div class="s-reveal"><span>📶</span><strong>Wi-Fi</strong><small>Senha enviada na reserva</small></div>
+            <div class="s-reveal"><span>☕</span><strong>Café</strong><small>À disposição</small></div>
+            <div class="s-reveal"><span>🛋️</span><strong>Recepção</strong><small>Para receber seus clientes</small></div>
+            <div class="s-reveal"><span>🔌</span><strong>Tomadas</strong><small>Em cada estação</small></div>
+            <div class="s-reveal"><span>📱</span><strong>Check-in por QR</strong><small>Chegou, escaneou, entrou</small></div>
+            <div class="s-reveal"><span>💠</span><strong>Pagamento por Pix</strong><small>QR Code na hora</small></div>
+            <div class="s-reveal"><span>🧾</span><strong>Recibo em PDF</strong><small>Direto pelo app</small></div>
+            <div class="s-reveal"><span>🔔</span><strong>Lembretes</strong><small>Aviso antes da reserva</small></div>
+        </div>
+    </div>
+</section>
+
+<section style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Galeria</p>
+        <h2 class="s-title s-reveal">Conheça o <em>espaço</em></h2>
+        <div class="s-gallery s-reveal" id="sGallery">
+            <img class="s-big" src="img/coworking-2.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/recepcao-1.jpg" alt="Recepção" loading="lazy">
+            <img src="img/sala-particular-1.jpg" alt="Sala Particular" loading="lazy">
+            <img src="img/sala-compartilhada-1.jpg" alt="Sala Compartilhada" loading="lazy">
+            <img src="img/coworking-4.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/coworking-3.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/recepcao-2.jpg" alt="Recepção" loading="lazy">
+            <img src="img/coworking-5.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/coworking-6.jpg" alt="Sala Coworking" loading="lazy">
+        </div>
+    </div>
+</section>
+
+<section id="s-precos" style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Preços</p>
+        <h2 class="s-title s-reveal">Pague só pelo que <em>usar</em></h2>
+        <p class="s-lead s-reveal">Avulso por hora, pacotes com desconto ou plano mensal. Tudo contratado e pago pelo app.</p>
+        <div class="s-prices" id="sPrices">
+            <div class="s-plan s-reveal">
+                <h3>⏱ Estação compartilhada <small style="letter-spacing:0;text-transform:none">(por pessoa)</small></h3>
+                <div class="s-row"><span>1 hora</span><b>R$ 25</b></div>
+                <div class="s-row"><span>2 horas</span><b>R$ 40</b></div>
+                <div class="s-row"><span>Meio período <small>(4h)</small></span><b>R$ 70</b></div>
+                <div class="s-row"><span>Diária <small>(9h às 18h)</small></span><b>R$ 100</b></div>
+                <p class="s-note">Vale para a Sala Coworking e a Sala Compartilhada.</p>
+                <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">Reservar horário</a>
+            </div>
+            <div class="s-plan s-reveal">
+                <h3>🚪 Salas inteiras</h3>
+                <div class="s-row"><span>🔒 Sala Particular</span><b>R$ 50/h</b></div>
+                <div class="s-row"><span>👥 Sala de reunião <small>(até 4 pessoas)</small></span><b>R$ 60/h</b></div>
+                <div class="s-row"><span>👥 Sala de reunião <small>(5 a 8 pessoas)</small></span><b>R$ 80/h</b></div>
+                <p class="s-note">Valor por hora, pela sala toda.</p>
+                <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">Reservar sala</a>
+            </div>
+            <div class="s-plan featured s-reveal">
+                <h3>📦 Pacotes de horas</h3>
+                <div class="s-row"><span>Pacote 10 horas</span><b>R$ 200</b></div>
+                <div class="s-row"><span>Pacote 20 horas <span class="s-tag">Recomendado</span></span><b>R$ 360</b></div>
+                <div class="s-row"><span>Pacote 40 horas</span><b>R$ 680</b></div>
+                <p class="s-note">Para estação compartilhada. Validade de 60 a 90 dias.</p>
+                <a href="#reservar" class="s-btn s-gold" onclick="enterApp('planos');return false;">Contratar pacote</a>
+            </div>
+            <div class="s-plan s-reveal">
+                <h3>🏆 Planos mensais</h3>
+                <div class="s-row"><span>Posto compartilhado rotativo</span><b>R$ 450/mês</b></div>
+                <div class="s-row"><span>Posto fixo</span><b>R$ 650/mês</b></div>
+                <p class="s-note">Sem custo por hora durante o mês.</p>
+                <a href="#reservar" class="s-btn s-ghost" onclick="enterApp('planos');return false;">Contratar plano</a>
+            </div>
+        </div>
+        <div class="s-coupon s-reveal">🎁 Primeira reserva? Use o cupom <strong>PRIMERAVEZ</strong> e ganhe <strong>20% de desconto</strong>.</div>
+    </div>
+</section>
+
+<section id="s-como" style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Como funciona</p>
+        <h2 class="s-title s-reveal">Reservou, <em>chegou</em>, trabalhou</h2>
+        <div class="s-steps">
+            <div class="s-step s-reveal"><h3>Escolha sala e horário</h3><p>Veja a agenda em tempo real e reserve pelo celular em menos de 1 minuto.</p></div>
+            <div class="s-step s-reveal"><h3>Pague por Pix</h3><p>QR Code na hora. A confirmação e o recibo ficam salvos no app.</p></div>
+            <div class="s-step s-reveal"><h3>Faça o check-in</h3><p>Ao chegar, escaneie o QR Code da porta. Pronto, o espaço é seu.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="s-reviews" style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow">Avaliações</p>
+        <h2 class="s-title">Quem usa, <em>recomenda</em></h2>
+        <div class="s-reviews" id="sReviewsList"></div>
+    </div>
+</section>
+
+<section id="s-local" style="padding-top:0">
+    <div class="s-wrap">
+        <p class="s-eyebrow s-reveal">Localização</p>
+        <h2 class="s-title s-reveal">No coração da <em>Penha</em></h2>
+        <div class="s-loc">
+            <div class="s-loc-info s-reveal">
+                <div><small>Endereço</small>Av. Amador Bueno da Veiga, 1970 — 2º andar<br>Jardim Esperança · Penha · São Paulo/SP</div>
+                <div><small>Referência</small>2 minutos do Fórum Trabalhista da Penha</div>
+                <div><small>Horário</small>Segunda a sexta, das 9h às 18h</div>
+                <div><small>Contato</small><a href="https://wa.me/5511962826658" target="_blank" rel="noopener" style="color:var(--gold)">WhatsApp (11) 96282-6658</a></div>
+                <a href="https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+S%C3%A3o+Paulo" target="_blank" rel="noopener" class="s-btn s-ghost">🗺️ Abrir no Google Maps</a>
+            </div>
+            <div class="s-map s-reveal" id="sMap"></div>
+        </div>
+    </div>
+</section>
+
+<section class="s-final">
+    <div class="s-wrap">
+        <h2>Sua próxima reunião merece um <em>lugar à altura</em></h2>
+        <p>Veja os horários livres e reserve agora mesmo.</p>
+        <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Ver agenda e reservar</a>
+    </div>
+</section>
+
+<footer class="s-footer">
+    <div class="s-brand"><span>WB COWORKING</span></div>
+    Foco · Trabalho · Resultados — Av. Amador Bueno da Veiga, 1970 · Penha · SP<br>
+    <a href="/privacidade.html">Política de Privacidade</a>
+</footer>
+
+<div class="s-float" id="sFloat">
+    <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Reservar agora</a>
+    <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Vi%20o%20site%20do%20WB%20Coworking%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="s-btn s-wa" aria-label="WhatsApp">💬</a>
+</div>
+
+<div class="s-lightbox" id="sLightbox" onclick="if(event.target===this)siteLbClose()">
+    <button class="s-lb-close" onclick="siteLbClose()" aria-label="Fechar">✕</button>
+    <button class="s-lb-btn s-lb-prev" onclick="siteLbStep(-1)" aria-label="Anterior">‹</button>
+    <img id="sLbImg" alt="">
+    <button class="s-lb-btn s-lb-next" onclick="siteLbStep(1)" aria-label="Próxima">›</button>
+    <div class="s-lb-cap" id="sLbCap"></div>
+</div>
+</div>
 
 <div id="toast"></div>
 
@@ -1109,6 +1503,7 @@
 <!-- LOGIN -->
 <section id="screen-login" class="screen">
     <div class="login-wrap">
+        <a href="/" class="login-back" onclick="showSite();return false;">← Conhecer o espaço</a>
         <p class="login-eyebrow">Bem-vindo</p>
         <h1 class="login-title">Acesso <em>Exclusivo</em></h1>
         <p class="login-subtitle">WB Coworking · Penha · SP</p>
@@ -1475,6 +1870,7 @@ async function loadPricing() {
 }
 function applyPricingTexts() {
     document.querySelectorAll('.js-from-price').forEach(el => { el.textContent = formatBRL(PRICING.estacao.h1); });
+    if (typeof renderSitePrices === 'function') renderSitePrices();
 }
 
 // Estação: combina os blocos (1h, 2h, 4h, diária) pelo menor preço, com a
@@ -1678,6 +2074,133 @@ function dismissNotifBanner() {
     document.getElementById('notifBanner').style.display = 'none';
     localStorage.setItem('wb_notif_dismissed', '1');
 }
+
+
+// ══════════════════════════════════════════════
+//  SITE — apresentação para visitantes, antes da agenda
+// ══════════════════════════════════════════════
+// Quem decide se mostra é o script "site-mode" no <head>. Cliente logado,
+// app instalado e links de QR/ingresso/cupom vão direto para a agenda.
+function enterApp(after) {
+    document.documentElement.classList.remove('site-mode');
+    if (location.hash !== '#reservar') history.pushState({ wbApp: 1 }, '', '#reservar');
+    if (after) { try { sessionStorage.setItem('wb_after_login', after); } catch (e) {} }
+    if (user) { navTo('menu'); runAfterLogin(); } else navTo('login');
+    window.scrollTo(0, 0);
+}
+function showSite() {
+    if (user) return;
+    document.documentElement.classList.add('site-mode');
+    if (location.hash === '#reservar') history.replaceState(null, '', location.pathname + location.search);
+    window.scrollTo(0, 0);
+    siteInit();
+}
+function runAfterLogin() {
+    let a = null;
+    try { a = sessionStorage.getItem('wb_after_login'); sessionStorage.removeItem('wb_after_login'); } catch (e) {}
+    if (a === 'planos') setTimeout(() => openModal('planosModal'), 350);
+}
+window.addEventListener('popstate', () => {
+    if (!user && location.hash !== '#reservar') showSite();
+});
+
+function renderSitePrices() {
+    if (!document.getElementById('sPrices')) return;
+    const P = PRICING, e = P.estacao;
+    // R$ 25 em vez de R$ 25,00 (mais limpo no site)
+    const formatBRL = n => 'R$ ' + (Number.isInteger(+n) ? String(+n) : (+n).toFixed(2).replace('.', ','));
+    document.querySelectorAll('.js-site-from').forEach(el => el.textContent = formatBRL(e.h1));
+    document.querySelectorAll('.js-site-particular').forEach(el => el.textContent = formatBRL(P.particular));
+    document.querySelectorAll('.js-site-reuniao').forEach(el => el.textContent = formatBRL(P.reuniao.ate4));
+    const row = (l, v) => '<div class="s-row"><span>' + l + '</span><b>' + v + '</b></div>';
+    const sm = t => ' <small>' + t + '</small>';
+    const btn = (txt, after, gold) => '<a href="#reservar" class="s-btn ' + (gold ? 's-gold' : 's-ghost') + '" onclick="enterApp(' + (after ? '\'' + after + '\'' : '') + ');return false;">' + txt + '</a>';
+    const vals = P.pacotes.map(p => p.validade);
+    const vMin = Math.min(...vals), vMax = Math.max(...vals);
+    document.getElementById('sPrices').innerHTML =
+        '<div class="s-plan s-reveal in"><h3>⏱ Estação compartilhada <small style="letter-spacing:0;text-transform:none">(por pessoa)</small></h3>' +
+            row('1 hora', formatBRL(e.h1)) + row('2 horas', formatBRL(e.h2)) +
+            row('Meio período' + sm('(4h)'), formatBRL(e.h4)) + row('Diária' + sm('(9h às 18h)'), formatBRL(e.diaria)) +
+            '<p class="s-note">Vale para a Sala Coworking e a Sala Compartilhada.</p>' + btn('Reservar horário', '', true) + '</div>' +
+        '<div class="s-plan s-reveal in"><h3>🚪 Salas inteiras</h3>' +
+            row('🔒 Sala Particular', formatBRL(P.particular) + '/h') +
+            row('👥 Sala de reunião' + sm('(até 4 pessoas)'), formatBRL(P.reuniao.ate4) + '/h') +
+            row('👥 Sala de reunião' + sm('(5 a 8 pessoas)'), formatBRL(P.reuniao.ate8) + '/h') +
+            '<p class="s-note">Valor por hora, pela sala toda.</p>' + btn('Reservar sala', '', true) + '</div>' +
+        '<div class="s-plan featured s-reveal in"><h3>📦 Pacotes de horas</h3>' +
+            P.pacotes.map(p => row(escHtml(p.nome) + (p.destaque ? ' <span class="s-tag">Recomendado</span>' : '') + '<br><small>' + formatBRL(p.preco / p.horas) + '/hora · ' + p.validade + ' dias</small>', formatBRL(p.preco))).join('') +
+            '<p class="s-note">Para estação compartilhada. Validade de ' + (vMin === vMax ? vMin : vMin + ' a ' + vMax) + ' dias.</p>' + btn('Contratar pacote', 'planos', true) + '</div>' +
+        '<div class="s-plan s-reveal in"><h3>🏆 Planos mensais</h3>' +
+            P.mensal.map(m => row(escHtml(m.nome) + (MENSAL_DESC[m.id] ? '<br><small>' + MENSAL_DESC[m.id] + '</small>' : ''), formatBRL(m.preco) + '/mês')).join('') +
+            '<p class="s-note">Contratado e pago pelo app.</p>' + btn('Contratar plano', 'planos', false) + '</div>';
+}
+
+// Fotos em tela cheia (galeria e fotos de cada sala)
+let siteLb = { list: [], i: 0 };
+function siteLbOpen(list, i) {
+    siteLb = { list, i };
+    siteLbShow();
+    document.getElementById('sLightbox').classList.add('open');
+}
+function siteLbShow() {
+    const it = siteLb.list[siteLb.i];
+    document.getElementById('sLbImg').src = it.src;
+    document.getElementById('sLbCap').textContent = it.cap + (siteLb.list.length > 1 ? '  ·  ' + (siteLb.i + 1) + '/' + siteLb.list.length : '');
+}
+function siteLbStep(d) { siteLb.i = (siteLb.i + d + siteLb.list.length) % siteLb.list.length; siteLbShow(); }
+function siteLbClose() { document.getElementById('sLightbox').classList.remove('open'); }
+function siteGallery(salaId) {
+    const s = CFG.salas.find(x => x.id === salaId);
+    if (s && s.photos && s.photos.length) siteLbOpen(s.photos.map(src => ({ src, cap: s.nome })), 0);
+}
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('sLightbox')?.classList.contains('open')) return;
+    if (e.key === 'Escape') siteLbClose();
+    if (e.key === 'ArrowRight') siteLbStep(1);
+    if (e.key === 'ArrowLeft') siteLbStep(-1);
+});
+
+let siteReady = false;
+function siteInit() {
+    renderSitePrices();
+    if (siteReady) return;
+    siteReady = true;
+    const top = document.getElementById('sTop'), fl = document.getElementById('sFloat');
+    const onScroll = () => {
+        if (!document.documentElement.classList.contains('site-mode')) return;
+        top.classList.toggle('scrolled', scrollY > 30);
+        fl.classList.toggle('hide', scrollY < 420);
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    // Animação de entrada
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: .1 });
+        document.querySelectorAll('#site .s-reveal').forEach(el => io.observe(el));
+        // Mapa só carrega quando chega perto (página mais leve)
+        const mapEl = document.getElementById('sMap');
+        const mo = new IntersectionObserver(es => { if (es[0].isIntersecting) { mo.disconnect();
+            mapEl.innerHTML = '<iframe src="https://www.google.com/maps?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+S%C3%A3o+Paulo&output=embed" loading="lazy" title="Mapa do WB Coworking" referrerpolicy="no-referrer-when-downgrade"></iframe>'; } }, { rootMargin: '400px' });
+        mo.observe(mapEl);
+    } else {
+        document.querySelectorAll('#site .s-reveal').forEach(el => el.classList.add('in'));
+    }
+    // Galeria
+    const imgs = [...document.querySelectorAll('#sGallery img')];
+    imgs.forEach((img, i) => img.addEventListener('click', () => siteLbOpen(imgs.map(x => ({ src: x.getAttribute('src'), cap: x.alt })), i)));
+    // Avaliações reais (aparecem só se houver)
+    sb.rpc('wb_public_reviews').then(({ data }) => {
+        const list = Array.isArray(data) ? data.filter(r => r && r.comment).slice(0, 6) : [];
+        if (!list.length) return;
+        document.getElementById('sReviewsList').innerHTML = list.map(r =>
+            '<div class="s-review"><div class="s-stars">' + '★'.repeat(Math.max(1, Math.min(5, r.rating || 5))) + '</div>' +
+            '<p>“' + escHtml(r.comment) + '”</p><small>— ' + escHtml(r.name || 'Cliente') + '</small></div>').join('');
+        document.getElementById('s-reviews').style.display = 'block';
+    }).catch(() => {});
+}
+window.addEventListener('DOMContentLoaded', () => {
+    if (document.documentElement.classList.contains('site-mode')) siteInit();
+});
 
 window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pixDisplay').value = CFG.pixKey;
@@ -2008,7 +2531,7 @@ document.getElementById('loginForm').addEventListener('submit', e => {
     const remembered = JSON.parse(localStorage.getItem('wb_remembered_users') || '{}');
     remembered[phone] = { name, email, phone: user.phone };
     localStorage.setItem('wb_remembered_users', JSON.stringify(remembered));
-    applyUser(); navTo('menu');
+    applyUser(); navTo('menu'); runAfterLogin();
     if (localStorage.getItem('wb_pending_checkin')) { localStorage.removeItem('wb_pending_checkin'); doCheckin(); }
 });
 
