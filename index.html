@@ -55,7 +55,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WB Coworking — Salas por hora na Penha, ao lado do Fórum Trabalhista</title>
-    <meta name="description" content="Coworking na Penha, São Paulo, a 2 minutos do Fórum Trabalhista. Sala particular, sala de reunião e estações por hora a partir de R$ 25. Wi-Fi, café e ar-condicionado. Seg a sex, 9h às 18h. Reserve online.">
+    <meta name="description" content="Coworking na Penha, São Paulo, a 2 minutos do Fórum Trabalhista. Sala particular, sala de reunião e estações por hora a partir de R$ 25. Wi-Fi, café e ar-condicionado. Seg a sex, 9h às 18h30. Reserve online.">
     <link rel="canonical" href="https://www.wbcoworking.com.br/">
     <meta property="og:site_name" content="WB Coworking">
     <meta property="og:locale" content="pt_BR">
@@ -94,7 +94,7 @@
             "@type": "OpeningHoursSpecification",
             "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
             "opens": "09:00",
-            "closes": "18:00"
+            "closes": "18:30"
         }],
         "amenityFeature": [
             { "@type": "LocationFeatureSpecification", "name": "Wi-Fi", "value": true },
@@ -1034,7 +1034,7 @@
             <p class="s-applink">📲 Baixe o app grátis e reserve sua sala em menos de 1 minuto, direto do celular.</p>
             <div class="s-chips">
                 <span class="s-chip">📍 2 min do Fórum Trabalhista</span>
-                <span class="s-chip">🕘 Seg a sex, 9h às 18h</span>
+                <span class="s-chip">🕘 Seg a sex, 9h às 18h30</span>
                 <span class="s-chip">📶 Wi-Fi</span>
                 <span class="s-chip">☕ Café</span>
             </div>
@@ -1133,7 +1133,7 @@
                 <div class="s-row"><span>1 hora</span><b>R$ 25</b></div>
                 <div class="s-row"><span>2 horas</span><b>R$ 40</b></div>
                 <div class="s-row"><span>Meio período <small>(4h)</small></span><b>R$ 70</b></div>
-                <div class="s-row"><span>Diária <small>(9h às 18h)</small></span><b>R$ 100</b></div>
+                <div class="s-row"><span>Diária <small>(dia inteiro)</small></span><b>R$ 100</b></div>
                 <p class="s-note">Vale para a Sala Coworking e a Sala Compartilhada.</p>
                 <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">Reservar horário</a>
             </div>
@@ -1220,7 +1220,7 @@
             <div class="s-loc-info s-reveal">
                 <div><small>Endereço</small>Av. Amador Bueno da Veiga, 1970 — 2º andar<br>Jardim Esperança · Penha · São Paulo/SP</div>
                 <div><small>Referência</small>2 minutos do Fórum Trabalhista da Penha</div>
-                <div><small>Horário</small>Segunda a sexta, das 9h às 18h</div>
+                <div><small>Horário</small>Segunda a sexta, das 9h às 18h30</div>
                 <div><small>Contato</small><a href="https://wa.me/5511962826658" target="_blank" rel="noopener" style="color:var(--gold)">WhatsApp (11) 96282-6658</a></div>
                 <a href="https://maps.google.com/?q=Av.+Amador+Bueno+da+Veiga,+1970,+Penha,+S%C3%A3o+Paulo" target="_blank" rel="noopener" class="s-btn s-ghost">🗺️ Abrir no Google Maps</a>
             </div>
@@ -1269,7 +1269,7 @@
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;margin-bottom:10px">Tabela de <em style="color:var(--gold);font-style:italic">Preços</em></h3>
         <div class="price-perks">
             <span>📍 2 min do Fórum Trabalhista da Penha</span><span>📶 Wi-Fi</span><span>☕ Café</span>
-            <span>❄️ Ar-condicionado</span><span>🕘 9h às 18h</span><span>💻 8 postos de trabalho</span>
+            <span>❄️ Ar-condicionado</span><span>🕘 9h às 18h30</span><span>💻 8 postos de trabalho</span>
         </div>
         <!-- Conteúdo montado por renderPlanos() a partir de PRICING -->
         <div id="planosContent"></div>
@@ -1598,7 +1598,7 @@
             <div class="info-pill" onclick="window.open(CFG.mapsUrl,'_blank')">
                 <span class="pill-icon">📍</span><span id="infoAddress">Carregando...</span>
             </div>
-            <div class="info-pill"><span class="pill-icon">🕘</span><span>Seg–Sex · 09h–18h</span></div>
+            <div class="info-pill"><span class="pill-icon">🕘</span><span>Seg–Sex · 09h–18h30</span></div>
             <div class="info-pill" onclick="copyWifi()">
                 <span class="pill-icon">📶</span><span id="wifiDisplay">Wi-Fi</span><span id="wifiHint" style="font-size:10px;color:var(--muted);margin-left:4px"></span>
             </div>
@@ -2172,7 +2172,7 @@ function renderSitePrices() {
     document.getElementById('sPrices').innerHTML =
         '<div class="s-plan s-reveal in"><h3>⏱ Estação compartilhada <small style="letter-spacing:0;text-transform:none">(por pessoa)</small></h3>' +
             row('1 hora', formatBRL(e.h1)) + row('2 horas', formatBRL(e.h2)) +
-            row('Meio período' + sm('(4h)'), formatBRL(e.h4)) + row('Diária' + sm('(9h às 18h)'), formatBRL(e.diaria)) +
+            row('Meio período' + sm('(4h)'), formatBRL(e.h4)) + row('Diária' + sm('(dia inteiro)'), formatBRL(e.diaria)) +
             '<p class="s-note">Vale para a Sala Coworking e a Sala Compartilhada.</p>' + btn('Reservar horário', '', true) + '</div>' +
         '<div class="s-plan s-reveal in"><h3>🚪 Salas inteiras</h3>' +
             row('🔒 Sala Particular', formatBRL(P.particular) + '/h') +
