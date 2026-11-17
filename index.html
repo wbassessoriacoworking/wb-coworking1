@@ -1340,8 +1340,8 @@
 <div id="successModal" class="modal-overlay">
     <div class="modal-box" style="text-align:center">
         <div class="success-icon">✓</div>
-        <div class="modal-title">Reserva Enviada!</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.</p>
+        <div class="modal-title" id="successTitle">Reserva Enviada!</div>
+        <p id="successSub" style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.</p>
         <!-- Resumo da reserva -->
         <div id="successBookingSummary" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;text-align:left;display:none">
             <p style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">📋 Resumo da Reserva</p>
@@ -1352,6 +1352,7 @@
             <p style="font-size:14px;color:var(--gold);font-weight:600;letter-spacing:.05em" id="successWifi">—</p>
             <p style="font-size:10px;color:var(--muted);margin-top:4px">📍 Av. Amador Bueno da Veiga, 1970 — Sala 19 · Penha</p>
         </div>
+        <button id="successTicketBtn" onclick="openTicketFromSuccess()" class="btn-gold" style="display:none;margin-bottom:10px">🎟️ &nbsp;Ver ingresso (QR de check-in)</button>
         <button onclick="sendToWhatsapp()" class="btn-gold" style="margin-bottom:10px">💬 &nbsp;Confirmar pelo WhatsApp</button>
         <button onclick="downloadReceipt()" style="width:100%;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);color:var(--gold);padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📄 &nbsp;Baixar Recibo em PDF</button>
         <button onclick="addToGoogleCalendar()" style="width:100%;background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.25);color:#4285f4;padding:13px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;transition:.2s">📅 &nbsp;Adicionar ao Google Calendar</button>
@@ -2389,6 +2390,11 @@ function openModal(id) {
         const contentEl = document.getElementById('successSummaryContent');
         if (b && summaryEl && contentEl) {
             summaryEl.style.display = 'block';
+            const tBtn = document.getElementById('successTicketBtn');
+            if (tBtn) tBtn.style.display = /confirmado/i.test(b.status || '') ? '' : 'none';
+            const paid = /confirmado/i.test(b.status || '');
+            document.getElementById('successTitle').textContent = paid ? 'Reserva Confirmada!' : 'Reserva Enviada!';
+            document.getElementById('successSub').innerHTML = paid ? 'Pagamento recebido ✅<br>Na chegada, mostre o ingresso ou escaneie o QR da porta.' : 'Sua solicitação foi registrada com sucesso.<br>Confirme pelo WhatsApp para garantir o horário.';
             const row = (lbl, val, highlight) =>
                 '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;gap:8px">' +
                 '<span style="color:var(--muted);font-size:12px;white-space:nowrap">' + lbl + '</span>' +
@@ -3399,6 +3405,11 @@ function sendToWhatsapp() {
     window.open('https://wa.me/' + CFG.whatsappAdmin + '?text=' + encodeURIComponent(text), '_blank');
 }
 
+function openTicketFromSuccess() {
+    const b = tempBooking || (myBookings.length ? myBookings[myBookings.length - 1] : null);
+    if (!b) return;
+    closeModal('successModal'); openTicket(b.id);
+}
 function finishSuccess() { closeModal('successModal'); tempBooking = null; navTo('history'); }
 
 // ══════════════════════════════════════════════
