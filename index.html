@@ -1037,7 +1037,7 @@
             </div>
         </div>
         <div class="s-hero-photo">
-            <img src="img/login-bg.jpg" alt="Letreiro do WB Coworking — Foco, Trabalho, Resultados" fetchpriority="high">
+            <img src="img/site-letreiro.jpg" alt="Letreiro do WB Coworking — Foco, Trabalho, Resultados" fetchpriority="high">
             <div class="s-badge"><b>Foco · Trabalho · Resultados</b>Penha · São Paulo</div>
         </div>
     </div>
@@ -1050,7 +1050,7 @@
         <p class="s-lead s-reveal">Do atendimento sigiloso ao dia inteiro de trabalho focado: você reserva só as horas que precisa, direto pelo celular.</p>
         <div class="s-spaces">
             <article class="s-space s-reveal">
-                <div class="s-space-img" style="background-image:url('img/sala-particular-1.jpg')" onclick="siteGallery('particular')" role="button" aria-label="Ver fotos da Sala Particular"><span class="s-count">📷 Ver fotos</span></div>
+                <div class="s-space-img" style="background-image:url('img/sala-particular-1.jpg')" onclick="siteGallery('particular')" role="button" aria-label="Ver fotos da Sala Particular"><span class="s-count">📷 2 fotos</span></div>
                 <div class="s-space-body">
                     <h3>Sala Particular</h3>
                     <p>Só para você e seu cliente. Ideal para atendimentos, audiências online e reuniões sigilosas. ❄️ Ar-condicionado.</p>
@@ -1059,7 +1059,7 @@
                 </div>
             </article>
             <article class="s-space s-reveal">
-                <div class="s-space-img" style="background-image:url('img/sala-compartilhada-1.jpg')" onclick="siteGallery('compartilhada')" role="button" aria-label="Ver fotos da Sala Compartilhada"><span class="s-count">📷 Ver fotos</span></div>
+                <div class="s-space-img" style="background-image:url('img/sala-compartilhada-1.jpg')" onclick="siteGallery('compartilhada')" role="button" aria-label="Ver fotos da Sala Compartilhada"><span class="s-count">📷 3 fotos</span></div>
                 <div class="s-space-body">
                     <h3>Sala Compartilhada</h3>
                     <p>Reserve uma estação por pessoa ou a sala inteira como <strong style="color:var(--text)">sala de reunião</strong> para até 8 pessoas. 🌀 Ventilador.</p>
@@ -1102,15 +1102,19 @@
         <p class="s-eyebrow s-reveal">Galeria</p>
         <h2 class="s-title s-reveal">Conheça o <em>espaço</em></h2>
         <div class="s-gallery s-reveal" id="sGallery">
-            <img class="s-big" src="img/coworking-2.jpg" alt="Sala Coworking" loading="lazy">
+            <img class="s-big" src="img/coworking-1.jpg" alt="Sala Coworking" loading="lazy">
             <img src="img/recepcao-1.jpg" alt="Recepção" loading="lazy">
             <img src="img/sala-particular-1.jpg" alt="Sala Particular" loading="lazy">
             <img src="img/sala-compartilhada-1.jpg" alt="Sala Compartilhada" loading="lazy">
-            <img src="img/coworking-4.jpg" alt="Sala Coworking" loading="lazy">
-            <img src="img/coworking-3.jpg" alt="Sala Coworking" loading="lazy">
-            <img src="img/recepcao-2.jpg" alt="Recepção" loading="lazy">
             <img src="img/coworking-5.jpg" alt="Sala Coworking" loading="lazy">
-            <img src="img/coworking-6.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/recepcao-4.jpg" alt="Recepção com café" loading="lazy">
+            <img src="img/coworking-3.jpg" alt="Sala Coworking" loading="lazy">
+            <img src="img/sala-particular-2.jpg" alt="Sala Particular" loading="lazy">
+            <img src="img/recepcao-2.jpg" alt="Recepção com TV" loading="lazy">
+            <img src="img/coworking-7.jpg" alt="Espaço café" loading="lazy">
+            <img src="img/sala-compartilhada-2.jpg" alt="Sala Compartilhada" loading="lazy">
+            <img src="img/recepcao-3.jpg" alt="Recepção" loading="lazy">
+            <img src="img/coworking-4.jpg" alt="Sala Coworking" loading="lazy">
         </div>
     </div>
 </section>
@@ -1862,9 +1866,9 @@ const CFG = {
         // reservada inteira como Sala de Reunião (meetingMax pessoas).
         // Valores ficam em PRICING (editável pelo painel admin), não aqui.
         { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', pricing: 'hora', stations: 1,
-          photos: ['img/sala-particular-1.jpg'] },
+          photos: ['img/sala-particular-1.jpg', 'img/sala-particular-2.jpg'] },
         { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '🪑 Estação ou 👥 Sala de Reunião · 🌀 Ventilador · 📷 Câmera', pricing: 'estacao', stations: 4, meetingMax: 8,
-          photos: ['img/sala-compartilhada-1.jpg'] },
+          photos: [1,2,3].map(n => 'img/sala-compartilhada-' + n + '.jpg') },
         { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', pricing: 'estacao', stations: 8,
           address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP',
           photos: [1,2,3,4,5,6,7].map(n => 'img/coworking-' + n + '.jpg') }
