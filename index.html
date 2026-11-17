@@ -3181,8 +3181,9 @@ async function pixAutoPaid(ctx) {
         if (oi >= 0) myBookings[oi].status = 'Cancelado';
         localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
     }
-    // O aviso para a equipe (WhatsApp/Make) é enviado pelo servidor (mp-pix)
+    // Aviso para a equipe (Make.com), agora que está pago
     const b0 = ctx.bookings[0];
+    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: b0.id, userName: b0.userName, userPhone: b0.userPhone, date: b0.date, sala: b0.sala, slots: b0.slots, total: b0.weeklyTotal || b0.total, status, notes: b0.notes || null }) }); } catch (e) {}
     tempBooking = b0;
     resetBookingUI();
     openModal('successModal');

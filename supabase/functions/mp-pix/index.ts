@@ -12,8 +12,6 @@
 // consultar o pagamento direto na API do Mercado Pago.
 //
 // Segredos (Supabase → Edge Functions → Secrets): MP_ACCESS_TOKEN
-// Opcionais, para o recibo chegar sozinho no WhatsApp do coworking (CallMeBot):
-//   CALLMEBOT_APIKEY e WB_WHATSAPP (ex.: 5511962826658)
 // Publicar com "Verify JWT" DESLIGADO (o Mercado Pago não manda JWT).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
@@ -88,87 +86,36 @@ async function createPayment(amount: number, description: string, ref: string, e
   return { paymentId: String(p.id), qrCode: td.qr_code, qrBase64: td.qr_code_base64, amount: p.transaction_amount, expiresAt: expires.toISOString() };
 }
 
-// ── Recibo para o WhatsApp do coworking
-const MAKE_URL = Deno.env.get('MAKE_WEBHOOK_URL') ?? 'https://hook.us2.make.com/91xnrodd2h29jo8jm89jpy926f092u5g';
-const brl = (n: number) => 'R$ ' + Number(n).toFixed(2).replace('.', ',');
-const dBR = (d: string) => (d || '').split('-').reverse().join('/');
-const nowBR = (iso?: string) => new Date(iso || Date.now()).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
-
-async function sendWhatsApp(text: string) {
-  const key = Deno.env.get('CALLMEBOT_APIKEY');
-  const phone = Deno.env.get('WB_WHATSAPP') ?? '5511962826658';
-  if (!key) return;
-  try {
-    await fetch('https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(phone) +
-      '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(key));
-  } catch (e) { console.error('CallMeBot', e); }
-}
-async function sendMake(payload: unknown) {
-  if (!MAKE_URL) return;
-  try { await fetch(MAKE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
-  catch (e) { console.error('Make', e); }
-}
-
-// ── Aplica um pagamento aprovado (idempotente: só avisa quem mudou de status agora)
+// ── Aplica um pagamento aprovado (idempotente)
 async function applyPayment(p: any) {
   const ref = String(p.external_reference ?? '');
   if (p.status !== 'approved') return;
-  const pid = String(p.id);
-  const VERIFY = 'PAGO — Aguardando Verificação';
   if (ref.startsWith('booking:')) {
     // as reservas cobradas guardam o id do pagamento (mp_payment_id)
-    const { data: rows } = await sb.from('bookings').select('*').eq('mp_payment_id', pid).order('date');
+    const { data: rows } = await sb.from('bookings').select('id,status,total,weekly_total').eq('mp_payment_id', String(p.id));
     if (!rows?.length) return;
+    const ids = rows.map((b: any) => b.id);
     const expected = Number(rows[0].weekly_total) || rows.reduce((s: number, b: any) => s + Number(b.total || 0), 0);
     const ok = Math.abs(Number(p.transaction_amount) - expected) < 0.01;
-    const status = ok ? PAID : VERIFY;
-    const { data: changed } = await sb.from('bookings').update({ status, method: 'Pix automático' })
-      .eq('mp_payment_id', pid).eq('status', WAIT).select('id');
+    const status = ok ? PAID : 'PAGO — Aguardando Verificação';
+    await sb.from('bookings').update({ status, method: 'Pix automático', mp_payment_id: String(p.id) })
+      .in('id', ids).not('status', 'ilike', '%cancelado%');
     // Reserva já tinha sido cancelada por tempo, mas o cliente pagou: volta como "verificar"
-    const { data: revived } = await sb.from('bookings').update({ status: VERIFY, method: 'Pix automático' })
-      .eq('mp_payment_id', pid).ilike('status', '%cancelado%').eq('method', 'Pix automático').select('id');
-    if (!(changed?.length || revived?.length)) return;
-    const finalStatus = revived?.length ? VERIFY : status;
-    const b0 = rows[0];
-    const datas = rows.map((b: any) => dBR(b.date)).join(', ');
-    const text =
-      (finalStatus === PAID ? '✅ *PAGAMENTO CONFIRMADO*' : '⚠️ *PAGAMENTO RECEBIDO — VERIFICAR*') + ' · Pix automático\n\n' +
-      '🧾 Recibo nº ' + pid + '\n' +
-      '👤 Cliente: ' + (b0.user_name || '—') + '\n' +
-      '📱 WhatsApp: ' + (b0.user_phone || '—') + '\n' +
-      '🚪 Sala: ' + (b0.sala || '—') + '\n' +
-      '📅 ' + (rows.length > 1 ? rows.length + ' datas: ' : 'Data: ') + datas + '\n' +
-      '🕘 Horários: ' + (b0.slots || []).join(', ') + '\n' +
-      (Number(b0.stations) > 1 ? '👥 Pessoas: ' + b0.stations + '\n' : '') +
-      (b0.coupon ? '🎟️ Cupom: ' + b0.coupon + '\n' : '') +
-      '💰 Valor pago: *' + brl(p.transaction_amount) + '*\n' +
-      '🕒 Pago em: ' + nowBR(p.date_approved) + '\n' +
-      '🔖 Reserva: #' + b0.id +
-      (finalStatus === PAID ? '' : '\n\n_O valor ou o status não bateu com a reserva. Confira no painel admin._');
-    await sendWhatsApp(text);
-    await sendMake({ id: b0.id, userName: b0.user_name, userPhone: b0.user_phone, date: b0.date, sala: b0.sala, slots: b0.slots,
-      total: Number(p.transaction_amount), status: finalStatus, notes: b0.notes || null, event: 'pagamento_confirmado', paymentId: pid, receipt: text });
+    await sb.from('bookings').update({ status: 'PAGO — Aguardando Verificação', method: 'Pix automático', mp_payment_id: String(p.id) })
+      .in('id', ids).ilike('status', '%cancelado%').eq('method', 'Pix automático');
   } else if (ref.startsWith('purchase:')) {
     const id = Number(ref.slice(9));
     const { data: pu } = await sb.from('wb_purchases').select('*').eq('id', id).maybeSingle();
     if (!pu || pu.status === 'Ativo') return;
-    const ok = Math.abs(Number(p.transaction_amount) - Number(pu.price)) < 0.01;
+    if (Math.abs(Number(p.transaction_amount) - Number(pu.price)) >= 0.01) {
+      await sb.from('wb_purchases').update({ status: 'Aguardando Verificação', mp_payment_id: String(p.id) }).eq('id', id);
+      return;
+    }
     const now = new Date();
-    const expires = new Date(now.getTime() + Number(pu.validity_days) * 864e5);
-    const { data: changed } = await sb.from('wb_purchases').update(ok
-      ? { status: 'Ativo', approved_at: now.toISOString(), mp_payment_id: pid, expires_at: expires.toISOString() }
-      : { status: 'Aguardando Verificação', mp_payment_id: pid })
-      .eq('id', id).in('status', [WAIT, 'Cancelado']).select('id');
-    if (!changed?.length) return;
-    await sendWhatsApp(
-      (ok ? '✅ *PAGAMENTO CONFIRMADO*' : '⚠️ *PAGAMENTO RECEBIDO — VERIFICAR*') + ' · Pix automático\n\n' +
-      '🧾 Recibo nº ' + pid + '\n' +
-      '👤 Cliente: ' + (pu.user_name || '—') + '\n' +
-      '📱 WhatsApp: ' + (pu.user_phone || '—') + '\n' +
-      '📦 Plano: ' + pu.plan_name + '\n' +
-      '💰 Valor pago: *' + brl(p.transaction_amount) + '*\n' +
-      '🕒 Pago em: ' + nowBR(p.date_approved) + '\n' +
-      (ok ? '📆 Saldo ativo até: ' + expires.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '_Confira no painel admin._'));
+    await sb.from('wb_purchases').update({
+      status: 'Ativo', approved_at: now.toISOString(), mp_payment_id: String(p.id),
+      expires_at: new Date(now.getTime() + Number(pu.validity_days) * 864e5).toISOString(),
+    }).eq('id', id);
   }
 }
 
