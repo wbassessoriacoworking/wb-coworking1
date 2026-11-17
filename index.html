@@ -1065,7 +1065,7 @@
                 <div class="s-space-img" style="background-image:url('img/sala-compartilhada-1.jpg')" onclick="siteGallery('compartilhada')" role="button" aria-label="Ver fotos da Sala Compartilhada"><span class="s-count">📷 3 fotos</span></div>
                 <div class="s-space-body">
                     <h3>Sala Compartilhada</h3>
-                    <p>Reserve uma estação por pessoa ou a sala inteira como <strong style="color:var(--text)">sala de reunião</strong> para até 8 pessoas. 🌀 Ventilador.</p>
+                    <p>8 estações (4 mesas). Reserve por pessoa ou a sala inteira como <strong style="color:var(--text)">sala de reunião</strong> para até 8 pessoas. 🌀 Ventilador.</p>
                     <div class="s-from"><strong class="js-site-from">R$ 25</strong> /pessoa · reunião <strong class="js-site-reuniao" style="font-size:18px">R$ 60</strong>/h</div>
                     <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">Reservar esta sala</a>
                 </div>
@@ -1269,7 +1269,7 @@
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;margin-bottom:10px">Tabela de <em style="color:var(--gold);font-style:italic">Preços</em></h3>
         <div class="price-perks">
             <span>📍 2 min do Fórum Trabalhista da Penha</span><span>📶 Wi-Fi</span><span>☕ Café</span>
-            <span>❄️ Ar-condicionado</span><span>🕘 9h às 18h30</span><span>💻 8 postos de trabalho</span>
+            <span>❄️ Ar-condicionado</span><span>🕘 9h às 18h30</span><span>💻 16 estações de trabalho</span>
         </div>
         <!-- Conteúdo montado por renderPlanos() a partir de PRICING -->
         <div id="planosContent"></div>
@@ -1604,7 +1604,7 @@
             </div>
             <div class="info-pill"><span class="pill-icon">⚖️</span><span>2 min do Fórum Trabalhista</span></div>
             <div class="info-pill"><span class="pill-icon">☕</span><span>Café · ❄️ Ar-condicionado</span></div>
-            <div class="info-pill"><span class="pill-icon">💻</span><span>8 postos de trabalho</span></div>
+            <div class="info-pill"><span class="pill-icon">💻</span><span>16 estações de trabalho</span></div>
         </div>
 
         <!-- Meu saldo (pacotes / plano mensal) — montado por renderMenuCredits -->
@@ -1870,7 +1870,7 @@ const CFG = {
         // Valores ficam em PRICING (editável pelo painel admin), não aqui.
         { id: 'particular',    nome: 'Sala Particular',    emoji: '🔒', desc: '⚖️ Atendimento privativo · ❄️ AC · 📷 Câmera', pricing: 'hora', stations: 1,
           photos: ['img/sala-particular-1.jpg', 'img/sala-particular-2.jpg'] },
-        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '🪑 Estação ou 👥 Sala de Reunião · 🌀 Ventilador · 📷 Câmera', pricing: 'estacao', stations: 4, meetingMax: 8,
+        { id: 'compartilhada', nome: 'Sala Compartilhada', emoji: '🤝', desc: '🪑 8 estações ou 👥 Sala de Reunião · 🌀 Ventilador · 📷 Câmera', pricing: 'estacao', stations: 8, meetingMax: 8,
           photos: [1,2,3].map(n => 'img/sala-compartilhada-' + n + '.jpg') },
         { id: 'coworking',     nome: 'Sala Coworking',     emoji: '💻', desc: '💻 8 estações individuais · ❄️ AC · 🔌 Tomadas', pricing: 'estacao', stations: 8,
           address: 'Av. Amador Bueno da Veiga, 1970 — 2º andar, Sala 15 · Penha · SP',
