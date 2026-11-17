@@ -994,6 +994,17 @@
     #site .s-appqr #sAppQr canvas { display: none; }
     #site .s-float .s-app { flex: 0 0 54px; padding: 0; background: var(--surface2); border: 1px solid var(--border-gold); color: #fff; font-size: 22px; }
     @media (max-width: 860px) { #site .s-appbox { grid-template-columns: 1fr; padding: 28px 22px; } #site .s-appqr { display: none; } #site .s-applist { font-size: 14.5px; } }
+    /* Pix automático */
+    .pix-auto-box { background: linear-gradient(135deg, rgba(34,197,94,0.10), rgba(212,175,55,0.06)); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+    .pix-auto-title { font-weight: 700; color: #4ade80; font-size: 14px; margin-bottom: 4px; }
+    .pix-auto-text { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+    .pix-manual > summary { cursor: pointer; font-size: 12px; color: var(--muted); margin: 4px 0 12px; list-style: none; text-decoration: underline; }
+    .pix-manual > summary::-webkit-details-marker { display: none; }
+    .pix-manual:not(.pix-manual-collapsed) > summary { display: none; }
+    .pix-auto-wait { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface2); font-size: 13px; color: var(--text); }
+    .pix-auto-wait small { color: var(--muted); font-size: 11.5px; }
+    .pix-auto-spin { flex: 0 0 22px; width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(212,175,55,0.25); border-top-color: var(--gold); animation: pixspin 1s linear infinite; }
+    @keyframes pixspin { to { transform: rotate(360deg); } }
     /* Link "conhecer o espaço" no login */
     .login-back { display: inline-block; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; margin-bottom: 18px; background: rgba(8,8,16,0.55); }
     .login-back:hover { color: var(--gold); border-color: var(--border-gold); }
@@ -1284,6 +1295,13 @@
         <div id="buySummary" class="order-summary" style="margin-bottom:16px"></div>
         <div class="pix-box">
             <p class="pix-box-title" style="margin-bottom:12px">💠 Pagamento via Pix</p>
+            <div class="js-pix-auto pix-auto-box" style="display:none">
+                <p class="pix-auto-title">⚡ Liberação automática</p>
+                <p class="pix-auto-text">Pague o Pix e o saldo é liberado na hora, sem enviar comprovante.</p>
+                <button class="btn-gold" id="btnBuyPixAuto" onclick="startPixAutoBuy()">⚡ Gerar Pix</button>
+            </div>
+            <details class="js-pix-manual pix-manual" open>
+            <summary>Prefere pagar pela chave e enviar o comprovante?</summary>
             <div style="text-align:center;margin-bottom:12px">
                 <div id="buyPixQr" style="display:inline-block;background:#fff;padding:10px;border-radius:12px"></div>
             </div>
@@ -1293,9 +1311,28 @@
             <label class="file-upload-label" for="buyProofFile" id="buyUploadLabel">📎 &nbsp;Clique para anexar comprovante (PDF, JPG, PNG)</label>
             <input type="file" id="buyProofFile" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="document.getElementById('buyUploadLabel').textContent = this.files[0] ? '✓  ' + this.files[0].name : '📎 Clique para anexar comprovante'">
             <button class="btn-gold" id="btnBuySubmit" onclick="submitBuy()" style="margin-top:12px">Enviar Comprovante</button>
+            </details>
         </div>
         <p style="font-size:11px;color:var(--muted);margin:12px 0;line-height:1.5">Seu saldo é liberado assim que confirmarmos o pagamento. A validade começa a contar a partir da confirmação.</p>
         <button onclick="closeModal('buyModal')" class="modal-cancel">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL PIX AUTOMÁTICO -->
+<div id="pixAutoModal" class="modal-overlay" onclick="if(event.target===this)closeModal('pixAutoModal')">
+    <div class="modal-box" style="max-width:400px;max-height:94vh;overflow-y:auto;text-align:center">
+        <div class="modal-title">💠 Pague com Pix</div>
+        <p id="pixAutoDesc" style="font-size:12px;color:var(--muted);margin:-4px 0 12px"></p>
+        <p id="pixAutoAmount" style="font-size:32px;font-weight:700;color:var(--gold);font-family:'Cormorant Garamond',serif;margin-bottom:12px">R$ 0,00</p>
+        <div style="background:#fff;padding:10px;border-radius:14px;display:inline-block;margin-bottom:14px"><img id="pixAutoImg" alt="QR Code Pix" style="width:210px;height:210px;display:block"></div>
+        <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Pix copia e cola</p>
+        <div class="pix-row"><input id="pixAutoCode" class="input" type="text" readonly style="font-size:11px"><button class="btn-copy" onclick="copyPixAutoCode()">Copiar</button></div>
+        <div id="pixAutoWait" class="pix-auto-wait">
+            <span class="pix-auto-spin"></span>
+            <div style="text-align:left"><strong>Aguardando pagamento…</strong><br><small>Pague no app do seu banco. Esta tela confirma sozinha. Expira em <b id="pixAutoTimer">30:00</b></small></div>
+        </div>
+        <div id="pixAutoExpired" style="display:none;margin-top:14px;font-size:13px;color:#f87171">⏰ Este Pix expirou e o horário foi liberado.<br><button class="btn-ghost" style="margin-top:10px" onclick="pixAutoRetry()">Gerar novo Pix</button></div>
+        <button onclick="closeModal('pixAutoModal')" class="modal-cancel" style="margin-top:14px">Fechar (continua aguardando)</button>
     </div>
 </div>
 
@@ -1795,6 +1832,14 @@
         <!-- PIX -->
         <div class="pix-box" style="margin-top:8px">
             <p class="pix-box-title" style="margin-bottom:16px">💠 Pagamento via Pix</p>
+            <!-- Pix automático (Mercado Pago): aparece quando o servidor está configurado -->
+            <div class="js-pix-auto pix-auto-box" style="display:none">
+                <p class="pix-auto-title">⚡ Confirmação automática</p>
+                <p class="pix-auto-text">Gere o Pix, pague no app do seu banco e a reserva é confirmada na hora. Sem enviar comprovante.</p>
+                <button class="btn-gold" id="btnPixAuto" onclick="startPixAuto()">⚡ Gerar Pix</button>
+            </div>
+            <details class="js-pix-manual pix-manual" open>
+            <summary>Prefere pagar pela chave e enviar o comprovante?</summary>
             <!-- Valor em destaque -->
             <div style="text-align:center;background:var(--surface2);border-radius:var(--radius);padding:14px;margin-bottom:16px">
                 <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Valor a transferir</p>
@@ -1819,6 +1864,7 @@
                 <img id="proofPreviewImg" style="width:100%;max-height:180px;object-fit:cover;display:block">
             </div>
             <button class="btn-gold" id="btnEnviarPix" onclick="finalizeBooking('PIX')">Enviar Comprovante</button>
+            </details>
         </div>
     </div>
 </section>
@@ -2284,6 +2330,7 @@ window.addEventListener('DOMContentLoaded', () => {
     applyPricingTexts();
     loadPricing();
     fetchGlobalBookings();
+    checkPixAuto();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
     maybeShowInstallBanner();
     const p = new URLSearchParams(window.location.search);
@@ -2735,7 +2782,7 @@ async function insertBooking(data) {
         } else { console.warn('Supabase insert:', error); return false; }
     }
     // Notificação Make.com (só para WhatsApp/email, não armazena dados)
-    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: data.id, userName: data.userName, userPhone: data.userPhone, date: data.date, sala: data.sala, slots: data.slots, total: data.total, status: data.status, notes: data.notes || null }) }); } catch(e) {}
+    if (CFG.webhookUrl && data.status !== 'Aguardando Pix') try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: data.id, userName: data.userName, userPhone: data.userPhone, date: data.date, sala: data.sala, slots: data.slots, total: data.total, status: data.status, notes: data.notes || null }) }); } catch(e) {}
     return true;
 }
 
@@ -2980,6 +3027,173 @@ function crc16(str) {
         for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
     }
     return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
+// ══════════════════════════════════════════════
+//  PIX AUTOMÁTICO (Mercado Pago) — confirma sozinho
+// ══════════════════════════════════════════════
+// Servidor: supabase/functions/mp-pix. Enquanto ele não estiver configurado
+// (ping falha), o app mostra só o Pix pela chave com comprovante, como antes.
+const PIX_WAIT = 'Aguardando Pix';
+let pixAutoEnabled = false;
+let _pixAuto = null;   // { kind, paymentId, ids, bookings, plan, expiresAt, timer, done }
+
+async function pixAutoCall(body) {
+    const r = await fetch(CFG.supabaseUrl + '/functions/v1/mp-pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: CFG.supabaseKey, Authorization: 'Bearer ' + CFG.supabaseKey },
+        body: JSON.stringify(body)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || data.error) throw new Error(data.error || ('Erro ' + r.status));
+    return data;
+}
+
+async function checkPixAuto() {
+    try { pixAutoEnabled = !!(await pixAutoCall({ action: 'ping' })).enabled; } catch (e) { pixAutoEnabled = false; }
+    applyPixAutoUI();
+}
+function applyPixAutoUI() {
+    document.querySelectorAll('.js-pix-auto').forEach(el => el.style.display = pixAutoEnabled ? '' : 'none');
+    document.querySelectorAll('.js-pix-manual').forEach(el => {
+        if (el.tagName === 'DETAILS') el.open = !pixAutoEnabled;
+        el.classList.toggle('pix-manual-collapsed', pixAutoEnabled);
+    });
+}
+
+// Reserva: grava como "Aguardando Pix" (segura o horário) e gera o Pix
+async function startPixAuto() {
+    if (!checkTerms()) return;
+    if (_pixAuto && !_pixAuto.done && _pixAuto.kind === 'booking') return openModal('pixAutoModal');
+    const btn = document.getElementById('btnPixAuto');
+    const reset = () => { btn.disabled = false; btn.textContent = '⚡ Gerar Pix'; };
+    btn.disabled = true; btn.textContent = 'Gerando Pix...';
+    let bookings;
+    if (bookingMode === 'semanal') bookings = buildWeeklyBookings('Pix automático', PIX_WAIT);
+    else if (selectedDates.length > 1) bookings = buildMultiBookings('Pix automático', PIX_WAIT, true);
+    else bookings = [buildBooking('Pix automático', PIX_WAIT)];
+    if (!bookings || !bookings.length) { reset(); return toast('Nenhuma data disponível.'); }
+    for (const b of bookings) {
+        if (!(await insertBooking(b))) { reset(); return toast('⚠️ Erro ao salvar reserva. Tente novamente.'); }
+    }
+    const ids = bookings.map(b => String(b.id));
+    let pay;
+    try { pay = await pixAutoCall({ action: 'create', kind: 'booking', ids }); }
+    catch (e) {
+        await sb.from('bookings').update({ status: 'Cancelado' }).in('id', ids);
+        reset();
+        return toast('Não foi possível gerar o Pix automático (' + e.message + '). Use o Pix pela chave abaixo.');
+    }
+    bookings.forEach(b => { const i = myBookings.findIndex(x => x.id === b.id); if (i >= 0) myBookings[i] = b; else myBookings.push(b); });
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    reset();
+    showPixAuto({ kind: 'booking', ids, bookings, rebookFromId: _rebookFromId }, pay);
+    _rebookFromId = null;
+    fetchGlobalBookings();
+}
+
+// Pacote / plano mensal
+async function startPixAutoBuy() {
+    if (!buyPlan) return;
+    const btn = document.getElementById('btnBuyPixAuto');
+    btn.disabled = true; btn.textContent = 'Gerando Pix...';
+    try {
+        const pay = await pixAutoCall({ action: 'create', kind: 'purchase', planId: buyPlan.id, doc: user.doc, name: user.name, phone: user.phone, email: user.email });
+        closeModal('buyModal');
+        showPixAuto({ kind: 'purchase', plan: buyPlan }, pay);
+    } catch (e) {
+        toast('Não foi possível gerar o Pix automático (' + e.message + '). Use o Pix pela chave.');
+    }
+    btn.disabled = false; btn.textContent = '⚡ Gerar Pix';
+}
+
+function showPixAuto(ctx, pay) {
+    if (_pixAuto && _pixAuto.timer) clearInterval(_pixAuto.timer);
+    _pixAuto = Object.assign(ctx, { paymentId: pay.paymentId, expiresAt: new Date(pay.expiresAt).getTime(), done: false });
+    document.getElementById('pixAutoAmount').textContent = formatBRL(Number(pay.amount));
+    document.getElementById('pixAutoImg').src = 'data:image/png;base64,' + pay.qrBase64;
+    document.getElementById('pixAutoCode').value = pay.qrCode || '';
+    document.getElementById('pixAutoDesc').textContent = ctx.kind === 'booking'
+        ? ctx.bookings[0].sala + ' · ' + (ctx.bookings.length > 1 ? ctx.bookings.length + ' datas' : formatDateBR(ctx.bookings[0].date) + ' · ' + ctx.bookings[0].slots.join(', '))
+        : ctx.plan.nome;
+    setPixAutoState('wait');
+    openModal('pixAutoModal');
+    let n = 0;
+    _pixAuto.timer = setInterval(() => pollPixAuto(++n), 1000);
+}
+
+function setPixAutoState(state) {
+    document.getElementById('pixAutoWait').style.display = state === 'wait' ? '' : 'none';
+    document.getElementById('pixAutoExpired').style.display = state === 'expired' ? '' : 'none';
+}
+
+async function pollPixAuto(n) {
+    const ctx = _pixAuto; if (!ctx || ctx.done) return;
+    const left = Math.max(0, ctx.expiresAt - Date.now());
+    const mm = Math.floor(left / 60000), ss = Math.floor(left / 1000) % 60;
+    document.getElementById('pixAutoTimer').textContent = mm + ':' + String(ss).padStart(2, '0');
+    if (left <= 0) {
+        clearInterval(ctx.timer); ctx.done = true; setPixAutoState('expired');
+        if (ctx.kind === 'booking') {
+            ctx.bookings.forEach(b => { const i = myBookings.findIndex(x => x.id === b.id); if (i >= 0) myBookings[i].status = 'Cancelado'; });
+            localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+        }
+        return;
+    }
+    if (n % 4 !== 0 || ctx.checking) return;   // consulta a cada 4 segundos
+    ctx.checking = true;
+    try {
+        const r = await pixAutoCall({ action: 'status', paymentId: ctx.paymentId });
+        if (r.status === 'approved') await pixAutoPaid(ctx);
+    } catch (e) {}
+    ctx.checking = false;
+}
+
+async function pixAutoPaid(ctx) {
+    if (ctx.done) return;
+    ctx.done = true; clearInterval(ctx.timer);
+    closeModal('pixAutoModal');
+    if (ctx.kind === 'purchase') {
+        await loadMyCredits();
+        toast('✅ Pagamento confirmado! ' + ctx.plan.nome + ' já está ativo no seu saldo.');
+        return;
+    }
+    // status real gravado pelo servidor (Confirmado, ou "verificar" se o valor não bateu)
+    let status = 'PAGO — Confirmado';
+    try {
+        const { data } = await sb.rpc('wb_booking_status', { p_ids: ctx.ids });
+        if (Array.isArray(data) && data[0] && data[0].status) status = data[0].status;
+    } catch (e) {}
+    ctx.bookings.forEach(b => {
+        b.status = status;
+        const i = myBookings.findIndex(x => x.id === b.id); if (i >= 0) myBookings[i] = b; else myBookings.push(b);
+    });
+    localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    if (ctx.rebookFromId) {
+        await sb.from('bookings').update({ status: 'Cancelado' }).eq('id', ctx.rebookFromId);
+        const oi = myBookings.findIndex(b => String(b.id) === String(ctx.rebookFromId));
+        if (oi >= 0) myBookings[oi].status = 'Cancelado';
+        localStorage.setItem('wb_bookings', JSON.stringify(myBookings));
+    }
+    // Aviso para a equipe (Make.com), agora que está pago
+    const b0 = ctx.bookings[0];
+    if (CFG.webhookUrl) try { await fetch(CFG.webhookUrl, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: b0.id, userName: b0.userName, userPhone: b0.userPhone, date: b0.date, sala: b0.sala, slots: b0.slots, total: b0.weeklyTotal || b0.total, status, notes: b0.notes || null }) }); } catch (e) {}
+    tempBooking = b0;
+    resetBookingUI();
+    openModal('successModal');
+    fetchGlobalBookings();
+}
+
+function copyPixAutoCode() {
+    const v = document.getElementById('pixAutoCode').value;
+    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(
+        () => toast('Código Pix copiado! Cole no app do seu banco.'),
+        () => { const el = document.getElementById('pixAutoCode'); el.select(); document.execCommand('copy'); toast('Código Pix copiado!'); });
+}
+function pixAutoRetry() {
+    closeModal('pixAutoModal');
+    _pixAuto = null;
+    if (document.getElementById('screen-checkout').classList.contains('active')) toast('Gere um novo Pix para continuar.');
 }
 
 function buildPixPayload(key, name, city, amount) {
