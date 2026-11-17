@@ -980,6 +980,17 @@
     #site .s-reveal.in { opacity: 1; transform: none; }
     @media (prefers-reduced-motion: reduce) { #site .s-reveal { opacity: 1; transform: none; transition: none; } }
 
+    #site .s-applink { margin-top: 16px; font-size: 14px; color: var(--gold); }
+    #site .s-appbox { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: center; background: linear-gradient(135deg, rgba(212,175,55,0.10), var(--surface) 55%); border: 1px solid var(--border-gold); border-radius: 26px; padding: 44px; }
+    #site .s-applist { list-style: none; margin: 8px 0 26px; display: grid; gap: 10px; color: var(--text2); font-size: 15.5px; }
+    #site .s-apphint { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+    #site .s-appqr { text-align: center; }
+    #site .s-appqr #sAppQr { display: inline-block; background: #fff; padding: 14px; border-radius: 18px; margin-bottom: 12px; }
+    #site .s-appqr #sAppQr img, #site .s-appqr #sAppQr canvas { display: block; }
+    #site .s-appqr small { display: block; color: var(--text2); font-size: 13px; }
+    #site .s-appqr #sAppQr canvas { display: none; }
+    #site .s-float .s-app { flex: 0 0 54px; padding: 0; background: var(--surface2); border: 1px solid var(--border-gold); color: #fff; font-size: 22px; }
+    @media (max-width: 860px) { #site .s-appbox { grid-template-columns: 1fr; padding: 28px 22px; } #site .s-appqr { display: none; } #site .s-applist { font-size: 14.5px; } }
     /* Link "conhecer o espaço" no login */
     .login-back { display: inline-block; font-size: 12px; color: var(--text2); text-decoration: none; border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px; margin-bottom: 18px; background: rgba(8,8,16,0.55); }
     .login-back:hover { color: var(--gold); border-color: var(--border-gold); }
@@ -997,6 +1008,7 @@
             <a href="#s-precos">Preços</a>
             <a href="#s-como">Como funciona</a>
             <a href="#s-local">Localização</a>
+            <a href="#s-app">📲 Baixar o app</a>
         </nav>
         <div style="display:flex;align-items:center">
             <a href="#reservar" class="s-login" onclick="enterApp();return false;">Já sou cliente</a>
@@ -1013,8 +1025,10 @@
             <p class="s-sub">Sala particular, sala de reunião e estações de trabalho por hora na Penha. Chegue, conecte e atenda seus clientes com estrutura de escritório, pagando só pelo tempo que usar.</p>
             <div class="s-ctas">
                 <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Reservar agora</a>
-                <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Vi%20o%20site%20do%20WB%20Coworking%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="s-btn s-ghost">💬 Falar no WhatsApp</a>
+                <button type="button" class="s-btn s-ghost" onclick="siteInstall()">📲 Baixar o app</button>
+                <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Vi%20o%20site%20do%20WB%20Coworking%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="s-btn s-ghost">💬 WhatsApp</a>
             </div>
+            <p class="s-applink">📲 Baixe o app grátis e reserve sua sala em menos de 1 minuto, direto do celular.</p>
             <div class="s-chips">
                 <span class="s-chip">📍 2 min do Fórum Trabalhista</span>
                 <span class="s-chip">🕘 Seg a sex, 9h às 18h</span>
@@ -1140,7 +1154,34 @@
                 <a href="#reservar" class="s-btn s-ghost" onclick="enterApp('planos');return false;">Contratar plano</a>
             </div>
         </div>
-        <div class="s-coupon s-reveal">🎁 Primeira reserva? Use o cupom <strong>PRIMERAVEZ</strong> e ganhe <strong>20% de desconto</strong>.</div>
+        <div class="s-coupon s-reveal">🎁 Primeira reserva? Baixe o app e use o cupom <strong>PRIMERAVEZ</strong> para ganhar <strong>7% de desconto</strong>.</div>
+    </div>
+</section>
+
+<section id="s-app" style="padding-top:0">
+    <div class="s-wrap">
+        <div class="s-appbox s-reveal">
+            <div>
+                <p class="s-eyebrow">App WB Coworking</p>
+                <h2 class="s-title">Baixe o app e reserve <em>na palma da mão</em></h2>
+                <ul class="s-applist">
+                    <li>📅 Agenda em tempo real: veja os horários livres e reserve na hora</li>
+                    <li>💠 Pague por Pix e receba o recibo no próprio app</li>
+                    <li>📱 Ingresso com QR Code para o check-in na chegada</li>
+                    <li>🔔 Lembrete antes da sua reserva</li>
+                    <li>📦 Pacotes e planos com saldo de horas</li>
+                </ul>
+                <div class="s-ctas">
+                    <button type="button" class="s-btn s-gold" onclick="siteInstall()">📲 Baixar o app grátis</button>
+                    <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">Reservar pelo site</a>
+                </div>
+                <p class="s-apphint">Funciona no Android e no iPhone, sem ocupar espaço. No iPhone: toque em Compartilhar 📤 e depois em “Adicionar à Tela de Início”.</p>
+            </div>
+            <div class="s-appqr">
+                <div id="sAppQr"></div>
+                <small>Está no computador?<br>Aponte a câmera do celular e baixe o app</small>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -1149,7 +1190,7 @@
         <p class="s-eyebrow s-reveal">Como funciona</p>
         <h2 class="s-title s-reveal">Reservou, <em>chegou</em>, trabalhou</h2>
         <div class="s-steps">
-            <div class="s-step s-reveal"><h3>Escolha sala e horário</h3><p>Veja a agenda em tempo real e reserve pelo celular em menos de 1 minuto.</p></div>
+            <div class="s-step s-reveal"><h3>Baixe o app e escolha o horário</h3><p>Veja a agenda em tempo real e reserve pelo celular em menos de 1 minuto.</p></div>
             <div class="s-step s-reveal"><h3>Pague por Pix</h3><p>QR Code na hora. A confirmação e o recibo ficam salvos no app.</p></div>
             <div class="s-step s-reveal"><h3>Faça o check-in</h3><p>Ao chegar, escaneie o QR Code da porta. Pronto, o espaço é seu.</p></div>
         </div>
@@ -1184,19 +1225,23 @@
 <section class="s-final">
     <div class="s-wrap">
         <h2>Sua próxima reunião merece um <em>lugar à altura</em></h2>
-        <p>Veja os horários livres e reserve agora mesmo.</p>
-        <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Ver agenda e reservar</a>
+        <p>Baixe o app WB Coworking, veja os horários livres e reserve agora mesmo.</p>
+        <div class="s-ctas" style="justify-content:center">
+            <button type="button" class="s-btn s-gold" onclick="siteInstall()">📲 Baixar o app</button>
+            <a href="#reservar" class="s-btn s-ghost" onclick="enterApp();return false;">📅 Ver agenda e reservar</a>
+        </div>
     </div>
 </section>
 
 <footer class="s-footer">
     <div class="s-brand"><span>WB COWORKING</span></div>
     Foco · Trabalho · Resultados — Av. Amador Bueno da Veiga, 1970 · Penha · SP<br>
-    <a href="/privacidade.html">Política de Privacidade</a>
+    <a href="#" onclick="siteInstall();return false;">📲 Baixar o app</a> · <a href="/privacidade.html">Política de Privacidade</a>
 </footer>
 
 <div class="s-float" id="sFloat">
     <a href="#reservar" class="s-btn s-gold" onclick="enterApp();return false;">📅 Reservar agora</a>
+    <button type="button" class="s-btn s-app" onclick="siteInstall()" aria-label="Baixar o app">📲</button>
     <a href="https://wa.me/5511962826658?text=Ol%C3%A1!%20Vi%20o%20site%20do%20WB%20Coworking%20e%20quero%20saber%20mais." target="_blank" rel="noopener" class="s-btn s-wa" aria-label="WhatsApp">💬</a>
 </div>
 
@@ -1825,7 +1870,7 @@ const CFG = {
           photos: [1,2,3,4,5,6,7].map(n => 'img/coworking-' + n + '.jpg') }
     ],
     coupons: {
-        'PRIMERAVEZ': { pct: 20, label: 'Primeira Reserva', type: 'firstTime',  desc: '20% off · válido na 1ª reserva' },
+        'PRIMERAVEZ': { pct: 7,  label: 'Primeira Reserva', type: 'firstTime',  desc: '7% off · válido na 1ª reserva' },
         'INDICA15':   { pct: 15, label: 'Indicação',        type: 'referral',   desc: '15% off · para clientes indicados' },
         'PREMIUM20':  { pct: 20, label: 'Cliente Premium',  type: 'premium5',   desc: '20% off · exclusivo 5+ reservas' },
         'VIP30':      { pct: 30, label: 'VIP',              type: 'premium10',  desc: '30% off · exclusivo 10+ reservas' },
@@ -2160,6 +2205,22 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') siteLbStep(-1);
 });
 
+// "Baixar o app": instala o app (PWA) quando o navegador permite;
+// no iPhone e no computador explica como fazer.
+function siteInstall() {
+    if (typeof isStandaloneApp === 'function' && isStandaloneApp()) return enterApp();
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; }).catch(() => {});
+        return;
+    }
+    if (isIosDevice()) return toast('No iPhone: toque em Compartilhar 📤 e depois em "Adicionar à Tela de Início".');
+    if (/android/i.test(navigator.userAgent)) return toast('No Android: toque no menu ⋮ do navegador e depois em "Instalar app" ou "Adicionar à tela inicial".');
+    const box = document.getElementById('s-app');
+    if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast('Aponte a câmera do celular para o QR Code e baixe o app.');
+}
+
 let siteReady = false;
 function siteInit() {
     renderSitePrices();
@@ -2185,6 +2246,8 @@ function siteInit() {
     } else {
         document.querySelectorAll('#site .s-reveal').forEach(el => el.classList.add('in'));
     }
+    // QR para baixar o app pelo celular (quando o site é aberto no computador)
+    try { new QRCode(document.getElementById('sAppQr'), { text: 'https://www.wbcoworking.com.br/', width: 150, height: 150, colorDark: '#1a1a2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     // Galeria
     const imgs = [...document.querySelectorAll('#sGallery img')];
     imgs.forEach((img, i) => img.addEventListener('click', () => siteLbOpen(imgs.map(x => ({ src: x.getAttribute('src'), cap: x.alt })), i)));
